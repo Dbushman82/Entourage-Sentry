@@ -20,7 +20,21 @@ import { apiRequest } from "@/lib/queryClient";
 
 const companyFormSchema = z.object({
   name: z.string().min(2, { message: "Company name must be at least 2 characters" }),
-  website: z.string().url({ message: "Please enter a valid URL" }),
+  website: z.string().transform(val => {
+    // Add https:// if not present
+    if (val && !val.match(/^https?:\/\//)) {
+      return `https://${val}`;
+    }
+    return val;
+  }).refine(val => {
+    // Validate URL after transformation
+    try {
+      new URL(val);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }, { message: "Please enter a valid URL" }),
   address: z.string().optional(),
   phone: z.string().optional(),
   primaryContact: z.string().optional(),
@@ -72,7 +86,7 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
   
   // When domain data is loaded, update form values if they're not already set
   useEffect(() => {
-    if (domainReconData && !defaultValues.name) {
+    if (domainReconData && (!defaultValues || !defaultValues.name)) {
       // Extract domain name for company name suggestion
       const domain = initialDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
       const domainParts = domain.split('.');

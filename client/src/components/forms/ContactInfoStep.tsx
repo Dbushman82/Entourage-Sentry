@@ -19,7 +19,21 @@ const contactFormSchema = z.object({
   lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string().optional(),
-  companyWebsite: z.string().url({ message: "Please enter a valid URL" }),
+  companyWebsite: z.string().transform(val => {
+    // Add https:// if not present and the value is not empty
+    if (val && !val.match(/^https?:\/\//)) {
+      return `https://${val}`;
+    }
+    return val;
+  }).refine(val => {
+    // Validate URL after transformation
+    try {
+      new URL(val);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }, { message: "Please enter a valid URL" }),
 });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
