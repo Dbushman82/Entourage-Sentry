@@ -31,7 +31,7 @@ const companyProfileSchema = z.object({
   locationCount: z.string().min(1, { message: "Please select location count" }),
   businessHours: z.string().optional(),
   overview: z.string().optional(),
-  compliance: z.record(z.boolean()).optional(),
+  compliance: z.record(z.boolean()).default({}),
   growthPlans: z.string().optional(),
 });
 
@@ -46,7 +46,7 @@ interface CompanyProfileStepProps {
 const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfileStepProps) => {
   // Set up default compliance values
   const defaultCompliance = complianceOptions.reduce((acc, option) => {
-    acc[option.id] = defaultValues.compliance?.[option.id] || false;
+    acc[option.id] = defaultValues && defaultValues.compliance ? defaultValues.compliance[option.id] || false : false;
     return acc;
   }, {} as Record<string, boolean>);
   

@@ -19,21 +19,31 @@ const contactFormSchema = z.object({
   lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string().optional(),
-  companyWebsite: z.string().transform(val => {
-    // Add https:// if not present and the value is not empty
-    if (val && !val.match(/^https?:\/\//)) {
-      return `https://${val}`;
-    }
-    return val;
-  }).refine(val => {
-    // Validate URL after transformation
-    try {
-      new URL(val);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }, { message: "Please enter a valid URL" }),
+  companyWebsite: z.string()
+    .transform(val => {
+      if (!val) return '';
+      
+      // Remove any leading/trailing whitespace
+      val = val.trim();
+      
+      // Add https:// if not present and the value is not empty
+      if (val && !val.match(/^https?:\/\//)) {
+        return `https://${val}`;
+      }
+      return val;
+    })
+    .superRefine((val, ctx) => {
+      if (!val) return; // Allow empty values
+      
+      // More relaxed validation for URL (just check format)
+      const hasValidFormat = val.match(/^https?:\/\/[\w.-]+(\.[\w.-]+)+([\/\w.-]*)*\/?$/);
+      if (!hasValidFormat) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter a valid URL",
+        });
+      }
+    }),
 });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
