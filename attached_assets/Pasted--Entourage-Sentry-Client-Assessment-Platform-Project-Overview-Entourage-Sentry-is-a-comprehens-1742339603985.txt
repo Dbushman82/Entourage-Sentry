@@ -1,0 +1,195 @@
+# Entourage Sentry: Client Assessment Platform
+
+## Project Overview
+Entourage Sentry is a comprehensive client assessment platform for MSPs that collects, analyzes, and securely stores prospect information. It provides automated reconnaissance, service inventory collection, network scanning, and cost tracking to streamline the client onboarding process.
+
+## Core Features
+
+### 1. Multi-Step Assessment Flow
+- **Step 1:** Basic contact information (first name, last name, company website URL)
+- **Step 2:** Auto-populated company information based on domain analysis
+- **Step 3:** Company profile and business process information
+- **Step 4:** Application and service inventory collection
+- **Step 5:** Network assessment (automated scanning or manual entry)
+- **Step 6:** Service cost tracking and analysis
+- **Step 7:** Pain points and service interest selection
+
+### 2. Domain Reconnaissance
+- Auto-populate from domain name:
+  - Company address and contact information
+  - MX records and email provider
+  - DNS configuration (A, CNAME, TXT records)
+  - SSL certificate details and expiration
+  - Website hosting provider
+  - SPF, DKIM, and DMARC records
+  - Web technology stack detection
+
+### 3. ISP Detection & Analysis
+- Automatic detection of client's ISP from IP address
+- Identification of connection type (business/residential)
+- Multi-location support for different ISPs
+- Service level verification
+- Bandwidth analysis and recommendations
+
+### 4. Technology Stack Inventory
+- Guided collection of all business applications and services
+- Common service auto-suggestions
+- Cloud vs. on-premises categorization
+- License counts and management details
+- Integration points between services
+
+### 5. Network Assessment
+- **Browser Option:** Limited scan using WebRTC and browser capabilities
+- **Downloadable Tool:** Comprehensive network discovery application
+  - Device discovery and inventory
+  - Operating system detection
+  - Port scanning for common services
+  - Printer and networked device discovery
+  - Basic vulnerability assessment
+- **Manual Entry:** Guided form for security-conscious clients
+
+### 6. Service Cost Tracking
+- Detailed inventory of all IT-related expenses
+- Provider information
+- Monthly/annual costs
+- User/license counts
+- Contract renewal dates
+- Cost per user calculations
+- Industry benchmarking
+- Cost saving opportunity identification
+
+### 7. Company Profile Collection
+- Structured fields for company overview and background
+- Industry classification selection
+- Number of employees and locations
+- Business hours and operation schedule
+- Key business processes description fields
+- Regulatory compliance requirements
+- Growth plans and business objectives
+- Company structure and departments
+
+### 8. Pain Points and Service Interest
+- Free-form text fields for describing current IT challenges
+- Prioritization of pain points (critical, high, medium, low)
+- Response time expectations
+- Checkboxes for service interests:
+  - Managed Security Service Provider (MSSP)
+  - Desktop/End-user Support
+  - Solutions Consulting
+  - Cloud Management
+  - Infrastructure Management
+  - Backup and Disaster Recovery
+  - Compliance Management
+  - VoIP/Telecommunications
+  - Strategic IT Planning
+  - Vendor Management
+  - Custom Software Development
+  - Business Process Automation
+- Expected budget range for IT services
+- Timeline for decision making
+
+### 9. API Integration
+- Comprehensive RESTful API for CRM integration
+- Authentication via API keys and OAuth 2.0
+- Endpoints for all assessment data
+- Webhook support for real-time updates
+- Custom field mapping capabilities
+- Batch operations for efficiency
+
+## Technical Specifications
+
+### Database
+- SQLite for development simplicity and portability
+- PostgreSQL for production deployments
+- Automated migration path between the two
+- Schema designed for efficient querying
+- Proper indexing for performance
+- Encrypted sensitive fields
+
+### Architecture
+- Next.js for frontend and API routes
+- Backend Node.js services for intensive operations
+- Microservice design for network scanning component
+- RESTful API design following OpenAPI specification
+- WebSocket support for real-time scanning updates
+
+### Security
+- End-to-end encryption for sensitive data
+- Role-based access controls
+- Audit logging of all operations
+- Data anonymization options
+- Compliance with relevant regulations
+- Secure development practices
+
+### Deployment
+- Replit hosting for core application
+- Containerized components for easy deployment
+- Environment-based configuration
+- Backup and restore capabilities
+- Monitoring and alerting
+
+## User Experience
+- Branded as "Entourage Sentry"
+- Professional, trust-building design
+- Clear progress indicators
+- Save/resume functionality
+- Estimated completion time
+- Mobile-responsive design
+- Guided help throughout process
+
+## API Specification
+
+### Authentication
+- API Key authentication
+- JWT tokens for session management
+- Rate limiting protection
+
+### Endpoints
+
+#### Assessment Management
+- `GET /api/assessments` - List all assessments
+- `GET /api/assessments/{id}` - Get specific assessment
+- `POST /api/assessments` - Create new assessment
+- `PUT /api/assessments/{id}` - Update assessment
+- `DELETE /api/assessments/{id}` - Delete assessment
+
+#### Domain Information
+- `GET /api/domain/{domain}` - Get domain reconnaissance data
+- `GET /api/domain/{domain}/mx` - Get MX records
+- `GET /api/domain/{domain}/hosting` - Get hosting information
+
+#### Network Scan
+- `GET /api/scans/{id}` - Get scan results
+- `POST /api/scans` - Initiate new scan
+- `GET /api/scans/{id}/devices` - List discovered devices
+- `GET /api/scans/{id}/services` - List discovered services
+
+#### Service Inventory
+- `GET /api/services` - List service inventory
+- `POST /api/services` - Add service
+- `GET /api/services/costs` - Get cost analysis
+
+#### Company Profile
+- `GET /api/company/{id}` - Get company profile
+- `PUT /api/company/{id}` - Update company profile
+- `GET /api/company/{id}/processes` - Get business processes
+
+#### Pain Points & Service Interests
+- `GET /api/interests/{id}` - Get service interests
+- `PUT /api/interests/{id}` - Update service interests
+- `GET /api/painpoints/{id}` - Get pain points
+- `PUT /api/painpoints/{id}` - Update pain points
+
+#### Webhook Integrations
+- `POST /api/webhooks` - Create webhook subscription
+- `GET /api/webhooks` - List webhooks
+- `DELETE /api/webhooks/{id}` - Remove webhook
+
+## CRM Integration Features
+- Bidirectional sync with popular MSP CRMs
+- Custom field mapping
+- Automated prospect creation
+- Assessment data synchronization
+- Document attachment capabilities
+- Activity logging in CRM
+- Quote/proposal generation from collected data
