@@ -311,9 +311,10 @@ const Home = () => {
       <Footer />
       
       {/* Assessment Dialog */}
-      {isDialogOpen && (
-        <NewAssessmentDialog onClose={() => setIsDialogOpen(false)} />
-      )}
+      <NewAssessmentDialog 
+        open={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)} 
+      />
     </div>
   );
 };

@@ -43,10 +43,11 @@ const newAssessmentSchema = z.object({
 type NewAssessmentFormValues = z.infer<typeof newAssessmentSchema>;
 
 interface NewAssessmentDialogProps {
+  open: boolean;
   onClose: () => void;
 }
 
-const NewAssessmentDialog = ({ onClose }: NewAssessmentDialogProps) => {
+const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -137,91 +138,102 @@ const NewAssessmentDialog = ({ onClose }: NewAssessmentDialogProps) => {
   const isPending = createAssessmentMutation.isPending;
   
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="companyName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Company Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Acme Inc." {...field} className="bg-slate-700 border-slate-600" />
-              </FormControl>
-              <FormDescription>
-                Enter the company name for this assessment.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="bg-slate-800 border-slate-700 text-white sm:max-w-[525px]">
+        <DialogHeader>
+          <DialogTitle className="text-white">Create New Assessment</DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Create a new client assessment and generate a shareable link.
+          </DialogDescription>
+        </DialogHeader>
         
-        <FormField
-          control={form.control}
-          name="companyWebsite"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Company Website</FormLabel>
-              <FormControl>
-                <Input placeholder="example.com" {...field} className="bg-slate-700 border-slate-600" />
-              </FormControl>
-              <FormDescription>
-                Enter the company website URL.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="expirationDuration"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Link Expiration</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="bg-slate-700 border-slate-600">
-                    <SelectValue placeholder="Select an expiration time" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="1d">1 Day</SelectItem>
-                  <SelectItem value="3d">3 Days</SelectItem>
-                  <SelectItem value="7d">7 Days</SelectItem>
-                  <SelectItem value="14d">14 Days</SelectItem>
-                  <SelectItem value="30d">30 Days</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Set how long the assessment link will be valid. Your client will be able to access the assessment until this time.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-end space-x-4 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isPending}
-            className="border-slate-600 hover:bg-slate-700"
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="submit"
-            disabled={isPending}
-            className="bg-primary-600 hover:bg-primary-700"
-          >
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isPending ? "Creating..." : "Create Assessment"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="companyName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Acme Inc." {...field} className="bg-slate-700 border-slate-600" />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the company name for this assessment.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="companyWebsite"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Website</FormLabel>
+                  <FormControl>
+                    <Input placeholder="example.com" {...field} className="bg-slate-700 border-slate-600" />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the company website URL.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="expirationDuration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Link Expiration</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-slate-700 border-slate-600">
+                        <SelectValue placeholder="Select an expiration time" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="1d">1 Day</SelectItem>
+                      <SelectItem value="3d">3 Days</SelectItem>
+                      <SelectItem value="7d">7 Days</SelectItem>
+                      <SelectItem value="14d">14 Days</SelectItem>
+                      <SelectItem value="30d">30 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Set how long the assessment link will be valid. Your client will be able to access the assessment until this time.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end space-x-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isPending}
+                className="border-slate-600 hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={isPending}
+                className="bg-primary-600 hover:bg-primary-700"
+              >
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? "Creating..." : "Create Assessment"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
