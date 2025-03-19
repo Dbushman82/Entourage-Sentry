@@ -8,6 +8,13 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -17,7 +24,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -32,7 +38,6 @@ const newAssessmentSchema = z.object({
   companyName: z.string().min(2, "Company name is required"),
   companyWebsite: z.string().min(3, "Website is required"),
   expirationDuration: z.string().optional().default("7d"),
-  generateLink: z.boolean().default(true),
 });
 
 type NewAssessmentFormValues = z.infer<typeof newAssessmentSchema>;
@@ -53,13 +58,12 @@ const NewAssessmentDialog = ({ onClose }: NewAssessmentDialogProps) => {
       companyName: "",
       companyWebsite: "",
       expirationDuration: "7d",
-      generateLink: true,
     },
   });
   
-  // Create a new assessment
+  // Create a new assessment and generate a link
   const createAssessmentMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: NewAssessmentFormValues) => {
       const res = await apiRequest("POST", "/api/assessments", {
         contact: {
           firstName: "Contact",
@@ -72,7 +76,17 @@ const NewAssessmentDialog = ({ onClose }: NewAssessmentDialogProps) => {
           website: data.companyWebsite,
         },
       });
-      return res.json();
+      const result = await res.json();
+      
+      // Get the created assessment and generate a link
+      const linkRes = await apiRequest("POST", `/api/assessments/${result.assessment.id}/link`, {
+        expirationDuration: data.expirationDuration,
+      });
+      
+      return {
+        assessment: result.assessment,
+        link: await linkRes.json()
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/assessments"] });
@@ -81,17 +95,31 @@ const NewAssessmentDialog = ({ onClose }: NewAssessmentDialogProps) => {
         description: `Assessment ${data.assessment.referenceCode} has been created successfully.`,
       });
       
-      // If generateLink is true, generate a link for the assessment
-      if (form.getValues().generateLink) {
-        generateLinkMutation.mutate({
-          assessmentId: data.assessment.id,
-          expirationDuration: form.getValues().expirationDuration,
-        });
-      } else {
-        onClose();
-        // Navigate to the assessment for further editing
-        setLocation(`/assessment/${data.assessment.id}`);
+      // Show success message with the generated link
+      toast({
+        title: "Link Generated",
+        description: "Assessment link has been generated. You can now share it with your client.",
+      });
+      
+      // Copy link to clipboard
+      if (data.link && data.link.url) {
+        navigator.clipboard.writeText(data.link.url)
+          .then(() => {
+            toast({
+              title: "Link Copied",
+              description: "Assessment link has been copied to your clipboard.",
+            });
+          })
+          .catch(() => {
+            toast({
+              title: "Copy Failed",
+              description: "Please copy the link manually.",
+              variant: "destructive",
+            });
+          });
       }
+      
+      onClose();
     },
     onError: (error: Error) => {
       toast({
@@ -102,56 +130,11 @@ const NewAssessmentDialog = ({ onClose }: NewAssessmentDialogProps) => {
     },
   });
   
-  // Generate a link for the assessment
-  const generateLinkMutation = useMutation({
-    mutationFn: async (data: { assessmentId: number; expirationDuration: string }) => {
-      const res = await apiRequest("POST", `/api/assessments/${data.assessmentId}/link`, {
-        expirationDuration: data.expirationDuration,
-      });
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/assessments"] });
-      
-      // Show success message with the generated link
-      toast({
-        title: "Link Generated",
-        description: "Assessment link has been generated. You can now share it with your client.",
-      });
-      
-      // Copy link to clipboard
-      navigator.clipboard.writeText(data.url)
-        .then(() => {
-          toast({
-            title: "Link Copied",
-            description: "Assessment link has been copied to your clipboard.",
-          });
-        })
-        .catch(() => {
-          toast({
-            title: "Copy Failed",
-            description: "Please copy the link manually.",
-            variant: "destructive",
-          });
-        });
-      
-      onClose();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error Generating Link",
-        description: error.message,
-        variant: "destructive",
-      });
-      onClose();
-    },
-  });
-  
   const onSubmit = (values: NewAssessmentFormValues) => {
     createAssessmentMutation.mutate(values);
   };
   
-  const isPending = createAssessmentMutation.isPending || generateLinkMutation.isPending;
+  const isPending = createAssessmentMutation.isPending;
   
   return (
     <Form {...form}>
@@ -192,71 +175,31 @@ const NewAssessmentDialog = ({ onClose }: NewAssessmentDialogProps) => {
         
         <FormField
           control={form.control}
-          name="generateLink"
+          name="expirationDuration"
           render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Assessment Access</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={(value) => field.onChange(value === "true")}
-                  defaultValue={field.value ? "true" : "false"}
-                  className="flex flex-col space-y-1"
-                >
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="true" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      Generate shareable link
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="false" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      Complete assessment manually
-                    </FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
+            <FormItem>
+              <FormLabel>Link Expiration</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectValue placeholder="Select an expiration time" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="1d">1 Day</SelectItem>
+                  <SelectItem value="3d">3 Days</SelectItem>
+                  <SelectItem value="7d">7 Days</SelectItem>
+                  <SelectItem value="14d">14 Days</SelectItem>
+                  <SelectItem value="30d">30 Days</SelectItem>
+                </SelectContent>
+              </Select>
               <FormDescription>
-                Choose whether to generate a shareable link for client self-service or complete the assessment manually.
+                Set how long the assessment link will be valid. Your client will be able to access the assessment until this time.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        
-        {form.watch("generateLink") && (
-          <FormField
-            control={form.control}
-            name="expirationDuration"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Link Expiration</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
-                      <SelectValue placeholder="Select an expiration time" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="1d">1 Day</SelectItem>
-                    <SelectItem value="3d">3 Days</SelectItem>
-                    <SelectItem value="7d">7 Days</SelectItem>
-                    <SelectItem value="14d">14 Days</SelectItem>
-                    <SelectItem value="30d">30 Days</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Set how long the assessment link will be valid.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
         
         <div className="flex justify-end space-x-4 pt-4">
           <Button

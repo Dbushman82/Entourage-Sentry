@@ -36,6 +36,16 @@ const Home = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [, setLocation] = useLocation();
   
+  // Event listener for dialog open requests
+  useEffect(() => {
+    const handleOpenDialog = () => setIsDialogOpen(true);
+    window.addEventListener('open-assessment-dialog', handleOpenDialog);
+    
+    return () => {
+      window.removeEventListener('open-assessment-dialog', handleOpenDialog);
+    };
+  }, []);
+  
   // Query to get assessments
   const { data: assessments, isLoading } = useQuery({
     queryKey: ['/api/assessments'],
