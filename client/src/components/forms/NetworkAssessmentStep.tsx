@@ -43,7 +43,7 @@ const manualNetworkSchema = z.object({
   bandwidth: z.number().optional(),
   bandwidthUnit: z.string().optional(),
   routerModel: z.string().optional(),
-  topology: z.string().optional(),
+  // topology field removed from schema
   deviceCounts: z.object({
     workstations: z.number().optional(),
     servers: z.number().optional(),
@@ -98,7 +98,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
       bandwidth: undefined,
       bandwidthUnit: 'mbps',
       routerModel: '',
-      topology: '',
+      // topology removed from form state
       deviceCounts: {
         workstations: 0,
         servers: 0,
@@ -315,7 +315,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         bandwidth: values.bandwidth,
         bandwidthUnit: values.bandwidthUnit,
         routerModel: values.routerModel,
-        topology: values.topology,
+        // topology removed as clients might not know this information
         deviceCounts: values.deviceCounts,
         notes: values.notes,
       };
@@ -793,13 +793,13 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                   <FormField
                     control={form.control}
                     name="routerModel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Router/Firewall Model</FormLabel>
+                        <FormLabel>Router/Firewall Model (if known)</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -807,35 +807,6 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                             className="bg-slate-700 border-slate-600 text-white"
                           />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="topology"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Network Topology</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value || "unknown"}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                              <SelectValue placeholder="Select network topology" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                            <SelectItem value="unknown">Select network topology</SelectItem>
-                            <SelectItem value="star">Star</SelectItem>
-                            <SelectItem value="mesh">Mesh</SelectItem>
-                            <SelectItem value="bus">Bus</SelectItem>
-                            <SelectItem value="ring">Ring</SelectItem>
-                            <SelectItem value="hybrid">Hybrid</SelectItem>
-                          </SelectContent>
-                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
