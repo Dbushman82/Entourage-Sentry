@@ -487,7 +487,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                              <SelectItem value="">Select connection type</SelectItem>
+                              <SelectItem value="_none">Select connection type</SelectItem>
                               <SelectItem value="fiber">Fiber</SelectItem>
                               <SelectItem value="cable">Cable</SelectItem>
                               <SelectItem value="dsl">DSL</SelectItem>
@@ -572,7 +572,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                            <SelectItem value="">Select network topology</SelectItem>
+                            <SelectItem value="_none">Select network topology</SelectItem>
                             <SelectItem value="star">Star</SelectItem>
                             <SelectItem value="mesh">Mesh</SelectItem>
                             <SelectItem value="bus">Bus</SelectItem>

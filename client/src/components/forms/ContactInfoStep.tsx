@@ -152,8 +152,8 @@ const ContactInfoStep = ({ onNext, onSave, defaultValues = {} }: ContactInfoStep
                       </div>
                       <Input 
                         {...field} 
-                        type="url"
-                        placeholder="https://example.com"
+                        type="text"
+                        placeholder="example.com"
                         className="bg-slate-700 border-slate-600 text-white pl-10"
                       />
                     </div>

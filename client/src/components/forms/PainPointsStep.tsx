@@ -220,7 +220,7 @@ const PainPointsStep = ({ onSubmit, onBack, companyId, defaultValues = {} }: Pai
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                      <SelectItem value="">Select expected response time</SelectItem>
+                      <SelectItem value="_none">Select expected response time</SelectItem>
                       <SelectItem value="1hour">Within 1 hour</SelectItem>
                       <SelectItem value="4hours">Within 4 hours</SelectItem>
                       <SelectItem value="sameday">Same business day</SelectItem>
@@ -280,7 +280,7 @@ const PainPointsStep = ({ onSubmit, onBack, companyId, defaultValues = {} }: Pai
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                        <SelectItem value="">Select budget range</SelectItem>
+                        <SelectItem value="_none">Select budget range</SelectItem>
                         <SelectItem value="under1k">Under $1,000</SelectItem>
                         <SelectItem value="1k-5k">$1,000 - $5,000</SelectItem>
                         <SelectItem value="5k-10k">$5,000 - $10,000</SelectItem>
@@ -309,7 +309,7 @@ const PainPointsStep = ({ onSubmit, onBack, companyId, defaultValues = {} }: Pai
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                        <SelectItem value="">Select timeline</SelectItem>
+                        <SelectItem value="_none">Select timeline</SelectItem>
                         <SelectItem value="immediate">Immediate (1-2 weeks)</SelectItem>
                         <SelectItem value="month">Within a month</SelectItem>
                         <SelectItem value="quarter">This quarter</SelectItem>
