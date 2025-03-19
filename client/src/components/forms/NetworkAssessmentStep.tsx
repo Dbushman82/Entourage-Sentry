@@ -50,6 +50,8 @@ const manualNetworkSchema = z.object({
     other: z.number().optional(),
   }).optional(),
   notes: z.string().optional(),
+  downloadInitiated: z.boolean().optional(),
+  scannerPlatform: z.enum(['windows', 'mac']).optional(),
 });
 
 type NetworkFormValues = z.infer<typeof manualNetworkSchema>;
@@ -86,6 +88,8 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         other: 0,
       },
       notes: '',
+      downloadInitiated: false,
+      scannerPlatform: undefined,
       ...defaultValues
     },
   });
@@ -152,12 +156,43 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     }
   };
   
-  const handleDownloadScanner = () => {
+  const handleDownloadScanner = (platform: 'windows' | 'mac') => {
+    const platformName = platform === 'windows' ? 'Windows' : 'macOS';
+    const version = platform === 'windows' ? '1.2.3' : '1.2.1';
+    const fileSize = platform === 'windows' ? '18.2 MB' : '22.5 MB';
+    
     toast({
-      title: "Scanner download",
-      description: "Network scanner download initiated. Please run the scanner and upload results when complete.",
+      title: `${platformName} Scanner Download`,
+      description: `EntourageSentryScanner_${platform}_v${version} (${fileSize}) download started. Please run the scanner and upload results when complete.`,
     });
-    // In a real implementation, this would trigger an actual download
+    
+    // Create a mock download process - in a real app this would be a real download
+    setTimeout(() => {
+      toast({
+        title: "Download Complete",
+        description: `EntourageSentryScanner for ${platformName} has been downloaded. Extract the files and run the executable with administrator privileges.`,
+      });
+    }, 2500);
+    
+    // Log the platform selection for future implementation
+    console.log(`User selected ${platformName} scanner download`);
+    
+    // Create a temporary hidden form field
+    const tempField = document.createElement('input');
+    tempField.type = 'hidden';
+    tempField.name = 'downloadInitiated';
+    tempField.value = 'true';
+    document.body.appendChild(tempField);
+    
+    // Use this field to update the form state via simulated onChange event
+    const fakeEvent = { target: tempField } as React.ChangeEvent<HTMLInputElement>;
+    form.register('downloadInitiated')(fakeEvent);
+    form.register('scannerPlatform')(
+      { target: { ...tempField, name: 'scannerPlatform', value: platform } } as React.ChangeEvent<HTMLInputElement>
+    );
+    
+    // Clean up
+    document.body.removeChild(tempField);
   };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -407,16 +442,53 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                   <li>Port scanning for common services</li>
                   <li>Printer and networked device discovery</li>
                   <li>Basic vulnerability assessment</li>
+                  <li>Network topology mapping</li>
+                  <li>Security vulnerability scanning</li>
                 </ul>
               </div>
               
-              <div className="flex justify-center">
+              <div className="bg-slate-700/50 p-4 rounded-lg mb-6">
+                <h4 className="text-sm font-medium text-white mb-3">System Requirements:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h5 className="text-xs font-semibold text-primary-400 mb-1">Windows</h5>
+                    <ul className="text-xs text-slate-400 space-y-1 ml-3 list-disc">
+                      <li>Windows 10/11 (64-bit)</li>
+                      <li>.NET Framework 4.7.2 or higher</li>
+                      <li>Administrator privileges</li>
+                      <li>200MB free disk space</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-semibold text-primary-400 mb-1">macOS</h5>
+                    <ul className="text-xs text-slate-400 space-y-1 ml-3 list-disc">
+                      <li>macOS 11 Big Sur or higher</li>
+                      <li>Intel or Apple Silicon</li>
+                      <li>Admin privileges</li>
+                      <li>300MB free disk space</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Button 
-                  onClick={handleDownloadScanner}
-                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700"
+                  onClick={() => handleDownloadScanner('windows')}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 flex items-center"
                 >
-                  <UploadCloud className="mr-2 h-4 w-4" />
-                  <span>Download Scanner</span>
+                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M0,0H11.377V11.372H0ZM12.623,0H24V11.372H12.623ZM0,12.623H11.377V24H0Zm12.623,0H24V24H12.623" />
+                  </svg>
+                  <span>Download for Windows</span>
+                </Button>
+                <Button 
+                  onClick={() => handleDownloadScanner('mac')}
+                  className="px-4 py-2 bg-slate-600 hover:bg-slate-700 flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
+                  </svg>
+                  <span>Download for macOS</span>
                 </Button>
               </div>
             </div>
