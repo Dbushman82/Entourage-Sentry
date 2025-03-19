@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -24,7 +26,28 @@ import {
   Clock,
   CheckCircle2,
   Layers,
+  Trash2,
+  Copy,
+  Link2,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +57,11 @@ import NewAssessmentDialog from "@/components/NewAssessmentDialog";
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Event listener for dialog open requests
   useEffect(() => {
@@ -49,6 +76,68 @@ const Home = () => {
   // Query to get assessments
   const { data: assessments, isLoading } = useQuery({
     queryKey: ['/api/assessments'],
+  });
+  
+  // Delete assessment mutation
+  const deleteAssessmentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest('DELETE', `/api/assessments/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Assessment deleted",
+        description: "The assessment has been deleted successfully",
+        variant: "default"
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/assessments'] });
+      setIsDeleteDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error deleting assessment",
+        description: error.message || "An error occurred while deleting the assessment",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Generate/renew assessment link mutation
+  const generateLinkMutation = useMutation({
+    mutationFn: async ({ id, renew = false }: { id: number, renew?: boolean }) => {
+      const endpoint = renew 
+        ? `/api/assessments/${id}/link/renew` 
+        : `/api/assessments/${id}/link`;
+        
+      const res = await apiRequest('POST', endpoint, { expirationDuration: '7d' });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      // Copy link to clipboard
+      if (data && data.url) {
+        navigator.clipboard.writeText(data.url)
+          .then(() => {
+            toast({
+              title: "Link copied to clipboard",
+              description: "Assessment link has been copied to your clipboard",
+              variant: "default"
+            });
+          })
+          .catch(() => {
+            toast({
+              title: "Couldn't copy to clipboard",
+              description: "Please copy the link manually",
+              variant: "destructive"
+            });
+          });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error generating link",
+        description: error.message || "An error occurred while generating the assessment link",
+        variant: "destructive"
+      });
+    }
   });
   
   // Filter assessments based on search query
@@ -213,30 +302,78 @@ const Home = () => {
                   return (
                     <div 
                       key={assessment.id} 
-                      className="border border-slate-700 hover:border-primary-500 rounded-md p-4 transition-colors"
-                      onClick={() => setLocation(`/assessment/${assessment.id}`)}
-                      style={{ cursor: 'pointer' }}
+                      className="border border-slate-700 hover:border-primary-500 rounded-md p-4 transition-colors relative"
                     >
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="font-medium text-white flex items-center">
-                          <Building className="h-4 w-4 mr-2" />
-                          <span>{assessment.companyName || 'Unnamed Company'}</span>
-                          <Badge 
-                            className={`ml-3 ${isCompleted ? 'bg-emerald-600' : 'bg-amber-600'}`}
-                          >
-                            {isCompleted ? 'Completed' : `Step ${assessment.currentStep} of 7`}
-                          </Badge>
-                        </div>
-                        <span className="text-sm text-slate-400">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
+                      <div 
+                        className="absolute right-2 top-2 z-10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700 text-white">
+                            <DropdownMenuItem 
+                              className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
+                              onClick={() => {
+                                generateLinkMutation.mutate({ 
+                                  id: assessment.id, 
+                                  renew: assessment.linkToken ? true : false 
+                                });
+                              }}
+                            >
+                              <Link2 className="mr-2 h-4 w-4" />
+                              {assessment.linkToken ? "Renew & Copy Link" : "Generate & Copy Link"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-slate-700" />
+                            <DropdownMenuItem 
+                              className="text-destructive hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
+                              onClick={() => {
+                                setSelectedAssessment(assessment);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Assessment
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <div className="text-slate-400 text-sm flex items-center">
-                          <span className="font-mono text-xs">{assessment.referenceCode}</span>
-                          <span className="mx-2">•</span>
-                          <Users className="h-4 w-4 mr-1" />
-                          <span>Contact ID: {assessment.contactId}</span>
+                      
+                      <div 
+                        className="flex flex-col"
+                        onClick={() => setLocation(`/assessment/${assessment.id}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="font-medium text-white flex items-center">
+                            <Building className="h-4 w-4 mr-2" />
+                            <span>{assessment.companyName || 'Unnamed Company'}</span>
+                            <Badge 
+                              className={`ml-3 ${isCompleted ? 'bg-emerald-600' : 'bg-amber-600'}`}
+                            >
+                              {isCompleted ? 'Completed' : `Step ${assessment.currentStep} of 7`}
+                            </Badge>
+                          </div>
+                          <span className="text-sm text-slate-400 mr-8">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
                         </div>
-                        <span className="text-primary-500 text-sm">View details →</span>
+                        
+                        <div className="flex justify-between items-center">
+                          <div className="text-slate-400 text-sm flex items-center">
+                            <span className="font-mono text-xs">{assessment.referenceCode}</span>
+                            <span className="mx-2">•</span>
+                            <Users className="h-4 w-4 mr-1" />
+                            <span>Contact ID: {assessment.contactId}</span>
+                          </div>
+                          <span className="text-primary-500 text-sm mr-8">View details →</span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -313,6 +450,51 @@ const Home = () => {
         open={isDialogOpen} 
         onClose={() => setIsDialogOpen(false)} 
       />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Assessment</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Are you sure you want to delete this assessment? This action cannot be undone.
+              {selectedAssessment && (
+                <div className="mt-2 p-3 border border-slate-700 rounded-md bg-slate-900">
+                  <div className="font-medium text-white">
+                    {selectedAssessment.companyName || 'Unnamed Company'}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1 font-mono">
+                    {selectedAssessment.referenceCode}
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-slate-600 text-white hover:bg-slate-700 hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive hover:bg-destructive/90 text-white"
+              onClick={() => {
+                if (selectedAssessment) {
+                  deleteAssessmentMutation.mutate(selectedAssessment.id);
+                }
+              }}
+              disabled={deleteAssessmentMutation.isPending}
+            >
+              {deleteAssessmentMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Assessment"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
