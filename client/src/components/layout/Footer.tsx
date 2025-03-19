@@ -11,14 +11,14 @@ const Footer = () => {
             <span className="text-lg font-semibold">Entourage Sentry</span>
           </div>
           <div className="flex items-center space-x-6">
-            <Link href="#">
-              <a className="text-sm text-slate-400 hover:text-white">Privacy Policy</a>
+            <Link href="#" className="text-sm text-slate-400 hover:text-white">
+              Privacy Policy
             </Link>
-            <Link href="#">
-              <a className="text-sm text-slate-400 hover:text-white">Terms of Service</a>
+            <Link href="#" className="text-sm text-slate-400 hover:text-white">
+              Terms of Service
             </Link>
-            <Link href="#">
-              <a className="text-sm text-slate-400 hover:text-white">Contact Support</a>
+            <Link href="#" className="text-sm text-slate-400 hover:text-white">
+              Contact Support
             </Link>
           </div>
         </div>
