@@ -59,14 +59,13 @@ const Home = () => {
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">Entourage Sentry</h1>
-            <p className="text-slate-400">Client Assessment Platform for MSPs</p>
+            <p className="text-slate-400">Powered by Entourage IT</p>
           </div>
-          <Button 
-            className="bg-primary-600 hover:bg-primary-700" 
-            onClick={() => window.location.href = "/assessment"}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Assessment
+          <Button className="bg-primary-600 hover:bg-primary-700" asChild>
+            <Link href="/assessment">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Assessment
+            </Link>
           </Button>
         </div>
         
@@ -185,12 +184,11 @@ const Home = () => {
                     "Start by creating your first client assessment."}
                 </p>
                 {!searchQuery && (
-                  <Button 
-                    className="bg-primary-600 hover:bg-primary-700"
-                    onClick={() => window.location.href = "/assessment"}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    New Assessment
+                  <Button className="bg-primary-600 hover:bg-primary-700" asChild>
+                    <Link href="/assessment">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      New Assessment
+                    </Link>
                   </Button>
                 )}
               </div>
@@ -201,33 +199,31 @@ const Home = () => {
                   const isCompleted = assessment.status === 'completed';
                   
                   return (
-                    <div 
-                      key={assessment.id} 
-                      className="block border border-slate-700 hover:border-primary-500 rounded-md p-4 transition-colors cursor-pointer"
-                      onClick={() => window.location.href = `/assessment/${assessment.id}`}
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="font-medium text-white flex items-center">
-                          <span className="font-mono">{assessment.referenceCode}</span>
-                          <Badge 
-                            className={`ml-3 ${isCompleted ? 'bg-emerald-600' : 'bg-amber-600'}`}
-                          >
-                            {isCompleted ? 'Completed' : `Step ${assessment.currentStep} of 7`}
-                          </Badge>
+                    <Link key={assessment.id} href={`/assessment/${assessment.id}`}>
+                      <a className="block border border-slate-700 hover:border-primary-500 rounded-md p-4 transition-colors">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="font-medium text-white flex items-center">
+                            <span className="font-mono">{assessment.referenceCode}</span>
+                            <Badge 
+                              className={`ml-3 ${isCompleted ? 'bg-emerald-600' : 'bg-amber-600'}`}
+                            >
+                              {isCompleted ? 'Completed' : `Step ${assessment.currentStep} of 7`}
+                            </Badge>
+                          </div>
+                          <span className="text-sm text-slate-400">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
                         </div>
-                        <span className="text-sm text-slate-400">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="text-slate-400 text-sm flex items-center">
-                          <Building className="h-4 w-4 mr-1" />
-                          <span>Company ID: {assessment.companyId}</span>
-                          <span className="mx-2">•</span>
-                          <Users className="h-4 w-4 mr-1" />
-                          <span>Contact ID: {assessment.contactId}</span>
+                        <div className="flex justify-between items-center">
+                          <div className="text-slate-400 text-sm flex items-center">
+                            <Building className="h-4 w-4 mr-1" />
+                            <span>Company ID: {assessment.companyId}</span>
+                            <span className="mx-2">•</span>
+                            <Users className="h-4 w-4 mr-1" />
+                            <span>Contact ID: {assessment.contactId}</span>
+                          </div>
+                          <span className="text-primary-500 text-sm">View details →</span>
                         </div>
-                        <span className="text-primary-500 text-sm">View details →</span>
-                      </div>
-                    </div>
+                      </a>
+                    </Link>
                   );
                 })}
               </div>
