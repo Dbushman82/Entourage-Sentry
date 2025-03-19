@@ -18,6 +18,8 @@ import { analyzeDomain } from "./utils/domainRecon";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import crypto from 'crypto';
+import { setupAuthRoutes } from "./auth";
+import { isAuthenticated, isManager, isAdmin } from "./middlewares/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Error handling middleware
@@ -549,6 +551,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Setup authentication routes
+  setupAuthRoutes(app);
+  
+  // Apply authentication middleware to protected routes
+  // You can uncomment these lines to secure specific routes
+  
+  /*
+  // Require authentication for all assessment management routes
+  app.get('/api/assessments', isAuthenticated, async (_req: Request, res: Response) => {
+    // ...existing code
+  });
+  
+  // Manager-only routes
+  app.delete('/api/assessments/:id', isManager, async (req: Request, res: Response) => {
+    // ...existing code
+  });
+  
+  // Admin-only routes
+  app.get('/api/admin/users', isAdmin, async (req: Request, res: Response) => {
+    // Admin-only functionality
+  });
+  */
+  
   const httpServer = createServer(app);
   return httpServer;
 }
