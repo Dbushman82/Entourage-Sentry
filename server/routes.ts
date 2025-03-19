@@ -551,6 +551,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Network scanner download routes
+  app.get('/api/scanner/:platform', (req: Request, res: Response) => {
+    const { platform } = req.params;
+    
+    if (platform !== 'windows' && platform !== 'mac') {
+      return res.status(400).json({ message: 'Invalid platform specified' });
+    }
+    
+    const platformName = platform === 'windows' ? 'Windows' : 'macOS';
+    const version = platform === 'windows' ? '1.2.3' : '1.2.1';
+    
+    // Create a simple HTML page that explains this is a demo
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>EntourageSentryScanner Download</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .box {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+          }
+          .header {
+            color: #0066cc;
+            margin-top: 0;
+          }
+          .button {
+            display: inline-block;
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+          }
+          .note {
+            font-size: 0.9em;
+            color: #666;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>EntourageSentryScanner for ${platformName}</h1>
+        <div class="box">
+          <h2 class="header">Download Information</h2>
+          <p>You're downloading EntourageSentryScanner version ${version} for ${platformName}.</p>
+          <p>This is a demo page. In a production environment, this would initiate the actual scanner download.</p>
+          <p>After downloading, please extract the zip file and run the executable with administrator privileges.</p>
+          <p><a href="javascript:window.close()" class="button">Close this window</a></p>
+        </div>
+        <p class="note">© 2025 Entourage IT - Enterprise Network Security Scanner</p>
+      </body>
+      </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  });
+
   // Setup authentication routes
   setupAuthRoutes(app);
   
