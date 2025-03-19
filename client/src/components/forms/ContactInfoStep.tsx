@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,6 +48,9 @@ interface ContactInfoStepProps {
 const ContactInfoStep = ({ onNext, onSave, defaultValues = {} }: ContactInfoStepProps) => {
   const { toast } = useToast();
   
+  // Log the default values to debug
+  console.log("ContactInfoStep defaultValues:", defaultValues);
+
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
@@ -58,6 +62,17 @@ const ContactInfoStep = ({ onNext, onSave, defaultValues = {} }: ContactInfoStep
       ...defaultValues
     },
   });
+  
+  // Force reset the form when defaultValues changes
+  useEffect(() => {
+    if (defaultValues?.companyWebsite) {
+      console.log("Resetting form with company website:", defaultValues.companyWebsite);
+      form.reset({
+        ...form.getValues(),
+        ...defaultValues
+      });
+    }
+  }, [defaultValues, form]);
   
   const handleSaveAndExit = () => {
     const values = form.getValues();
