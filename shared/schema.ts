@@ -255,6 +255,8 @@ export const assessments = pgTable("assessments", {
   currentStep: integer("current_step").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
+  linkExpiration: timestamp("link_expiration"), // When the assessment link expires
+  linkToken: text("link_token"), // Token for secure access without authentication
 });
 
 export const insertAssessmentSchema = createInsertSchema(assessments).pick({
@@ -266,6 +268,8 @@ export const insertAssessmentSchema = createInsertSchema(assessments).pick({
   painPointId: true,
   status: true,
   currentStep: true,
+  linkExpiration: true,
+  linkToken: true,
 });
 
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
