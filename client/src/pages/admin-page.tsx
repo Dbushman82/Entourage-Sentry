@@ -654,10 +654,11 @@ const AdminPage = () => {
                               variant="outline" 
                               size="sm"
                               onClick={() => {
-                                // Show link generator for this assessment
+                                setSelectedAssessment(assessment);
+                                setShowLinkDialog(true);
                               }}
                             >
-                              Manage Link
+                              <Link2 className="h-4 w-4 mr-1" /> Manage Link
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -945,6 +946,29 @@ const AdminPage = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Assessment Link Generator Dialog */}
+      <Dialog 
+        open={showLinkDialog} 
+        onOpenChange={(open) => {
+          setShowLinkDialog(open);
+          if (!open) setSelectedAssessment(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Assessment Link Management</DialogTitle>
+          </DialogHeader>
+          {selectedAssessment && (
+            <AssessmentLinkGenerator
+              assessmentId={selectedAssessment.id}
+              referenceCode={selectedAssessment.referenceCode}
+              linkToken={selectedAssessment.linkToken}
+              linkExpiration={selectedAssessment.linkExpiration}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
