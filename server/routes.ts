@@ -50,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyWebsite: z.string().optional(),
         firstName: z.string().optional().default(""),
         lastName: z.string().optional().default(""),
-        email: z.string().email().optional().default(""),
+        email: z.string().optional().default(""),
       });
       
       const contactData = extendedContactSchema.parse(req.body.contact);

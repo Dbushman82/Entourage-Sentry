@@ -39,19 +39,23 @@ export type User = typeof users.$inferSelect;
 // Contact information schema
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  firstName: text("first_name").notNull().default(""),
+  lastName: text("last_name").notNull().default(""),
+  email: text("email").notNull().default(""),
   phone: text("phone"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertContactSchema = createInsertSchema(contacts).pick({
-  firstName: true,
-  lastName: true,
-  email: true,
-  phone: true,
-});
+export const insertContactSchema = createInsertSchema(contacts)
+  .extend({
+    email: z.string().email("Please enter a valid email address").optional().default(""),
+  })
+  .pick({
+    firstName: true,
+    lastName: true,
+    email: true,
+    phone: true,
+  });
 
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
