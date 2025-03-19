@@ -5,14 +5,29 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Assessment from "@/pages/assessment";
+import AuthPage from "@/pages/auth-page";
 import { AssessmentProvider } from "@/context/AssessmentContext";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/assessment" component={Assessment} />
-      <Route path="/assessment/:id" component={Assessment} />
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/assessment">
+        <Assessment />
+      </ProtectedRoute>
+      <ProtectedRoute path="/assessment/:id">
+        <Assessment />
+      </ProtectedRoute>
+      {/* Admin routes with role requirement */}
+      <ProtectedRoute path="/admin" requiredRole="admin">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
+          <p>This page is only accessible to administrators.</p>
+        </div>
+      </ProtectedRoute>
       <Route component={NotFound} />
     </Switch>
   );
@@ -21,10 +36,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AssessmentProvider>
-        <Router />
-        <Toaster />
-      </AssessmentProvider>
+      <AuthProvider>
+        <AssessmentProvider>
+          <Router />
+          <Toaster />
+        </AssessmentProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
