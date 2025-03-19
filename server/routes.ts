@@ -180,6 +180,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(err, res);
     }
   });
+  
+  // Generate a signed link for an assessment
+  app.post('/api/assessments/:id/link', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid assessment ID' });
+      }
+      
+      const { expirationDuration = '7d' } = req.body;
+      
+      // Validate expiration duration format (e.g., '1d', '7d', '30d', '24h')
+      const durationPattern = /^(\d+)([dhm])$/;
+      if (!durationPattern.test(expirationDuration)) {
+        return res.status(400).json({ 
+          message: 'Invalid expiration duration format. Use format like "7d", "24h", or "60m".' 
+        });
+      }
+      
+      const result = await storage.generateAssessmentLink(id, expirationDuration);
+      res.json(result);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
+  // Renew a signed link for an assessment
+  app.post('/api/assessments/:id/link/renew', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid assessment ID' });
+      }
+      
+      const { expirationDuration = '7d' } = req.body;
+      
+      // Validate expiration duration format
+      const durationPattern = /^(\d+)([dhm])$/;
+      if (!durationPattern.test(expirationDuration)) {
+        return res.status(400).json({ 
+          message: 'Invalid expiration duration format. Use format like "7d", "24h", or "60m".' 
+        });
+      }
+      
+      const result = await storage.renewAssessmentLink(id, expirationDuration);
+      res.json(result);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
+  // Verify assessment token
+  app.get('/api/assessments/verify-token/:token', async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      const assessment = await storage.verifyAssessmentLink(token);
+      
+      if (!assessment) {
+        return res.status(401).json({ message: 'Invalid or expired token' });
+      }
+      
+      res.json({ valid: true, assessmentId: assessment.id, referenceCode: assessment.referenceCode });
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
 
   app.delete('/api/assessments/:id', async (req: Request, res: Response) => {
     try {
