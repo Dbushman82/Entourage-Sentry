@@ -326,7 +326,6 @@ const TechStackStep = ({ onNext, onBack, companyId, autoDetectedServices = [] }:
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                              <SelectItem value="">Select type</SelectItem>
                               <SelectItem value="productivity">Productivity</SelectItem>
                               <SelectItem value="communication">Communication</SelectItem>
                               <SelectItem value="security">Security</SelectItem>
@@ -362,7 +361,6 @@ const TechStackStep = ({ onNext, onBack, companyId, autoDetectedServices = [] }:
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                              <SelectItem value="">Select deployment</SelectItem>
                               <SelectItem value="cloud">Cloud</SelectItem>
                               <SelectItem value="onprem">On-premises</SelectItem>
                               <SelectItem value="hybrid">Hybrid</SelectItem>
