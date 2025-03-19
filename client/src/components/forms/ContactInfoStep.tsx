@@ -32,18 +32,8 @@ const contactFormSchema = z.object({
       }
       return val;
     })
-    .refine(val => {
-      if (!val) return true; // Allow empty values
-      
-      // Accept common URL formats including domains with www
-      try {
-        new URL(val);
-        return true;
-      } catch {
-        // For simpler domain validation if URL constructor fails
-        return val.match(/^https?:\/\/(www\.)?[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](\.[a-zA-Z]{2,})+/i) !== null;
-      }
-    }, { message: "Please enter a valid URL" }),
+    // No validation at all - accept any input
+    .optional(),
 });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
