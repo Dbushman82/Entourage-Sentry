@@ -195,6 +195,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Contact APIs
+  app.post('/api/contacts', async (req: Request, res: Response) => {
+    try {
+      const validData = insertContactSchema.parse(req.body);
+      const contact = await storage.createContact(validData);
+      res.status(201).json(contact);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
   app.put('/api/contacts/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -218,6 +228,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company APIs
+  app.post('/api/companies', async (req: Request, res: Response) => {
+    try {
+      const validData = insertCompanySchema.parse(req.body);
+      const company = await storage.createCompany(validData);
+      res.status(201).json(company);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
   app.put('/api/companies/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
