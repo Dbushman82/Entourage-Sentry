@@ -45,7 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/assessments', async (req: Request, res: Response) => {
     try {
       // We need at minimum contact and company info to start an assessment
-      const contactData = insertContactSchema.parse(req.body.contact);
+      // Use extend to allow the companyWebsite field in the contact data
+      const extendedContactSchema = insertContactSchema.extend({
+        companyWebsite: z.string().optional(),
+      });
+      const contactData = extendedContactSchema.parse(req.body.contact);
       const companyData = insertCompanySchema.parse(req.body.company);
       
       // Create contact and company records
@@ -300,7 +304,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Contact not found' });
       }
       
-      const updateSchema = insertContactSchema.partial();
+      const extendedContactSchema = insertContactSchema.extend({
+        companyWebsite: z.string().optional(),
+      });
+      const updateSchema = extendedContactSchema.partial();
       const validData = updateSchema.parse(req.body);
       
       const updatedContact = await storage.updateContact(id, validData);

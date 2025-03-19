@@ -99,12 +99,13 @@ const Assessment = () => {
       }
       
       if (typedAssessmentDetails.contact) {
+        // Make sure to populate the contact data with the company website
         setContactData({
           firstName: typedAssessmentDetails.contact.firstName,
           lastName: typedAssessmentDetails.contact.lastName,
           email: typedAssessmentDetails.contact.email,
           phone: typedAssessmentDetails.contact.phone,
-          companyWebsite: typedAssessmentDetails.company?.website,
+          companyWebsite: typedAssessmentDetails.company?.website || "",
         });
       }
       

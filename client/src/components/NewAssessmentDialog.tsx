@@ -71,6 +71,7 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
           lastName: "Pending",
           email: "pending@example.com",
           phone: "",
+          companyWebsite: data.companyWebsite, // Include website to ensure auto-population
         },
         company: {
           name: data.companyName,
