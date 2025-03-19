@@ -280,24 +280,35 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     }, 1500);
   };
   
-  const handleSubmit = () => {
-    const values = form.getValues();
+  // Function to continue to next step from browser scan
+  const handleContinueFromBrowserScan = () => {
+    if (scanResults) {
+      setCurrentStep(STEPS.CHOOSE_METHOD);
+    } else {
+      toast({
+        title: "Scan Required",
+        description: "Please complete the browser scan before proceeding.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Prepare final submission data based on assessment method and current step
+  const prepareFinalData = () => {
+    const browserData = scanResults ? {
+      method: 'browser',
+      ipAddress: scanResults.ipAddress,
+      isp: scanResults.isp,
+      connectionType: scanResults.connectionType,
+      hostname: scanResults.hostname,
+      userAgent: scanResults.userAgent,
+      operatingSystem: scanResults.operatingSystem,
+    } : null;
     
-    // Prepare data based on assessment method
-    let networkData: any;
-    
-    if (assessmentMethod === 'browser' && scanResults) {
-      networkData = {
-        method: 'browser',
-        ipAddress: scanResults.ipAddress,
-        isp: scanResults.isp,
-        connectionType: scanResults.connectionType,
-        hostname: scanResults.hostname,
-        userAgent: scanResults.userAgent,
-        operatingSystem: scanResults.operatingSystem,
-      };
-    } else if (assessmentMethod === 'manual') {
-      networkData = {
+    if (assessmentMethod === 'manual') {
+      const values = form.getValues();
+      return {
+        ...browserData, // Include browser scan data
         method: 'manual',
         isp: values.isp,
         connectionType: values.connectionType,
@@ -315,16 +326,17 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
           description: "Please upload the network scan results file before continuing.",
           variant: "destructive",
         });
-        return;
+        return null;
       }
       
-      // For downloadable option, include the uploaded file data
-      networkData = {
+      return {
+        ...browserData, // Include browser scan data
         method: 'downloadable',
         fileName: uploadedFile.name,
         fileSize: uploadedFile.size,
         fileType: uploadedFile.type,
         uploadTimestamp: new Date().toISOString(),
+        scannerPlatform: form.getValues().scannerPlatform,
         // In a real implementation, we would include the actual data from the file
         // or reference to the uploaded file on the server
         scanSummary: {
@@ -340,16 +352,9 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
           }
         }
       };
-    } else {
-      toast({
-        title: "Missing data",
-        description: "Please complete the network assessment before continuing.",
-        variant: "destructive",
-      });
-      return;
     }
     
-    networkAssessmentMutation.mutate(networkData);
+    return null;
   };
 
   return (
@@ -360,428 +365,452 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
           <span className="px-2 py-1 bg-primary-900/50 text-primary-400 text-xs rounded-md">Step 5 of 7</span>
         </div>
       </div>
+      
       <div className="p-6">
         <p className="text-slate-400 mb-6">Gather information about the client's network infrastructure.</p>
         
-        {/* Network Assessment Options */}
-        <div className="mb-6">
-          <h3 className="text-md font-medium text-white mb-3">Choose Assessment Method</h3>
-          <RadioGroup 
-            value={assessmentMethod} 
-            onValueChange={(value) => handleMethodChange(value as 'browser' | 'downloadable' | 'manual')}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4"
-          >
-            <div className={`bg-slate-800 ${assessmentMethod === 'browser' ? 'border-4 border-blue-500' : 'border border-slate-700'} hover:border-blue-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
-              <RadioGroupItem value="browser" id="browser" className="sr-only" />
-              <Label htmlFor="browser" className="cursor-pointer">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'browser' ? 'text-blue-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <circle cx="12" cy="12" r="4" />
-                      <line x1="21.17" y1="8" x2="12" y2="8" />
-                      <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
-                      <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
-                    </svg>
-                  </div>
-                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'browser' ? 'text-blue-400' : 'text-white'}`}>Browser Scan</h4>
-                  <p className="text-xs text-slate-400">Basic network information using browser capabilities</p>
-                </div>
-              </Label>
-            </div>
-            
-            <div className={`bg-slate-800 ${assessmentMethod === 'downloadable' ? 'border-4 border-blue-500' : 'border border-slate-700'} hover:border-blue-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
-              <RadioGroupItem value="downloadable" id="downloadable" className="sr-only" />
-              <Label htmlFor="downloadable" className="cursor-pointer">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <UploadCloud className={`text-2xl h-6 w-6 ${assessmentMethod === 'downloadable' ? 'text-blue-400' : 'text-slate-400'}`} />
-                  </div>
-                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'downloadable' ? 'text-blue-400' : 'text-white'}`}>Network Scanner</h4>
-                  <p className="text-xs text-slate-400">Comprehensive network analysis with our secure tool</p>
-                </div>
-              </Label>
-            </div>
-            
-            <div className={`bg-slate-800 ${assessmentMethod === 'manual' ? 'border-4 border-blue-500' : 'border border-slate-700'} hover:border-blue-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
-              <RadioGroupItem value="manual" id="manual" className="sr-only" />
-              <Label htmlFor="manual" className="cursor-pointer">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'manual' ? 'text-blue-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                  </div>
-                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'manual' ? 'text-blue-400' : 'text-white'}`}>Manual Entry</h4>
-                  <p className="text-xs text-slate-400">Security-conscious option with guided manual entry</p>
-                </div>
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
-        
-        {/* Browser Scan Section */}
-        {assessmentMethod === 'browser' && (
+        {/* Step 1: Browser Scan (Default First Step) */}
+        {currentStep === STEPS.BROWSER_SCAN && (
           <div className="space-y-6">
             <div className="p-4 bg-primary-900/20 border border-primary-700/30 rounded-lg flex items-center">
               <Info className="text-primary-400 text-xl mr-3" />
               <div>
                 <h4 className="text-sm font-medium text-primary-400">Browser-based Scan</h4>
-                <p className="text-xs text-slate-400">This scan collects basic network information using your browser. For a more comprehensive assessment, use our Network Scanner.</p>
+                <p className="text-xs text-slate-400">This scan collects basic network information using your browser. After completion, you'll be able to choose between our Network Scanner tool or manual entry for more comprehensive assessment.</p>
               </div>
             </div>
             
-            {!scanResults && !scanInProgress && (
-              <div>
-                <Button 
-                  onClick={startBrowserScan} 
-                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700"
-                >
-                  <Radar className="mr-2 h-4 w-4" />
-                  <span>Start Browser Scan</span>
-                </Button>
-              </div>
-            )}
-            
-            {/* Scan in Progress */}
-            {scanInProgress && (
-              <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-white">Scan in Progress</h4>
-                  <span className="text-xs text-slate-400">65%</span>
+            <div className="flex flex-col items-center py-6">
+              {scanInProgress ? (
+                <div className="text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] text-primary-400 motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+                  <p className="mt-2 text-sm text-slate-400">Scanning network environment...</p>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
-                  <div className="bg-primary-500 h-2 rounded-full animate-pulse" style={{width: '65%'}}></div>
-                </div>
-                <div className="mt-2 text-xs text-slate-400">
-                  Detecting IP address, hostname, and connection information...
-                </div>
-              </div>
-            )}
-            
-            {/* Scan Results */}
-            {scanResults && (
-              <div className="space-y-4">
-                <h3 className="text-md font-medium text-white">Network Information</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-3 bg-slate-800 border border-slate-700 rounded-md">
-                    <h4 className="text-xs font-medium text-slate-400 mb-1">Public IP Address</h4>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-white">{scanResults.ipAddress}</span>
-                      <span className="text-xs px-2 py-0.5 bg-slate-700 text-slate-300 rounded">IPv4</span>
+              ) : scanResults ? (
+                <div className="w-full max-w-lg">
+                  <div className="flex items-center justify-center mb-4">
+                    <Check className="text-green-400 mr-2" />
+                    <h4 className="text-green-400 font-medium">Scan Complete</h4>
+                  </div>
+                  
+                  <div className="bg-slate-800 rounded-lg p-4 mb-4">
+                    <h5 className="text-sm font-medium text-slate-300 mb-3">Network Information</h5>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-slate-400">IP Address:</p>
+                        <p className="text-white font-mono">{scanResults.ipAddress}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">ISP Provider:</p>
+                        <p className="text-white">{scanResults.isp}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Connection Type:</p>
+                        <p className="text-white">{scanResults.connectionType}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Hostname:</p>
+                        <p className="text-white font-mono truncate">{scanResults.hostname}</p>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="p-3 bg-slate-800 border border-slate-700 rounded-md">
-                    <h4 className="text-xs font-medium text-slate-400 mb-1">ISP</h4>
-                    <span className="text-sm text-white">{scanResults.isp}</span>
-                  </div>
-                  
-                  <div className="p-3 bg-slate-800 border border-slate-700 rounded-md">
-                    <h4 className="text-xs font-medium text-slate-400 mb-1">Connection Type</h4>
-                    <span className="text-sm text-white">{scanResults.connectionType}</span>
-                  </div>
-                  
-                  <div className="p-3 bg-slate-800 border border-slate-700 rounded-md">
-                    <h4 className="text-xs font-medium text-slate-400 mb-1">Hostname</h4>
-                    <span className="text-sm text-white">{scanResults.hostname}</span>
-                  </div>
-                </div>
-                
-                <h3 className="text-md font-medium text-white mt-6">Browser Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-3 bg-slate-800 border border-slate-700 rounded-md">
-                    <h4 className="text-xs font-medium text-slate-400 mb-1">User Agent</h4>
-                    <span className="text-sm text-white">{scanResults.userAgent}</span>
-                  </div>
-                  
-                  <div className="p-3 bg-slate-800 border border-slate-700 rounded-md">
-                    <h4 className="text-xs font-medium text-slate-400 mb-1">Operating System</h4>
-                    <span className="text-sm text-white">{scanResults.operatingSystem}</span>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-amber-900/20 border border-amber-700/30 rounded-lg mt-6">
-                  <div className="flex items-center">
-                    <AlertTriangle className="text-amber-400 text-xl mr-3" />
-                    <div>
-                      <h4 className="text-sm font-medium text-amber-400">Limited Information</h4>
-                      <p className="text-xs text-slate-400">Browser scanning provides limited network information. For detailed assessment including device discovery, consider using our Network Scanner tool.</p>
+                  <div className="bg-slate-800 rounded-lg p-4 mb-6">
+                    <h5 className="text-sm font-medium text-slate-300 mb-3">Device Information</h5>
+                    <div className="text-xs">
+                      <div className="mb-3">
+                        <p className="text-slate-400">Operating System:</p>
+                        <p className="text-white">{scanResults.operatingSystem}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Browser:</p>
+                        <p className="text-white font-mono text-xs break-all">{scanResults.userAgent}</p>
+                      </div>
                     </div>
                   </div>
+                  
+                  <Button 
+                    onClick={handleContinueFromBrowserScan}
+                    className="w-full bg-primary-600 hover:bg-primary-700"
+                  >
+                    <span>Continue to Next Step</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center">
+                  <Button 
+                    onClick={startBrowserScan}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 flex items-center mb-4"
+                  >
+                    <Radar className="mr-2 h-4 w-4" />
+                    <span>Start Browser Scan</span>
+                  </Button>
+                  <p className="text-xs text-slate-400">This quick scan will gather basic information about your network connection.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
         
-        {/* Network Scanner Option */}
-        {assessmentMethod === 'downloadable' && (
+        {/* Step 2: Choose Method (After Browser Scan) */}
+        {currentStep === STEPS.CHOOSE_METHOD && (
           <div className="space-y-6">
-            <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg">
-              <h3 className="text-md font-medium text-white mb-3">Network Scanner Tool</h3>
-              <p className="text-sm text-slate-400 mb-4">Our secure network scanner provides comprehensive discovery of devices, operating systems, and services.</p>
-              
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-white mb-2">Features:</h4>
-                <ul className="text-sm text-slate-400 space-y-1 ml-5 list-disc">
-                  <li>Complete device inventory</li>
-                  <li>Operating system detection</li>
-                  <li>Port scanning for common services</li>
-                  <li>Printer and networked device discovery</li>
-                  <li>Basic vulnerability assessment</li>
-                  <li>Network topology mapping</li>
-                  <li>Security vulnerability scanning</li>
-                </ul>
-              </div>
-              
-              <div className="bg-slate-700/50 p-4 rounded-lg mb-6">
-                <h4 className="text-sm font-medium text-white mb-3">System Requirements:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h5 className="text-xs font-semibold text-primary-400 mb-1">Windows</h5>
-                    <ul className="text-xs text-slate-400 space-y-1 ml-3 list-disc">
-                      <li>Windows 10/11 (64-bit)</li>
-                      <li>.NET Framework 4.7.2 or higher</li>
-                      <li>Administrator privileges</li>
-                      <li>200MB free disk space</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h5 className="text-xs font-semibold text-primary-400 mb-1">macOS</h5>
-                    <ul className="text-xs text-slate-400 space-y-1 ml-3 list-disc">
-                      <li>macOS 11 Big Sur or higher</li>
-                      <li>Intel or Apple Silicon</li>
-                      <li>Admin privileges</li>
-                      <li>300MB free disk space</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Button 
-                  onClick={() => handleDownloadScanner('windows')}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 flex items-center"
-                >
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M0,0H11.377V11.372H0ZM12.623,0H24V11.372H12.623ZM0,12.623H11.377V24H0Zm12.623,0H24V24H12.623" />
-                  </svg>
-                  <span>Download for Windows</span>
-                </Button>
-                <Button 
-                  onClick={() => handleDownloadScanner('mac')}
-                  className="px-4 py-2 bg-slate-600 hover:bg-slate-700 flex items-center"
-                >
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
-                  </svg>
-                  <span>Download for macOS</span>
-                </Button>
+            <div className="p-4 bg-primary-900/20 border border-primary-700/30 rounded-lg flex items-center mb-6">
+              <Check className="text-green-400 text-xl mr-3" />
+              <div>
+                <h4 className="text-sm font-medium text-green-400">Browser Scan Complete</h4>
+                <p className="text-xs text-slate-400">Basic network information has been collected. Now choose how you'd like to proceed with the detailed assessment.</p>
               </div>
             </div>
             
-            <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg">
-              <h3 className="text-md font-medium text-white mb-3">Upload Results</h3>
-              <p className="text-sm text-slate-400 mb-4">After running the scanner, upload the results file here to complete your assessment.</p>
+            <h3 className="text-md font-medium text-white mb-4">Choose Assessment Method</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div 
+                className="bg-slate-800 border border-slate-700 hover:border-blue-500 rounded-lg p-6 cursor-pointer transition-all duration-150"
+                onClick={() => handleMethodChange('downloadable')}
+              >
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-slate-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <UploadCloud className="text-2xl h-8 w-8 text-primary-400" />
+                  </div>
+                  <h4 className="text-md font-medium mb-2 text-white">Network Scanner Tool</h4>
+                  <p className="text-sm text-slate-400 mb-4">Comprehensive network analysis with our secure downloadable scanner tool.</p>
+                  <ul className="text-xs text-left text-slate-400 space-y-1 ml-5 list-disc mb-4">
+                    <li>Complete device discovery</li>
+                    <li>Security vulnerability scanning</li>
+                    <li>Network topology mapping</li>
+                    <li>Performance measurement</li>
+                  </ul>
+                  <Button className="bg-primary-600 hover:bg-primary-700">
+                    <span>Use Network Scanner</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               
-              {!uploadedFile && !isUploading && (
-                <div className="flex items-center justify-center w-full">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-600 rounded-lg cursor-pointer bg-slate-900/50 hover:bg-slate-900 hover:border-primary-500 transition-all">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <UploadCloud className="text-2xl text-slate-400 mb-2" />
-                      <p className="mb-1 text-sm text-slate-400">Click to upload scan results</p>
-                      <p className="text-xs text-slate-500">JSON or XML file (Max 10MB)</p>
-                    </div>
+              <div 
+                className="bg-slate-800 border border-slate-700 hover:border-blue-500 rounded-lg p-6 cursor-pointer transition-all duration-150"
+                onClick={() => handleMethodChange('manual')}
+              >
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-slate-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="text-2xl h-8 w-8 text-primary-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </div>
+                  <h4 className="text-md font-medium mb-2 text-white">Manual Entry</h4>
+                  <p className="text-sm text-slate-400 mb-4">Security-conscious option with guided manual entry for clients who prefer not to run network scanning tools.</p>
+                  <ul className="text-xs text-left text-slate-400 space-y-1 ml-5 list-disc mb-4">
+                    <li>Privacy focused approach</li>
+                    <li>No software installation required</li>
+                    <li>Simple guided questionnaire</li>
+                    <li>Quick to complete</li>
+                  </ul>
+                  <Button className="bg-primary-600 hover:bg-primary-700">
+                    <span>Use Manual Entry</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Step 3A: Network Scanner */}
+        {currentStep === STEPS.NETWORK_SCANNER && (
+          <div className="space-y-6">
+            <div className="p-4 bg-primary-900/20 border border-primary-700/30 rounded-lg">
+              <div className="flex items-center mb-4">
+                <UploadCloud className="text-primary-400 text-xl mr-3" />
+                <h4 className="text-sm font-medium text-primary-400">Network Scanner Tool</h4>
+              </div>
+              <p className="text-xs text-slate-400 mb-4">This tool provides a comprehensive assessment of the client's network environment, including:</p>
+              <ul className="text-xs text-slate-400 space-y-1 ml-5 list-disc mb-4">
+                <li>Device discovery (workstations, servers, network equipment)</li>
+                <li>Network topology detection</li>
+                <li>Internet connection analysis</li>
+                <li>Bandwidth measurement</li>
+                <li>Printer and networked device discovery</li>
+                <li>Basic vulnerability assessment</li>
+                <li>Network topology mapping</li>
+                <li>Security vulnerability scanning</li>
+              </ul>
+            </div>
+            
+            <div className="bg-slate-700/50 p-4 rounded-lg mb-6">
+              <h4 className="text-sm font-medium text-white mb-3">System Requirements:</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h5 className="text-xs font-semibold text-primary-400 mb-1">Windows</h5>
+                  <ul className="text-xs text-slate-400 space-y-1 ml-3 list-disc">
+                    <li>Windows 10/11 (64-bit)</li>
+                    <li>.NET Framework 4.7.2 or higher</li>
+                    <li>Administrator privileges</li>
+                    <li>200MB free disk space</li>
+                  </ul>
+                </div>
+                <div>
+                  <h5 className="text-xs font-semibold text-primary-400 mb-1">macOS</h5>
+                  <ul className="text-xs text-slate-400 space-y-1 ml-3 list-disc">
+                    <li>macOS 11 Big Sur or higher</li>
+                    <li>Intel or Apple Silicon</li>
+                    <li>Admin privileges</li>
+                    <li>300MB free disk space</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button 
+                onClick={() => handleDownloadScanner('windows')}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 flex items-center"
+              >
+                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M0,0H11.377V11.372H0ZM12.623,0H24V11.372H12.623ZM0,12.623H11.377V24H0Zm12.623,0H24V24H12.623" />
+                </svg>
+                <span>Download for Windows</span>
+              </Button>
+              <Button 
+                onClick={() => handleDownloadScanner('mac')}
+                className="px-4 py-2 bg-slate-600 hover:bg-slate-700 flex items-center"
+              >
+                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
+                </svg>
+                <span>Download for macOS</span>
+              </Button>
+            </div>
+            
+            {form.getValues().downloadInitiated && (
+              <div className="mt-8 border border-slate-600 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-white mb-4">Upload Scan Results</h4>
+                <p className="text-xs text-slate-400 mb-4">
+                  After running the scanner tool, upload the results file (JSON or XML) generated by the scanner:
+                </p>
+                
+                {!uploadedFile ? (
+                  <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center">
+                    <UploadCloud className="h-8 w-8 mx-auto mb-2 text-slate-500" />
+                    <p className="text-sm text-slate-400 mb-4">Drag and drop your scan results file, or click to browse</p>
                     <input 
                       type="file" 
+                      id="scan-results" 
+                      onChange={handleFileUpload}
                       className="hidden"
                       accept=".json,.xml"
-                      onChange={handleFileUpload}
                     />
-                  </label>
-                </div>
-              )}
-              
-              {isUploading && (
-                <div className="p-4 bg-slate-700/30 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-white">Processing Scan Results</h4>
-                    <span className="text-xs text-slate-400">75%</span>
+                    <label htmlFor="scan-results">
+                      <Button 
+                        variant="outline"
+                        className="border-slate-600 hover:border-slate-500"
+                        disabled={isUploading}
+                      >
+                        {isUploading ? (
+                          <>
+                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <span>Select File</span>
+                        )}
+                      </Button>
+                    </label>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-2">
-                    <div className="bg-primary-500 h-2 rounded-full animate-pulse" style={{width: '75%'}}></div>
-                  </div>
-                  <div className="mt-2 text-xs text-slate-400">
-                    Analyzing network data and device inventory...
-                  </div>
-                </div>
-              )}
-              
-              {uploadedFile && !isUploading && (
-                <div>
-                  <div className="p-4 bg-green-900/20 border border-green-700/30 rounded-lg mb-4 flex items-start">
-                    <Check className="text-green-500 text-xl mr-3 mt-0.5 shrink-0" />
-                    <div>
-                      <h4 className="text-sm font-medium text-green-400">Scan Results Processed</h4>
-                      <p className="text-xs text-slate-400 mb-2">Your scan results have been successfully uploaded and processed.</p>
-                      <div className="flex items-center bg-slate-800 rounded p-2 mb-1">
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 mr-2 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M7 21h10a2 2 0 0 0 2-2V9.414a1 1 0 0 0-.293-.707l-5.414-5.414A1 1 0 0 0 12.586 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z" />
-                          <polyline points="14 2 14 8 20 8" />
+                ) : (
+                  <div>
+                    <div className="bg-slate-800 p-3 rounded-lg flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <div className="p-2 bg-slate-700 rounded-md mr-3">
+                          <svg className="h-6 w-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-white truncate max-w-xs">{uploadedFile.name}</p>
+                          <p className="text-xs text-slate-400">{(uploadedFile.size / 1024).toFixed(2)} KB</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setUploadedFile(null)}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
-                        <span className="text-xs text-slate-300 truncate max-w-xs">{uploadedFile.name}</span>
-                        <span className="text-xs text-slate-500 ml-2">({Math.round(uploadedFile.size / 1024)} KB)</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="p-3 bg-slate-700/30 rounded-md">
-                      <h4 className="text-xs font-medium text-slate-400 mb-1">Devices Discovered</h4>
-                      <div className="flex items-center justify-between">
-                        <span className="text-md font-semibold text-white">42</span>
-                        <span className="text-xs px-2 py-0.5 bg-slate-700 text-slate-300 rounded">Complete</span>
-                      </div>
+                      </Button>
                     </div>
                     
-                    <div className="p-3 bg-slate-700/30 rounded-md">
-                      <h4 className="text-xs font-medium text-slate-400 mb-1">Security Vulnerabilities</h4>
-                      <div className="flex items-center justify-between">
-                        <span className="text-md font-semibold text-amber-400">7</span>
-                        <span className="text-xs px-2 py-0.5 bg-amber-900/50 text-amber-300 rounded">Medium Risk</span>
+                    <div className="bg-green-950 bg-opacity-20 border border-green-800 rounded-lg p-3">
+                      <div className="flex items-center">
+                        <Check className="text-green-400 mr-2" />
+                        <p className="text-sm font-medium text-green-400">Scan Results Processed</p>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <p className="text-slate-400">Devices Discovered:</p>
+                          <p className="text-white font-medium">42</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Security Score:</p>
+                          <p className="text-white font-medium">78/100</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Vulnerabilities:</p>
+                          <p className="text-white font-medium">7</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Scan Date:</p>
+                          <p className="text-white font-medium">{new Date().toLocaleDateString()}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex justify-center">
-                    <Button 
-                      type="button"
-                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-xs"
-                      onClick={() => setUploadedFile(null)}
-                    >
-                      Upload Another File
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         )}
         
-        {/* Manual Entry Option */}
-        {assessmentMethod === 'manual' && (
+        {/* Step 3B: Manual Entry */}
+        {currentStep === STEPS.MANUAL_ENTRY && (
           <div className="space-y-6">
-            <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg">
-              <h3 className="text-md font-medium text-white mb-3">Manual Network Information</h3>
-              <p className="text-sm text-slate-400 mb-4">Please provide the following information about the network infrastructure.</p>
-              
-              <Form {...form}>
-                <form className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="isp"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Internet Service Provider</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field}
-                              className="bg-slate-700 border-slate-600 text-white"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="connectionType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Connection Type</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value || ""}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                                <SelectValue placeholder="Select connection type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                              <SelectItem value="_none">Select connection type</SelectItem>
-                              <SelectItem value="fiber">Fiber</SelectItem>
-                              <SelectItem value="cable">Cable</SelectItem>
-                              <SelectItem value="dsl">DSL</SelectItem>
-                              <SelectItem value="wireless">Fixed Wireless</SelectItem>
-                              <SelectItem value="satellite">Satellite</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+            <div className="p-4 bg-primary-900/20 border border-primary-700/30 rounded-lg flex items-center">
+              <AlertTriangle className="text-primary-400 text-xl mr-3" />
+              <div>
+                <h4 className="text-sm font-medium text-primary-400">Manual Entry</h4>
+                <p className="text-xs text-slate-400">Provide network details manually. For more accurate results, consider using our Network Scanner tool.</p>
+              </div>
+            </div>
+            
+            <Form {...form}>
+              <form className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="isp"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Internet Service Provider (ISP)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="e.g., Comcast, AT&T, Verizon"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="bandwidth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bandwidth</FormLabel>
-                          <div className="flex">
-                            <FormControl>
-                              <Input 
-                                type="number"
-                                min={1}
-                                {...field}
-                                value={field.value || ''}
-                                onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                                className="w-full rounded-r-none bg-slate-700 border-slate-600 text-white"
-                              />
-                            </FormControl>
-                            <Select
-                              value={form.watch('bandwidthUnit') || 'mbps'}
-                              onValueChange={value => form.setValue('bandwidthUnit', value)}
-                            >
-                              <SelectTrigger className="w-[80px] rounded-l-none bg-slate-700 border-slate-600 text-white">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                                <SelectItem value="mbps">Mbps</SelectItem>
-                                <SelectItem value="gbps">Gbps</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="routerModel"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Router/Firewall Model</FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="connectionType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Connection Type</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || ""}
+                        >
                           <FormControl>
-                            <Input 
-                              {...field}
-                              className="bg-slate-700 border-slate-600 text-white"
-                            />
+                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                              <SelectValue placeholder="Select connection type" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                          <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                            <SelectItem value="">Select connection type</SelectItem>
+                            <SelectItem value="fiber">Fiber</SelectItem>
+                            <SelectItem value="cable">Cable</SelectItem>
+                            <SelectItem value="dsl">DSL</SelectItem>
+                            <SelectItem value="satellite">Satellite</SelectItem>
+                            <SelectItem value="cellular">Cellular/4G/5G</SelectItem>
+                            <SelectItem value="dialup">Dial-up</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="bandwidth"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Bandwidth</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="bandwidthUnit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || "mbps"}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                              <SelectValue placeholder="Unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                            <SelectItem value="kbps">Kbps</SelectItem>
+                            <SelectItem value="mbps">Mbps</SelectItem>
+                            <SelectItem value="gbps">Gbps</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="routerModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Router/Firewall Model</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="e.g., Cisco Meraki MX67, Ubiquiti UDM Pro"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
                   <FormField
                     control={form.control}
@@ -883,24 +912,25 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Network Notes</FormLabel>
+                        <FormLabel>Additional Notes</FormLabel>
                         <FormControl>
                           <Textarea 
-                            {...field}
-                            rows={3}
-                            className="bg-slate-700 border-slate-600 text-white"
+                            {...field} 
+                            placeholder="Any additional details about the network infrastructure..."
+                            className="bg-slate-700 border-slate-600 text-white h-32"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </form>
-              </Form>
-            </div>
+                </div>
+              </form>
+            </Form>
           </div>
         )}
       </div>
+      
       <div className="px-6 py-4 bg-slate-900/50 border-t border-slate-700 flex justify-between items-center">
         <Button
           type="button"
@@ -911,24 +941,38 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
           <ArrowLeft className="mr-2 h-4 w-4" />
           Previous
         </Button>
-        <Button 
-          type="button" 
-          className="bg-primary-600 hover:bg-primary-700"
-          onClick={handleSubmit}
-          disabled={networkAssessmentMutation.isPending}
-        >
-          {networkAssessmentMutation.isPending ? (
-            <>
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-              <span>Saving...</span>
-            </>
-          ) : (
-            <>
-              <span>Continue</span>
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </>
-          )}
-        </Button>
+        
+        {currentStep === STEPS.CHOOSE_METHOD && (
+          <div className="text-sm text-slate-400 flex items-center">
+            Please select one of the assessment methods above
+          </div>
+        )}
+        
+        {(currentStep === STEPS.NETWORK_SCANNER || currentStep === STEPS.MANUAL_ENTRY) && (
+          <Button 
+            type="button" 
+            className="bg-primary-600 hover:bg-primary-700"
+            onClick={() => {
+              const data = prepareFinalData();
+              if (data) {
+                networkAssessmentMutation.mutate(data);
+              }
+            }}
+            disabled={networkAssessmentMutation.isPending}
+          >
+            {networkAssessmentMutation.isPending ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <span>Continue</span>
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
