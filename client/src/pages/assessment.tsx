@@ -228,25 +228,36 @@ const Assessment = () => {
   
   // Handle company profile submission (Step 3)
   const handleCompanyProfileSubmit = async (data: any) => {
+    console.log("Profile submit triggered with data:", data);
     setCompanyProfileData(data);
     
     try {
+      console.log("Assessment data:", assessment);
+      console.log("Company data:", companyData);
+      
       if (assessment && assessment.id && companyData) {
+        console.log("Updating company data...");
         // Update company data with profile information
         await apiRequest('PUT', `/api/companies/${assessment.companyId}`, {
           ...companyData,
           ...data
         });
+        console.log("Company data updated successfully");
+      } else {
+        console.log("Missing required data for company update");
       }
       
+      console.log("Setting step to 4");
       setCurrentStep(4);
       
       if (assessment) {
+        console.log("Updating assessment step to 4");
         updateAssessmentMutation.mutate({
           currentStep: 4
         });
       }
     } catch (error) {
+      console.error("Error in company profile submission:", error);
       toast({
         title: "Error updating company profile",
         description: (error as Error).message || "An error occurred while updating the company profile.",

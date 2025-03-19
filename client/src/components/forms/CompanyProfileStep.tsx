@@ -71,27 +71,58 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
     },
   });
   
-  const handleSubmit = (values: CompanyProfileFormValues) => {
-    // Ensure compliance is included even if empty
-    if (!values.compliance) {
-      values.compliance = {};
+  const handleSubmit = (values: any) => {
+    // Log the original values
+    console.log("Original form values:", values);
+    console.log("Form state:", form.formState);
+    
+    // Fix any potential issues with the values
+    const fixedValues = {
+      // Ensure the required fields are always present
+      industry: values.industry || '',
+      employeeCount: values.employeeCount || '',
+      locationCount: values.locationCount || '',
+      
+      // Provide default values for optional fields
+      overview: values.overview ? values.overview.trim() : 'No company overview provided',
+      growthPlans: values.growthPlans ? values.growthPlans.trim() : 'No specific growth plans provided',
+      
+      // Ensure compliance is a valid object
+      compliance: values.compliance || {},
+    };
+    
+    // Log the fixed values
+    console.log("Fixed values to be submitted:", fixedValues);
+    
+    // Call the onNext function with the fixed values
+    onNext(fixedValues);
+  };
+  
+  // Handle form submit by clicking the continue button directly
+  const handleContinueClick = () => {
+    console.log("Continue button clicked directly");
+    
+    // Prepare default values
+    const defaultValues = {
+      industry: form.getValues().industry || "_none",
+      employeeCount: form.getValues().employeeCount || "_none",
+      locationCount: form.getValues().locationCount || "_none",
+      overview: form.getValues().overview || "No company overview provided",
+      growthPlans: form.getValues().growthPlans || "No specific growth plans provided",
+      compliance: form.getValues().compliance || {},
+    };
+    
+    // Check if the required fields meet the minimum requirements
+    if (defaultValues.industry === "_none" || 
+        defaultValues.employeeCount === "_none" || 
+        defaultValues.locationCount === "_none") {
+      console.log("Missing required fields");
+      form.trigger(); // Show validation errors
+      return;
     }
     
-    // Check if growthPlans is empty and set a default value
-    if (!values.growthPlans || values.growthPlans.trim() === '') {
-      values.growthPlans = 'No specific growth plans provided';
-    }
-    
-    // Same for overview
-    if (!values.overview || values.overview.trim() === '') {
-      values.overview = 'No company overview provided';
-    }
-    
-    // Log the form values for debugging
-    console.log("Submitting company profile values:", values);
-    
-    // Call the onNext function with the values
-    onNext(values);
+    console.log("Continue clicked with values:", defaultValues);
+    onNext(defaultValues);
   };
 
   return (
@@ -279,7 +310,11 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
-              <Button type="submit" className="bg-primary-600 hover:bg-primary-700">
+              <Button 
+                type="button" 
+                className="bg-primary-600 hover:bg-primary-700"
+                onClick={handleContinueClick}
+              >
                 Continue
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
