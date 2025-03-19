@@ -107,7 +107,7 @@ const Assessment = () => {
           lastName: typedAssessmentDetails.contact.lastName,
           email: typedAssessmentDetails.contact.email,
           phone: typedAssessmentDetails.contact.phone,
-          companyWebsite: typedAssessmentDetails.company?.website || "",
+          companyWebsite: typedAssessmentDetails.contact.companyWebsite || typedAssessmentDetails.company?.website || "",
         });
       }
       
