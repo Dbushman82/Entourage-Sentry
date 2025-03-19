@@ -73,7 +73,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/assessments', async (_req: Request, res: Response) => {
     try {
       const assessments = await storage.getAllAssessments();
-      res.json(assessments);
+      
+      // Get company information for each assessment
+      const assessmentsWithCompanyInfo = await Promise.all(
+        assessments.map(async (assessment) => {
+          const company = await storage.getCompany(assessment.companyId);
+          return {
+            ...assessment,
+            companyName: company?.name || 'Unknown Company'
+          };
+        })
+      );
+      
+      res.json(assessmentsWithCompanyInfo);
     } catch (err) {
       handleError(err, res);
     }

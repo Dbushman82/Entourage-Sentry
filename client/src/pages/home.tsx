@@ -165,7 +165,7 @@ const Home = () => {
         {/* Assessments Table */}
         <Card className="bg-slate-800 border-slate-700 mb-8">
           <CardHeader>
-            <CardTitle className="text-white">Recent Assessments</CardTitle>
+            <CardTitle className="text-white">Assessments</CardTitle>
             <CardDescription className="text-slate-400">
               View and manage your client assessments
             </CardDescription>
