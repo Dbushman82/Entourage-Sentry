@@ -98,7 +98,6 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
       bandwidth: undefined,
       bandwidthUnit: 'mbps',
       routerModel: '',
-      // topology removed from form state
       deviceCounts: {
         workstations: 0,
         servers: 0,
