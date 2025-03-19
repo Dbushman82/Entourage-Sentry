@@ -152,7 +152,7 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
   
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white sm:max-w-[525px]">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white">Create New Assessment</DialogTitle>
           <DialogDescription className="text-slate-400">
@@ -161,7 +161,7 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="companyName"
@@ -171,8 +171,8 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
                   <FormControl>
                     <Input placeholder="Acme Inc." {...field} className="bg-slate-700 border-slate-600" />
                   </FormControl>
-                  <FormDescription>
-                    Enter the company name for this assessment.
+                  <FormDescription className="text-xs sm:text-sm">
+                    Enter company name
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -188,15 +188,15 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
                   <FormControl>
                     <Input placeholder="example.com" {...field} className="bg-slate-700 border-slate-600" />
                   </FormControl>
-                  <FormDescription>
-                    Enter the company website URL.
+                  <FormDescription className="text-xs sm:text-sm">
+                    Enter website URL
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="firstName"
@@ -235,7 +235,7 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
                   <FormControl>
                     <Input placeholder="contact@example.com" {...field} className="bg-slate-700 border-slate-600" />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs sm:text-sm">
                     Optional contact email
                   </FormDescription>
                   <FormMessage />
@@ -263,21 +263,21 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
                       <SelectItem value="30d">30 Days</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Set how long the assessment link will be valid. Your client will be able to access the assessment until this time.
+                  <FormDescription className="text-xs sm:text-sm">
+                    Duration of assessment link validity
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <div className="flex justify-end space-x-4 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-4 space-y-2 space-y-reverse sm:space-y-0 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={isPending}
-                className="border-slate-600 hover:bg-slate-700"
+                className="border-slate-600 hover:bg-slate-700 mt-2 sm:mt-0"
               >
                 Cancel
               </Button>
