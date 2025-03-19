@@ -181,25 +181,27 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
       });
     }, 1500);
     
-    // These are pre-computed valid empty zip files encoded as base64
-    // They will properly unzip on Windows and macOS
-    const windowsZipBase64 = "UEsDBBQAAAAAAOWbK1YAAAAAAAAAAAAAAAAOAAAARGVtby1SZWFkTWUudHh0UEsBAhQAFAAAAAAAiTArVgAAAAAAAAAAAAAAABkAAAAAAAAAAAAgAH+BAAAAABFOVF9TQ0FOTkVSX1JFQURNRS50eHRQSwUGAAAAAAEAAQBBAAAAUwAAAAAA";
-    const macZipBase64 = "UEsDBBQAAAAAAOWbK1YAAAAAAAAAAAAAAAANAAAARGVtby1SZWFkTWUudHh0UEsBAhQAFAAAAAAAiTArVgAAAAAAAAAAAAAAABgAAAAAAAAAAAAgAH+BAAAAABFOVF9TQ0FOTkVSX1JFQURNRS50eHRQSwUGAAAAAAEAAQBAAAAAUQAAAAAA";
+    // Instead of using base64, let's use a fetch request to download a pre-created file
+    // This approach will direct the user to an external site where they can download 
+    // the scanner from the official source
     
-    // Use the appropriate file for the platform
-    const zipBase64 = platform === 'windows' ? windowsZipBase64 : macZipBase64;
+    // In a real-world implementation, these would be valid download URLs
+    const windowsScanner = 'https://github.com/entourageit/network-scanner/releases/latest/download/EntourageSentryScanner-windows-x64.zip';
+    const macScanner = 'https://github.com/entourageit/network-scanner/releases/latest/download/EntourageSentryScanner-macos.zip';
     
-    // Create data URI for the zip file
-    const dataUri = `data:application/zip;base64,${zipBase64}`;
+    // Use the appropriate URL for the platform
+    const downloadUrl = platform === 'windows' ? windowsScanner : macScanner;
     
-    // Initiate download using a hidden anchor element
-    const downloadLink = document.createElement('a');
-    downloadLink.href = dataUri;
-    downloadLink.download = `EntourageSentryScanner_${platform}_v${version}.zip`;
-    downloadLink.style.display = 'none';
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    // Open the download link in a new tab rather than trying to create a zip directly
+    window.open(`/api/scanner/${platform}`, '_blank');
+    
+    // For demo purposes, we'll also tell the user this is a simulation
+    setTimeout(() => {
+      toast({
+        title: "Demo Mode",
+        description: "In a production environment, this would download the actual scanner. In this demo, we simulate the download process.",
+      });
+    }, 2500);
   };
   
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -336,12 +338,12 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
             onValueChange={(value) => handleMethodChange(value as 'browser' | 'downloadable' | 'manual')}
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
           >
-            <div className={`bg-slate-800 ${assessmentMethod === 'browser' ? 'border-3 border-primary-500' : 'border border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
+            <div className={`bg-slate-800 ${assessmentMethod === 'browser' ? 'border-4 border-blue-500' : 'border border-slate-700'} hover:border-blue-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
               <RadioGroupItem value="browser" id="browser" className="sr-only" />
               <Label htmlFor="browser" className="cursor-pointer">
                 <div className="text-center">
                   <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'browser' ? 'text-primary-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'browser' ? 'text-blue-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10" />
                       <circle cx="12" cy="12" r="4" />
                       <line x1="21.17" y1="8" x2="12" y2="8" />
@@ -349,36 +351,36 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                       <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
                     </svg>
                   </div>
-                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'browser' ? 'text-primary-400' : 'text-white'}`}>Browser Scan</h4>
+                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'browser' ? 'text-blue-400' : 'text-white'}`}>Browser Scan</h4>
                   <p className="text-xs text-slate-400">Basic network information using browser capabilities</p>
                 </div>
               </Label>
             </div>
             
-            <div className={`bg-slate-800 ${assessmentMethod === 'downloadable' ? 'border-3 border-primary-500' : 'border border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
+            <div className={`bg-slate-800 ${assessmentMethod === 'downloadable' ? 'border-4 border-blue-500' : 'border border-slate-700'} hover:border-blue-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
               <RadioGroupItem value="downloadable" id="downloadable" className="sr-only" />
               <Label htmlFor="downloadable" className="cursor-pointer">
                 <div className="text-center">
                   <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <UploadCloud className={`text-2xl h-6 w-6 ${assessmentMethod === 'downloadable' ? 'text-primary-400' : 'text-slate-400'}`} />
+                    <UploadCloud className={`text-2xl h-6 w-6 ${assessmentMethod === 'downloadable' ? 'text-blue-400' : 'text-slate-400'}`} />
                   </div>
-                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'downloadable' ? 'text-primary-400' : 'text-white'}`}>Network Scanner</h4>
+                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'downloadable' ? 'text-blue-400' : 'text-white'}`}>Network Scanner</h4>
                   <p className="text-xs text-slate-400">Comprehensive network analysis with our secure tool</p>
                 </div>
               </Label>
             </div>
             
-            <div className={`bg-slate-800 ${assessmentMethod === 'manual' ? 'border-3 border-primary-500' : 'border border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
+            <div className={`bg-slate-800 ${assessmentMethod === 'manual' ? 'border-4 border-blue-500' : 'border border-slate-700'} hover:border-blue-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
               <RadioGroupItem value="manual" id="manual" className="sr-only" />
               <Label htmlFor="manual" className="cursor-pointer">
                 <div className="text-center">
                   <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'manual' ? 'text-primary-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'manual' ? 'text-blue-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
                   </div>
-                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'manual' ? 'text-primary-400' : 'text-white'}`}>Manual Entry</h4>
+                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'manual' ? 'text-blue-400' : 'text-white'}`}>Manual Entry</h4>
                   <p className="text-xs text-slate-400">Security-conscious option with guided manual entry</p>
                 </div>
               </Label>
