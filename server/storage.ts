@@ -71,6 +71,11 @@ export interface IStorage {
   deleteAssessment(id: number): Promise<boolean>;
   getAssessmentDetails(id: number): Promise<any>; // Returns all related data in a combined object
   
+  // Assessment link management
+  generateAssessmentLink(id: number, expirationDuration: string): Promise<{ url: string, expiration: Date }>;
+  renewAssessmentLink(id: number, expirationDuration: string): Promise<{ url: string, expiration: Date }>;
+  verifyAssessmentLink(token: string): Promise<Assessment | null>;
+  
   // System settings methods (for branding, etc.)
   updateSystemSetting(key: string, value: string): Promise<void>;
   getSystemSetting(key: string): Promise<string | null>;
@@ -438,6 +443,68 @@ export class MemStorage implements IStorage {
   
   async deleteScannerVersion(id: number): Promise<boolean> {
     return this.scannerVersions.delete(id);
+  }
+
+  // Assessment link management
+  async generateAssessmentLink(id: number, expirationDuration: string): Promise<{ url: string, expiration: Date }> {
+    const assessment = await this.getAssessment(id);
+    if (!assessment) {
+      throw new Error(`Assessment with ID ${id} not found`);
+    }
+
+    // Import functions from jwt.ts
+    const { generateAssessmentUrl, calculateExpirationDate } = require('./utils/jwt');
+    
+    // Calculate expiration date
+    const expiration = calculateExpirationDate(expirationDuration);
+    
+    // Generate signed URL
+    const url = generateAssessmentUrl(id, assessment.referenceCode, expirationDuration);
+    
+    // Generate token from the URL
+    const token = url.split('token=')[1];
+    
+    // Update assessment with token and expiration
+    await this.updateAssessment(id, {
+      linkToken: token,
+      linkExpiration: expiration
+    });
+    
+    return { url, expiration };
+  }
+
+  async renewAssessmentLink(id: number, expirationDuration: string): Promise<{ url: string, expiration: Date }> {
+    // Simply reuse the generate function since the logic is the same
+    return this.generateAssessmentLink(id, expirationDuration);
+  }
+
+  async verifyAssessmentLink(token: string): Promise<Assessment | null> {
+    // Import function from jwt.ts
+    const { verifyAssessmentToken } = require('./utils/jwt');
+    
+    // Verify the token
+    const decoded = verifyAssessmentToken(token);
+    if (!decoded) {
+      return null;
+    }
+    
+    // Get the assessment
+    const assessment = await this.getAssessment(decoded.assessmentId);
+    if (!assessment) {
+      return null;
+    }
+    
+    // Check if the token matches
+    if (assessment.linkToken !== token) {
+      return null;
+    }
+    
+    // Check if the token has expired
+    if (assessment.linkExpiration && new Date(assessment.linkExpiration) < new Date()) {
+      return null;
+    }
+    
+    return assessment;
   }
 }
 
