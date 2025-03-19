@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,9 @@ const AdminPage = () => {
             <p>This area is restricted to administrators only.</p>
           </CardContent>
           <CardFooter>
-            <Button onClick={() => window.history.back()}>Go Back</Button>
+            <Link href="/">
+              <Button>Back to Dashboard</Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
@@ -328,7 +331,14 @@ const AdminPage = () => {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-8">Administration</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Administration</h1>
+        <Link href="/">
+          <Button variant="outline">
+            Back to Dashboard
+          </Button>
+        </Link>
+      </div>
       
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="mb-6">
