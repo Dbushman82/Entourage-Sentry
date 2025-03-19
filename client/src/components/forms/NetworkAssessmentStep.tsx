@@ -166,14 +166,6 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
       description: `EntourageSentryScanner_${platform}_v${version} (${fileSize}) download started. Please run the scanner and upload results when complete.`,
     });
     
-    // Create a mock download process - in a real app this would be a real download
-    setTimeout(() => {
-      toast({
-        title: "Download Complete",
-        description: `EntourageSentryScanner for ${platformName} has been downloaded. Extract the files and run the executable with administrator privileges.`,
-      });
-    }, 2500);
-    
     // Log the platform selection for future implementation
     console.log(`User selected ${platformName} scanner download`);
     
@@ -181,10 +173,36 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     form.setValue('downloadInitiated', true);
     form.setValue('scannerPlatform', platform);
     
-    // Simulate a file download
-    // In a real implementation, this would trigger the actual file download
+    // Create a very basic valid zip file as a data URI
+    // This creates an empty ZIP file with proper headers that will open correctly
+    // For demonstration purposes only - in production, this would be a real scanner download
+    
+    // This is a minimal valid ZIP file in hex format
+    const emptyZipHex = '504B0304140000000000000000000000000000000000000000000000000000000000000000000000000000504B01021400140000000000000000000000000000000000000000000000000000000000000000000000504B050600000000010001002E000000000000000000';
+    
+    // Convert hex to binary string
+    let binaryString = '';
+    for (let i = 0; i < emptyZipHex.length; i += 2) {
+      binaryString += String.fromCharCode(parseInt(emptyZipHex.substr(i, 2), 16));
+    }
+    
+    // Convert to base64
+    const base64 = btoa(binaryString);
+    
+    // Create a mock download process
+    setTimeout(() => {
+      toast({
+        title: "Download Complete",
+        description: `EntourageSentryScanner for ${platformName} has been downloaded. Extract the files and run the executable with administrator privileges.`,
+      });
+    }, 1500);
+    
+    // Create data URI for the zip file
+    const dataUri = `data:application/zip;base64,${base64}`;
+    
+    // Simulate file download with the data URI
     const downloadLink = document.createElement('a');
-    downloadLink.href = '#';
+    downloadLink.href = dataUri;
     downloadLink.download = `EntourageSentryScanner_${platform}_v${version}.zip`;
     downloadLink.style.display = 'none';
     document.body.appendChild(downloadLink);
@@ -326,12 +344,12 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
             onValueChange={(value) => handleMethodChange(value as 'browser' | 'downloadable' | 'manual')}
             className="grid grid-cols-1 md:grid-cols-3 gap-4"
           >
-            <div className={`relative bg-slate-800 border ${assessmentMethod === 'browser' ? 'border-primary-500' : 'border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer`}>
+            <div className={`relative ${assessmentMethod === 'browser' ? 'bg-primary-950/50 border-2 border-primary-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-slate-800 border border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
               <RadioGroupItem value="browser" id="browser" className="sr-only" />
               <Label htmlFor="browser" className="cursor-pointer">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="text-2xl text-primary-500 h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center ${assessmentMethod === 'browser' ? 'bg-primary-800' : 'bg-slate-700'}`}>
+                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'browser' ? 'text-primary-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10" />
                       <circle cx="12" cy="12" r="4" />
                       <line x1="21.17" y1="8" x2="12" y2="8" />
@@ -339,47 +357,53 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                       <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
                     </svg>
                   </div>
-                  <h4 className="text-sm font-medium text-white mb-1">Browser Scan</h4>
+                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'browser' ? 'text-primary-400' : 'text-white'}`}>Browser Scan</h4>
                   <p className="text-xs text-slate-400">Basic network information using browser capabilities</p>
                 </div>
-                <div className={`absolute top-2 right-2 w-4 h-4 border-2 ${assessmentMethod === 'browser' ? 'border-primary-500' : 'border-slate-500'} rounded-full flex items-center justify-center`}>
-                  {assessmentMethod === 'browser' && <div className="w-2 h-2 bg-primary-500 rounded-full"></div>}
-                </div>
+                {assessmentMethod === 'browser' && (
+                  <div className="absolute top-0 left-0 w-0 h-0 border-t-[40px] border-l-[40px] border-t-primary-500 border-l-transparent border-r-transparent rotate-90 transform origin-top-left">
+                    <Check className="absolute top-[-35px] left-[-5px] text-white h-4 w-4" />
+                  </div>
+                )}
               </Label>
             </div>
             
-            <div className={`relative bg-slate-800 border ${assessmentMethod === 'downloadable' ? 'border-primary-500' : 'border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer`}>
+            <div className={`relative ${assessmentMethod === 'downloadable' ? 'bg-primary-950/50 border-2 border-primary-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-slate-800 border border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
               <RadioGroupItem value="downloadable" id="downloadable" className="sr-only" />
               <Label htmlFor="downloadable" className="cursor-pointer">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <UploadCloud className="text-2xl text-slate-300 h-6 w-6" />
+                  <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center ${assessmentMethod === 'downloadable' ? 'bg-primary-800' : 'bg-slate-700'}`}>
+                    <UploadCloud className={`text-2xl h-6 w-6 ${assessmentMethod === 'downloadable' ? 'text-primary-400' : 'text-slate-400'}`} />
                   </div>
-                  <h4 className="text-sm font-medium text-white mb-1">Network Scanner</h4>
+                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'downloadable' ? 'text-primary-400' : 'text-white'}`}>Network Scanner</h4>
                   <p className="text-xs text-slate-400">Comprehensive network analysis with our secure tool</p>
                 </div>
-                <div className={`absolute top-2 right-2 w-4 h-4 border-2 ${assessmentMethod === 'downloadable' ? 'border-primary-500' : 'border-slate-500'} rounded-full flex items-center justify-center`}>
-                  {assessmentMethod === 'downloadable' && <div className="w-2 h-2 bg-primary-500 rounded-full"></div>}
-                </div>
+                {assessmentMethod === 'downloadable' && (
+                  <div className="absolute top-0 left-0 w-0 h-0 border-t-[40px] border-l-[40px] border-t-primary-500 border-l-transparent border-r-transparent rotate-90 transform origin-top-left">
+                    <Check className="absolute top-[-35px] left-[-5px] text-white h-4 w-4" />
+                  </div>
+                )}
               </Label>
             </div>
             
-            <div className={`relative bg-slate-800 border ${assessmentMethod === 'manual' ? 'border-primary-500' : 'border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer`}>
+            <div className={`relative ${assessmentMethod === 'manual' ? 'bg-primary-950/50 border-2 border-primary-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'bg-slate-800 border border-slate-700'} hover:border-primary-500 rounded-lg p-4 cursor-pointer transition-all duration-150`}>
               <RadioGroupItem value="manual" id="manual" className="sr-only" />
               <Label htmlFor="manual" className="cursor-pointer">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-slate-700 rounded-full mx-auto mb-2 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="text-2xl text-slate-300 h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center ${assessmentMethod === 'manual' ? 'bg-primary-800' : 'bg-slate-700'}`}>
+                    <svg viewBox="0 0 24 24" className={`text-2xl h-6 w-6 ${assessmentMethod === 'manual' ? 'text-primary-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
                   </div>
-                  <h4 className="text-sm font-medium text-white mb-1">Manual Entry</h4>
+                  <h4 className={`text-sm font-medium mb-1 ${assessmentMethod === 'manual' ? 'text-primary-400' : 'text-white'}`}>Manual Entry</h4>
                   <p className="text-xs text-slate-400">Security-conscious option with guided manual entry</p>
                 </div>
-                <div className={`absolute top-2 right-2 w-4 h-4 border-2 ${assessmentMethod === 'manual' ? 'border-primary-500' : 'border-slate-500'} rounded-full flex items-center justify-center`}>
-                  {assessmentMethod === 'manual' && <div className="w-2 h-2 bg-primary-500 rounded-full"></div>}
-                </div>
+                {assessmentMethod === 'manual' && (
+                  <div className="absolute top-0 left-0 w-0 h-0 border-t-[40px] border-l-[40px] border-t-primary-500 border-l-transparent border-r-transparent rotate-90 transform origin-top-left">
+                    <Check className="absolute top-[-35px] left-[-5px] text-white h-4 w-4" />
+                  </div>
+                )}
               </Label>
             </div>
           </RadioGroup>
