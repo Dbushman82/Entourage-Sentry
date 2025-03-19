@@ -551,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Network scanner download routes
+  // Network scanner download routes - provide instructions as a webpage instead of a file
   app.get('/api/scanner/:platform', (req: Request, res: Response) => {
     const { platform } = req.params;
     
@@ -561,14 +561,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const platformName = platform === 'windows' ? 'Windows' : 'macOS';
     const version = platform === 'windows' ? '1.2.3' : '1.2.1';
-    const filename = `EntourageSentryScanner_${platform}_v${version}.zip`;
     
-    // We'll create a simple HTML page that initiates an automatic download
+    // Create an HTML page with installation instructions
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>EntourageSentryScanner Download</title>
+        <title>EntourageSentryScanner for ${platformName}</title>
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -577,17 +576,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
           }
-          .box {
-            background-color: #f8f9fa;
+          h1 {
+            color: #0066cc;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+          }
+          .section {
+            background-color: white;
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 20px;
             margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
-          .header {
+          h2 {
             color: #0066cc;
             margin-top: 0;
+          }
+          .steps {
+            counter-reset: step-counter;
+            list-style-type: none;
+            padding-left: 0;
+          }
+          .steps li {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 15px;
+          }
+          .steps li:before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 25px;
+            height: 25px;
+            background-color: #0066cc;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 25px;
+            font-weight: bold;
+          }
+          .requirements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+          }
+          .req {
+            flex: 1;
+            min-width: 250px;
+            background-color: #f8f9fa;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 15px;
+          }
+          .req h3 {
+            margin-top: 0;
+            color: #0066cc;
+            font-size: 16px;
+          }
+          .req ul {
+            padding-left: 20px;
+            margin-bottom: 0;
           }
           .button {
             display: inline-block;
@@ -597,33 +650,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
+            border: none;
+            cursor: pointer;
+          }
+          .button:hover {
+            background-color: #0052a3;
           }
           .note {
             font-size: 0.9em;
             color: #666;
+            margin-top: 40px;
+            text-align: center;
           }
         </style>
       </head>
       <body>
         <h1>EntourageSentryScanner for ${platformName}</h1>
-        <div class="box">
-          <h2 class="header">Download Information</h2>
-          <p>You're downloading EntourageSentryScanner version ${version} for ${platformName}.</p>
-          <p>This is a demo page. In a production environment, this would initiate the actual scanner download.</p>
-          <p>After downloading, please extract the zip file and run the executable with administrator privileges.</p>
-          <p><a href="javascript:window.close()" class="button">Close this window</a></p>
-        </div>
-        <p class="note">© 2025 Entourage IT - Enterprise Network Security Scanner</p>
         
-        <script>
-          // This script will trigger the download automatically
-          window.onload = function() {
-            // Trigger download after a brief delay
-            setTimeout(function() {
-              window.location.href = "/api/scanner/${platform}/download";
-            }, 1000);
-          }
-        </script>
+        <div class="section">
+          <h2>Installation Instructions</h2>
+          <ol class="steps">
+            <li>Download EntourageSentryScanner version ${version} for ${platformName} from the link below.</li>
+            <li>Extract all files from the ZIP archive to a folder on your computer.</li>
+            <li>${platform === 'windows' 
+              ? 'Right-click on EntourageSentryScanner.exe and select "Run as administrator".' 
+              : 'Open the extracted folder and double-click on EntourageSentryScanner.app to run it.'}</li>
+            <li>Follow the on-screen instructions to scan your network.</li>
+            <li>Save the scan results file (.json or .xml) to your computer.</li>
+            <li>Return to the Entourage Sentry assessment page and upload the scan results.</li>
+          </ol>
+          
+          <p><strong>Note:</strong> This is a demonstration version. In a production environment, there would be a real scanner available for download.</p>
+        </div>
+        
+        <div class="section">
+          <h2>System Requirements</h2>
+          <div class="requirements">
+            <div class="req">
+              <h3>${platform === 'windows' ? 'Windows Requirements' : 'macOS Requirements'}</h3>
+              <ul>
+                ${platform === 'windows' 
+                  ? `<li>Windows 10/11 (64-bit)</li>
+                    <li>.NET Framework 4.7.2 or higher</li>
+                    <li>Administrator privileges</li>
+                    <li>200MB free disk space</li>`
+                  : `<li>macOS 11 Big Sur or higher</li>
+                    <li>Intel or Apple Silicon</li>
+                    <li>Admin privileges</li>
+                    <li>300MB free disk space</li>`}
+              </ul>
+            </div>
+            <div class="req">
+              <h3>Network Requirements</h3>
+              <ul>
+                <li>Local administrator access</li>
+                <li>Firewall exceptions may be required</li>
+                <li>Network discovery enabled</li>
+                <li>Local network access</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="section">
+          <h2>Scanner Features</h2>
+          <ul>
+            <li>Complete network device inventory</li>
+            <li>Operating system detection</li>
+            <li>Port scanning for common services</li>
+            <li>Printer and network device discovery</li>
+            <li>Basic vulnerability assessment</li>
+            <li>Network topology mapping</li>
+            <li>Security vulnerability scanning</li>
+          </ul>
+        </div>
+        
+        <p class="note">© 2025 Entourage IT - Enterprise Network Security Scanner</p>
       </body>
       </html>
     `;
@@ -632,36 +734,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.send(html);
   });
   
-  // Actual download endpoint that will send a real file
+  // Legacy download endpoint that now redirects to the instructions page
   app.get('/api/scanner/:platform/download', (req: Request, res: Response) => {
     const { platform } = req.params;
-    
-    if (platform !== 'windows' && platform !== 'mac') {
-      return res.status(400).json({ message: 'Invalid platform specified' });
-    }
-    
-    const platformName = platform === 'windows' ? 'Windows' : 'macOS';
-    const version = platform === 'windows' ? '1.2.3' : '1.2.1';
-    const filename = `EntourageSentryScanner_${platform}_v${version}.zip`;
-    
-    // These are valid ZIP files containing a readme.txt file 
-    // with installation instructions
-    const windowsZipBase64 = 'UEsDBBQACAAIAFJqRVcAAAAAAAAAAAAAAAAJAAAAUkVBRE1FLnR4dM1TXW/aMBR996+wvO8H0I2iCW1DMMbWdmxjDKZJ1ZRLbsCisZPaTtv9+l0noauqTpsm7cU+9vW5x+ceW+LDw8ODWMelXa3FxYXkbZFpbZRkMtGsKJmscRYbcYBWWrE3MvXU29E+eR/r0lx72j8j7a7H1PfZx/sUCz6/D5KlV+kPRLpNuWEwXt46aXnTGMrRVLZUXhjONw6H/pYXueBK5Q7sV1D4B1z50eI2LYIizMJZHAWLNC58l2Z0vdJI6+QDDVKe6NpQR6Oc7EKdacX50JnS8PKWZbyYllD8HnF5eTm+GJ2dTv8fTcbx6TQapcEYNB+LMJ5FYZrZYlAGGZS9u7vz7Jx9p+t1TUhTUq+qGaeiYpnnNHfwUcnMk9zWrKaVlKxYQmCvDQIqFKFw4AxVwjzYM10o+D+0L1rQhpWoXiryQJNqJtYp+qV4TSXHLXQcpNJwZnMoR1p/vHt7vcM1XMxZZVtdoAJZ0qgoxbDXYJf1xn06pXfaRmuBk1qHjYXXCIFZ1ys5lLpj0BvRRJXYs+Xv6uY3WXOJWtXMxv0mFO1CrXS3CUW/0IFiH+qmVIpDGdzcAD6X2FfS0kEZ9Oo3UEsHCM43SHIrAQAASAMAAFBLAQIUABQACAAIAFJqRVfON0hyKwEAAEgDAAAJAAAAAAAAAAAAAAAAAAAAAABSRUFETUUudHh0UEsFBgAAAAABAAEANwAAAFIBAAAAAA==';
-    const macZipBase64 = 'UEsDBBQACAAIAFJqRVcAAAAAAAAAAAAAAAAJAAAAUkVBRE1FLnR4dM1T22rjMBB9z1cMeV9Lce8uDe3GMG3TbmhLoaFsGKzRxCKy5Epy0n59R3aSkoVtH/qig2U5c+bMmTOi+Pj4KJZpbhdr8XqtRJsnRhspucx0mhdcNjiPrThC44zcalqM9XZ9SD6mprC3YzM5J932WJnxbfLpAWjJF88gWYy13xPpxYnmBuPN7SOvRttYxtFWrpAiM4JvHA7+FpdCcq0LB/YbKPwTbsJkcR8XURLncJdmXhrHZRiQTT5rrJPPNCh5phtLHYuL6RbqzCohXGcoT1+3ecmLnMj8EXF9fT25Gl9cXP+/mE6zy/NsXEzSNQTejcL0Lg1Lv+l1YaXnZ2dnU3/O/vv1nQSPTepVNee0r3geuJh7+KhV7klha9bQWipeLSGw14EglabQcegNVcI+3vE7lcL/YWPpQBtWoHqlKYqdrNyshzHn1VTmRZdQTqC66pViWOq1xbeMkjNMjA2vJaZsBWtvEboGOydBnWYGl/BOnRMTxnRmM5N4J0GUFQZRhrWRV9pkpeoJTNxJgxf2G7GF58GXKm/NQXW7vjnZPJv7lHkJUxFN+6o+/IM2GvW7SbMtHXX2sWnrSuPE4e4O4QuFkydLu2l3D/oNUEsHCMjp8ZYzAQAASAMAAFBLAQIUABQACAAIAFJqRVfI6fGWMwEAAEgDAAAJAAAAAAAAAAAAAAAAAAAAAABSRUFETUUudHh0UEsFBgAAAAABAAEANwAAAFoBAAAAAA==';
-    
-    // Choose the appropriate ZIP file
-    const zipBase64 = platform === 'windows' ? windowsZipBase64 : macZipBase64;
-    
-    // Convert base64 to binary buffer
-    const zipBuffer = Buffer.from(zipBase64, 'base64');
-    
-    // Set headers for file download
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-    res.setHeader('Content-Length', zipBuffer.length);
-    
-    // Send the file
-    res.send(zipBuffer);
+    res.redirect(`/api/scanner/${platform}`);
   });
 
   // Setup authentication routes

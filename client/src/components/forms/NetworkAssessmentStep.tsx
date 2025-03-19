@@ -192,7 +192,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     // Use the appropriate URL for the platform
     const downloadUrl = platform === 'windows' ? windowsScanner : macScanner;
     
-    // Open the download link in a new tab rather than trying to create a zip directly
+    // Instead of trying to download a ZIP file, let's direct them to a text file with instructions
     window.open(`/api/scanner/${platform}`, '_blank');
     
     // For demo purposes, we'll also tell the user this is a simulation
