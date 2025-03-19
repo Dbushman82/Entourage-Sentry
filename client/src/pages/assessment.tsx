@@ -9,6 +9,7 @@ import { useAssessment } from "@/context/AssessmentContext";
 interface AssessmentData {
   id: number;
   referenceCode: string;
+  contactId: number;
   companyId: number;
   currentStep: number;
   status: string;
@@ -21,6 +22,7 @@ interface AssessmentDetails {
     lastName: string;
     email: string;
     phone: string;
+    companyWebsite?: string;
   };
   company?: {
     name: string;
@@ -185,6 +187,7 @@ const Assessment = () => {
           lastName: data.lastName,
           email: data.email,
           phone: data.phone,
+          companyWebsite: data.companyWebsite,
         },
         company: {
           name: "",
@@ -196,6 +199,17 @@ const Assessment = () => {
     setCurrentStep(2);
     
     if (assessment) {
+      // Update contact info in the database if needed
+      apiRequest('PUT', `/api/contacts/${assessment.contactId}`, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        companyWebsite: data.companyWebsite
+      }).catch(error => {
+        console.error("Error updating contact:", error);
+      });
+      
       updateAssessmentMutation.mutate({
         currentStep: 2
       });
@@ -205,6 +219,30 @@ const Assessment = () => {
   // Handle contact save
   const handleContactSave = (data: any) => {
     setContactData(data);
+    
+    // If we have an assessment, update the contact info in the database
+    if (assessment && assessment.contactId) {
+      apiRequest('PUT', `/api/contacts/${assessment.contactId}`, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        companyWebsite: data.companyWebsite
+      }).catch(error => {
+        console.error("Error saving contact:", error);
+      });
+      
+      // If the company website changed, also update the company record
+      if (data.companyWebsite && companyData && data.companyWebsite !== companyData.website) {
+        apiRequest('PUT', `/api/companies/${assessment.companyId}`, {
+          ...companyData,
+          website: data.companyWebsite
+        }).catch(error => {
+          console.error("Error updating company website:", error);
+        });
+      }
+    }
+    
     toast({
       title: "Progress saved",
       description: "Your assessment progress has been saved.",

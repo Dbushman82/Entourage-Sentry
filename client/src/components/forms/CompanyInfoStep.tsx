@@ -53,17 +53,21 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
   const { toast } = useToast();
   const [domainData, setDomainData] = useState<any>(null);
   
+  // Clean up the initialDomain if needed
+  const cleanedDomain = initialDomain?.replace(/^https?:\/\//, '') || '';
+  
   // Query for domain reconnaissance data
   const { data: domainReconData, isLoading, error } = useQuery({
-    queryKey: [`/api/domain`],
+    queryKey: [`/api/domain`, cleanedDomain],
     queryFn: async () => {
       // Don't make the request if we don't have a domain
-      if (!initialDomain) return null;
+      if (!cleanedDomain) return null;
       
-      const res = await apiRequest('POST', '/api/domain', { domain: initialDomain });
+      console.log("Fetching domain data for:", cleanedDomain);
+      const res = await apiRequest('POST', '/api/domain', { domain: cleanedDomain });
       return res.json();
     },
-    enabled: !!initialDomain
+    enabled: !!cleanedDomain
   });
   
   useEffect(() => {
