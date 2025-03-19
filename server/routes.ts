@@ -48,12 +48,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use extend to allow the companyWebsite field in the contact data
       const extendedContactSchema = insertContactSchema.extend({
         companyWebsite: z.string().optional(),
+        firstName: z.string().optional().default(""),
+        lastName: z.string().optional().default(""),
+        email: z.string().email().optional().default(""),
       });
+      
       const contactData = extendedContactSchema.parse(req.body.contact);
       const companyData = insertCompanySchema.parse(req.body.company);
       
-      // Create contact and company records
-      const contact = await storage.createContact(contactData);
+      // Create contact with empty values for new assessments
+      const contact = await storage.createContact({
+        ...contactData,
+        firstName: contactData.firstName || "",
+        lastName: contactData.lastName || "",
+        email: contactData.email || "",
+      });
+      
+      // Create company record
       const company = await storage.createCompany(companyData);
       
       // Create the assessment with a unique reference code
@@ -61,14 +72,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referenceCode: generateReferenceCode(),
         contactId: contact.id,
         companyId: company.id,
-        status: 'in_progress',
+        status: 'draft',
         currentStep: 1
       };
       
       const validAssessment = insertAssessmentSchema.parse(assessmentData);
       const assessment = await storage.createAssessment(validAssessment);
       
-      res.status(201).json({ assessment, contact, company });
+      // Generate a link for the assessment automatically
+      const link = await storage.generateAssessmentLink(assessment.id, '7d');
+      
+      res.status(201).json({ assessment, contact, company, link });
     } catch (err) {
       handleError(err, res);
     }

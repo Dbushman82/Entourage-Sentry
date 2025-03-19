@@ -146,6 +146,13 @@ const Assessment = () => {
     onSuccess: (data) => {
       setAssessment(data.assessment);
       setReferenceCode(data.assessment.referenceCode);
+      setContactData({
+        ...contactData,
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+      });
       queryClient.invalidateQueries({ queryKey: [`/api/assessments`] });
     },
     onError: (error) => {

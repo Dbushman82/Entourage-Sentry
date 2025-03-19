@@ -73,9 +73,9 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
       
       const res = await apiRequest("POST", "/api/assessments", {
         contact: {
-          firstName: "Contact",
-          lastName: "Pending",
-          email: "pending@example.com",
+          firstName: "",
+          lastName: "",
+          email: "",
           phone: "",
           companyWebsite: formattedWebsite, // Include properly formatted website
         },
