@@ -38,7 +38,7 @@ const companyProfileSchema = z.object({
   businessHours: z.string().min(3, "Please enter business hours"),
   overview: z.string().min(10, "Please provide a brief company overview"),
   compliance: z.record(z.boolean()).default({}),
-  growthPlans: z.string().optional(),
+  growthPlans: z.string().optional().default(""),
 });
 
 type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
@@ -77,6 +77,11 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
     // Ensure compliance is included even if empty
     if (!values.compliance) {
       values.compliance = {};
+    }
+    
+    // Check if growthPlans is empty and set a default value
+    if (!values.growthPlans || values.growthPlans.trim() === '') {
+      values.growthPlans = 'No specific growth plans provided';
     }
     
     // Log the form values for debugging
