@@ -44,9 +44,12 @@ interface CompanyProfileStepProps {
 }
 
 const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfileStepProps) => {
-  // Set up default compliance values
+  // Set up default compliance values - make sure it's initialized with a default empty object
+  const defaultValues_safe = defaultValues || {};
+  const defaultCompliance_obj = defaultValues_safe.compliance || {};
+  
   const defaultCompliance = complianceOptions.reduce((acc, option) => {
-    acc[option.id] = defaultValues && defaultValues.compliance ? defaultValues.compliance[option.id] || false : false;
+    acc[option.id] = defaultCompliance_obj[option.id] || false;
     return acc;
   }, {} as Record<string, boolean>);
   
@@ -97,7 +100,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                      <SelectItem value="">Select an industry</SelectItem>
+                      <SelectItem value="_none">Select an industry</SelectItem>
                       <SelectItem value="retail">Retail & E-commerce</SelectItem>
                       <SelectItem value="healthcare">Healthcare & Medical</SelectItem>
                       <SelectItem value="finance">Financial Services</SelectItem>
@@ -132,7 +135,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                        <SelectItem value="">Select employee count</SelectItem>
+                        <SelectItem value="_none">Select employee count</SelectItem>
                         <SelectItem value="1-10">1-10</SelectItem>
                         <SelectItem value="11-50">11-50</SelectItem>
                         <SelectItem value="51-200">51-200</SelectItem>
@@ -162,7 +165,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                        <SelectItem value="">Select location count</SelectItem>
+                        <SelectItem value="_none">Select location count</SelectItem>
                         <SelectItem value="1">1</SelectItem>
                         <SelectItem value="2-3">2-3</SelectItem>
                         <SelectItem value="4-10">4-10</SelectItem>
