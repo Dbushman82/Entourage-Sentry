@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,17 +27,8 @@ import {
   CheckCircle2,
   Layers,
   Trash2,
-  Copy,
   Link2,
-  MoreHorizontal,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -305,46 +296,38 @@ const Home = () => {
                       className="border border-slate-700 hover:border-primary-500 rounded-md p-4 transition-colors relative"
                     >
                       <div 
-                        className="absolute right-2 top-2 z-10"
+                        className="absolute right-3 top-3 z-10 flex space-x-2"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-700"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Actions</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700 text-white">
-                            <DropdownMenuItem 
-                              className="hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
-                              onClick={() => {
-                                generateLinkMutation.mutate({ 
-                                  id: assessment.id, 
-                                  renew: assessment.linkToken ? true : false 
-                                });
-                              }}
-                            >
-                              <Link2 className="mr-2 h-4 w-4" />
-                              {assessment.linkToken ? "Renew & Copy Link" : "Generate & Copy Link"}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-slate-700" />
-                            <DropdownMenuItem 
-                              className="text-destructive hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
-                              onClick={() => {
-                                setSelectedAssessment(assessment);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Assessment
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600"
+                          title={assessment.linkToken ? "Renew & Copy Link" : "Generate & Copy Link"}
+                          onClick={() => {
+                            generateLinkMutation.mutate({ 
+                              id: assessment.id, 
+                              renew: assessment.linkToken ? true : false 
+                            });
+                          }}
+                        >
+                          <Link2 className="h-4 w-4" />
+                          <span className="sr-only">Copy Link</span>
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 bg-slate-700 text-destructive hover:text-white hover:bg-destructive"
+                          title="Delete Assessment"
+                          onClick={() => {
+                            setSelectedAssessment(assessment);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
                       </div>
                       
                       <div 
@@ -483,14 +466,7 @@ const Home = () => {
               }}
               disabled={deleteAssessmentMutation.isPending}
             >
-              {deleteAssessmentMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete Assessment"
-              )}
+              {deleteAssessmentMutation.isPending ? "Deleting..." : "Delete Assessment"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
