@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Assessment from "@/pages/assessment";
 import AuthPage from "@/pages/auth-page";
+import AdminPage from "@/pages/admin-page";
 import { AssessmentProvider } from "@/context/AssessmentContext";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -23,10 +24,7 @@ function Router() {
       </ProtectedRoute>
       {/* Admin routes with role requirement */}
       <ProtectedRoute path="/admin" requiredRole="admin">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-          <p>This page is only accessible to administrators.</p>
-        </div>
+        <AdminPage />
       </ProtectedRoute>
       <Route component={NotFound} />
     </Switch>

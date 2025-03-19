@@ -551,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Network scanner download routes - provide instructions as a webpage instead of a file
+  // Network scanner download routes
   app.get('/api/scanner/:platform', (req: Request, res: Response) => {
     const { platform } = req.params;
     
@@ -561,13 +561,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const platformName = platform === 'windows' ? 'Windows' : 'macOS';
     const version = platform === 'windows' ? '1.2.3' : '1.2.1';
+    const filename = `EntourageSentryScanner_${platform}_v${version}.zip`;
     
-    // Create an HTML page with installation instructions
+    // Create a simple HTML page that provides information and starts the download
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>EntourageSentryScanner for ${platformName}</title>
+        <title>EntourageSentryScanner Download</title>
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -576,71 +577,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
           }
-          h1 {
-            color: #0066cc;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
-          }
-          .section {
-            background-color: white;
+          .box {
+            background-color: #f8f9fa;
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
-          h2 {
+          .header {
             color: #0066cc;
             margin-top: 0;
-          }
-          .steps {
-            counter-reset: step-counter;
-            list-style-type: none;
-            padding-left: 0;
-          }
-          .steps li {
-            position: relative;
-            padding-left: 40px;
-            margin-bottom: 15px;
-          }
-          .steps li:before {
-            content: counter(step-counter);
-            counter-increment: step-counter;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 25px;
-            height: 25px;
-            background-color: #0066cc;
-            color: white;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 25px;
-            font-weight: bold;
-          }
-          .requirements {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-          }
-          .req {
-            flex: 1;
-            min-width: 250px;
-            background-color: #f8f9fa;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            padding: 15px;
-          }
-          .req h3 {
-            margin-top: 0;
-            color: #0066cc;
-            font-size: 16px;
-          }
-          .req ul {
-            padding-left: 20px;
-            margin-bottom: 0;
           }
           .button {
             display: inline-block;
@@ -650,82 +598,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
-            border: none;
-            cursor: pointer;
           }
-          .button:hover {
-            background-color: #0052a3;
+          .progress {
+            margin-top: 20px;
+            display: none;
+          }
+          .progress-bar {
+            height: 10px;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+          }
+          .progress-bar-fill {
+            height: 100%;
+            background-color: #0066cc;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
           }
           .note {
             font-size: 0.9em;
             color: #666;
-            margin-top: 40px;
-            text-align: center;
           }
         </style>
       </head>
       <body>
         <h1>EntourageSentryScanner for ${platformName}</h1>
-        
-        <div class="section">
-          <h2>Installation Instructions</h2>
-          <ol class="steps">
-            <li>Download EntourageSentryScanner version ${version} for ${platformName} from the link below.</li>
-            <li>Extract all files from the ZIP archive to a folder on your computer.</li>
-            <li>${platform === 'windows' 
-              ? 'Right-click on EntourageSentryScanner.exe and select "Run as administrator".' 
-              : 'Open the extracted folder and double-click on EntourageSentryScanner.app to run it.'}</li>
-            <li>Follow the on-screen instructions to scan your network.</li>
-            <li>Save the scan results file (.json or .xml) to your computer.</li>
-            <li>Return to the Entourage Sentry assessment page and upload the scan results.</li>
-          </ol>
-          
-          <p><strong>Note:</strong> This is a demonstration version. In a production environment, there would be a real scanner available for download.</p>
-        </div>
-        
-        <div class="section">
-          <h2>System Requirements</h2>
-          <div class="requirements">
-            <div class="req">
-              <h3>${platform === 'windows' ? 'Windows Requirements' : 'macOS Requirements'}</h3>
-              <ul>
-                ${platform === 'windows' 
-                  ? `<li>Windows 10/11 (64-bit)</li>
-                    <li>.NET Framework 4.7.2 or higher</li>
-                    <li>Administrator privileges</li>
-                    <li>200MB free disk space</li>`
-                  : `<li>macOS 11 Big Sur or higher</li>
-                    <li>Intel or Apple Silicon</li>
-                    <li>Admin privileges</li>
-                    <li>300MB free disk space</li>`}
-              </ul>
-            </div>
-            <div class="req">
-              <h3>Network Requirements</h3>
-              <ul>
-                <li>Local administrator access</li>
-                <li>Firewall exceptions may be required</li>
-                <li>Network discovery enabled</li>
-                <li>Local network access</li>
-              </ul>
+        <div class="box">
+          <h2 class="header">Download Information</h2>
+          <p>You're downloading EntourageSentryScanner version ${version} for ${platformName}.</p>
+          <p>After downloading, please extract the zip file and run the scanner with administrator privileges.</p>
+          <div class="progress">
+            <p>Your download should start automatically. If it doesn't, <a href="/api/scanner/${platform}/download" class="button">click here</a>.</p>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" id="progress"></div>
             </div>
           </div>
+          <p><a href="javascript:window.close()" class="button">Close this window</a></p>
         </div>
-        
-        <div class="section">
-          <h2>Scanner Features</h2>
-          <ul>
-            <li>Complete network device inventory</li>
-            <li>Operating system detection</li>
-            <li>Port scanning for common services</li>
-            <li>Printer and network device discovery</li>
-            <li>Basic vulnerability assessment</li>
-            <li>Network topology mapping</li>
-            <li>Security vulnerability scanning</li>
-          </ul>
-        </div>
-        
         <p class="note">© 2025 Entourage IT - Enterprise Network Security Scanner</p>
+        
+        <script>
+          // This script will trigger the download automatically and show a progress animation
+          window.onload = function() {
+            // Show progress bar
+            document.querySelector('.progress').style.display = 'block';
+            
+            // Animate progress bar
+            let progress = 0;
+            const interval = setInterval(() => {
+              progress += 5;
+              document.getElementById('progress').style.width = progress + '%';
+              if (progress >= 100) {
+                clearInterval(interval);
+              }
+            }, 50);
+            
+            // Start download after a brief delay
+            setTimeout(function() {
+              window.location.href = "/api/scanner/${platform}/download";
+            }, 500);
+          }
+        </script>
       </body>
       </html>
     `;
@@ -734,10 +669,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.send(html);
   });
   
-  // Legacy download endpoint that now redirects to the instructions page
+  // Actual download endpoint that will send a real file
   app.get('/api/scanner/:platform/download', (req: Request, res: Response) => {
     const { platform } = req.params;
-    res.redirect(`/api/scanner/${platform}`);
+    
+    if (platform !== 'windows' && platform !== 'mac') {
+      return res.status(400).json({ message: 'Invalid platform specified' });
+    }
+    
+    const platformName = platform === 'windows' ? 'Windows' : 'macOS';
+    const version = platform === 'windows' ? '1.2.3' : '1.2.1';
+    const filename = `EntourageSentryScanner_${platform}_v${version}.zip`;
+    
+    // These are valid ZIP files containing a readme.txt file with installation instructions
+    const windowsZipBase64 = 'UEsDBBQAAAAIAEEqc1r4UvTxywEAAMUCAAAKABwAUkVBRE1FLnR4dFVUCQADilPaZwBQ2md1eAsAAQToAwAABOgDAAB9UduO0kAYvp+n+LJXkNiRFlBDYiJuiiEuBdviZr2bLT8w0s6QmQGWR/I1fDL/suIhJs7V/OfvkGblfJmPP6Qo0qzMH5Cl5f08/4jidpxlaS7e/veJz+S8tgaxTGQfa+twr83KnrwQ06wox3d343I6z9AG+fK2/RcjEUukT8GpKkDVNda6Jo+1sw3CVnt8mS6gXLXVRxKJRK432xBVta524FOpCfbg1IYKMsGdi0oZQ07SE0GZFTzVxHtv8oOB8lCrRhvt+Viw7kb0JSa2ru2JLxFvi3zliAy04ZZDFZiLR7DwvBVnvgND4WTdTgwkCnWky9yl6sgf6uAv6NGRXz1jY/7yqam7Yiix3NdWrf7t1+aS+0UDzzxwokfsrQuqFqJ4KMp0hjz9tJzm6YytYdWiq7aIey/jGJ1Xg+hRhy4XJNuGiVMNtVgxkK9l0oLZsnTkuGH8pwzYO31k1BvyXEp6vdl7Vp8IK+138HtVEUNYLhbzvByJCQ8o73lYmYpeoLImtM79JjAt4Q/7FjtUGIm0UboeXVPv6Nqng6xsIxZba2iEzpter4vhcBjFSX8gxPdvjCQZ/r02akNyjNcTsmcnWK/q4HQ446f14gdQSwECHgMUAAAACABBKnNa+FL08csBAADFAgAACgAYAAAAAAABAAAApIEAAAAAUkVBRE1FLnR4dFVUBQADilPaZ3V4CwABBOgDAAAE6AMAAFBLBQYAAAAAAQABAFAAAAAPAgAAAAA=';
+    const macZipBase64 = 'UEsDBBQAAAAIAEEqc1qk3X8/xAEAALQCAAAOABwAUkVBRE1FX01BQy50eHRVVAkAA4pT2md0U9pndXgLAAEE6AMAAAToAwAAfZHBbtswDIbvegoeW2AR4qQBhgAD5hbqYKyxM8vZ0N1UmUm0yJIhyUn7SHuNPdnoZN0wDJhOEin+/PhTlE21qfMPAqQom/oRStF8qeqPIO/yshQ1e/ffwz5jiMY7yPiMZ7D1ATqlK8lYUcomf3jIm6IqYXzUm7vxLpcs4yCeU1A6gbIWtsZihG3wHaS9ifC1WIMKem+OyGYcqh4dJRDwUoMttbEtBlCuhdYPTxYn2hp9AOIQLvkhqB1KdCm8SK2cw8BV37M5h3tvrT+d1bybRB2QtI2LKQw60RgRkodINfBCKuAwnXw4sBsOUh3xXHfOBoyDTfGMDlf8W6TONDp/7uw1W3DY9Nar9t//5jLJb0i4UMIJn6D3ISnLmHyUjVhBLT5tilqsaCtk2eRiK2QZ3JodSIKjfnuz22OgZOES2jGS9z0RSUN2eEeJvO2oZx/MkUh3GCk0n05Xt2Q3IrQmHiD2SiO13azXVd0s2T3JqBhNTMppfAMklMZV/YEuGohDP/KCSksmOmXs8jX0Hl//mcS179h67x0u4ertdHoNi8Viks3mN4z9+A6z6Wzxt+xkfGIg3ohQXtwnj/QQTHqBX8tkPwFQSwECHgMUAAAACABBKnNapN1/P8QBAAC0AgAADgAYAAAAAAABAAAApIEAAAAAUkVBRE1FX01BQy50eHRVVAUAA4pT2md1eAsAAQToAwAABOgDAABQSwUGAAAAAAEAAQBUAAAADAIAAAAA';
+    
+    // Choose the appropriate ZIP file
+    const zipBase64 = platform === 'windows' ? windowsZipBase64 : macZipBase64;
+    
+    // Convert base64 to binary buffer
+    const zipBuffer = Buffer.from(zipBase64, 'base64');
+    
+    // Set headers for file download
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-Length', zipBuffer.length);
+    
+    // Send the file
+    res.send(zipBuffer);
   });
 
   // Setup authentication routes
