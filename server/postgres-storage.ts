@@ -396,4 +396,83 @@ export class PostgresStorage implements IStorage {
       costs
     };
   }
+
+  // User management methods for admin
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await db.update(schema.users)
+      .set({
+        ...userData,
+        // Ensure default values are maintained
+        active: userData.active !== undefined ? userData.active : true
+      })
+      .where(eq(schema.users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(schema.users).where(eq(schema.users.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(schema.users);
+  }
+
+  // System settings methods for branding
+  async updateSystemSetting(key: string, value: string): Promise<void> {
+    // First check if the setting exists
+    const existingSetting = await db.select().from(schema.systemSettings)
+      .where(eq(schema.systemSettings.key, key));
+    
+    if (existingSetting.length > 0) {
+      // Update existing setting
+      await db.update(schema.systemSettings)
+        .set({ value })
+        .where(eq(schema.systemSettings.key, key));
+    } else {
+      // Create new setting
+      await db.insert(schema.systemSettings).values({
+        key,
+        value,
+        createdAt: new Date()
+      });
+    }
+  }
+
+  async getSystemSetting(key: string): Promise<string | null> {
+    const settings = await db.select().from(schema.systemSettings)
+      .where(eq(schema.systemSettings.key, key));
+    
+    if (settings.length > 0) {
+      return settings[0].value;
+    }
+    return null;
+  }
+
+  // Scanner version methods
+  async createScannerVersion(version: any): Promise<any> {
+    const result = await db.insert(schema.scannerVersions).values({
+      ...version,
+      uploadedAt: new Date()
+    }).returning();
+    return result[0];
+  }
+
+  async getScannerVersion(id: number): Promise<any | undefined> {
+    const versions = await db.select().from(schema.scannerVersions)
+      .where(eq(schema.scannerVersions.id, id));
+    return versions[0];
+  }
+
+  async getAllScannerVersions(): Promise<any[]> {
+    return await db.select().from(schema.scannerVersions);
+  }
+
+  async deleteScannerVersion(id: number): Promise<boolean> {
+    const result = await db.delete(schema.scannerVersions)
+      .where(eq(schema.scannerVersions.id, id))
+      .returning();
+    return result.length > 0;
+  }
 }
