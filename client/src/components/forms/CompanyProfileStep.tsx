@@ -26,11 +26,17 @@ const complianceOptions = [
 ];
 
 const companyProfileSchema = z.object({
-  industry: z.string().optional(),
-  employeeCount: z.string().optional(),
-  locationCount: z.string().optional(),
-  businessHours: z.string().optional(),
-  overview: z.string().optional(),
+  industry: z.string().refine(val => val !== "_none", {
+    message: "Please select an industry",
+  }),
+  employeeCount: z.string().refine(val => val !== "_none", {
+    message: "Please select an employee count",
+  }),
+  locationCount: z.string().refine(val => val !== "_none", {
+    message: "Please select a location count",
+  }),
+  businessHours: z.string().min(3, "Please enter business hours"),
+  overview: z.string().min(10, "Please provide a brief company overview"),
   compliance: z.record(z.boolean()).default({}),
   growthPlans: z.string().optional(),
 });
@@ -56,9 +62,9 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
   const form = useForm<CompanyProfileFormValues>({
     resolver: zodResolver(companyProfileSchema),
     defaultValues: {
-      industry: "",
-      employeeCount: "",
-      locationCount: "",
+      industry: "_none",
+      employeeCount: "_none",
+      locationCount: "_none",
       businessHours: "",
       overview: "",
       compliance: defaultCompliance,
@@ -68,8 +74,21 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
   });
   
   const handleSubmit = (values: CompanyProfileFormValues) => {
+    // Ensure compliance is included even if empty
+    if (!values.compliance) {
+      values.compliance = {};
+    }
+    
+    // Log the form values for debugging
+    console.log("Submitting company profile values:", values);
+    
+    // Call the onNext function with the values
     onNext(values);
   };
+  
+  // Add form error debugging logs
+  console.log("Form errors:", form.formState.errors);
+  
 
   return (
     <div>
@@ -92,7 +111,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                   <FormLabel>Industry</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
+                    value={field.value || ""}
                   >
                     <FormControl>
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -127,7 +146,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                     <FormLabel>Number of Employees</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -157,7 +176,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                     <FormLabel>Number of Locations</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
