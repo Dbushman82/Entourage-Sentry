@@ -1,7 +1,8 @@
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
+// Secret key for JWT signing (in a real app, this would be in an environment variable)
 const JWT_SECRET = process.env.JWT_SECRET || 'entourage-sentry-secret-key';
-const DEFAULT_EXPIRATION = '7d'; // Default expiration is 7 days
+const DEFAULT_EXPIRATION = '7d'; // Default token expiration time
 
 export interface AssessmentTokenPayload {
   assessmentId: number;
@@ -48,19 +49,21 @@ export function verifyAssessmentToken(token: string): AssessmentTokenPayload | n
  * @returns Signed URL for accessing the assessment
  */
 export function generateAssessmentUrl(
-  assessmentId: number,
-  referenceCode: string,
+  assessmentId: number, 
+  referenceCode: string, 
   expiresIn: string = DEFAULT_EXPIRATION
 ): string {
-  const token = generateAssessmentToken(
-    { assessmentId, referenceCode, isPublicAccess: true },
-    expiresIn
-  );
+  const payload: AssessmentTokenPayload = {
+    assessmentId,
+    referenceCode,
+    isPublicAccess: true
+  };
   
-  // Get base URL from environment or use localhost for development
-  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const token = generateAssessmentToken(payload, expiresIn);
+  // In production, this would be the actual domain of the application
+  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:5000';
   
-  return `${baseUrl}/assessment/${referenceCode}?token=${token}`;
+  return `${baseUrl}/assessment?token=${token}`;
 }
 
 /**
@@ -71,18 +74,29 @@ export function generateAssessmentUrl(
  */
 export function calculateExpirationDate(duration: string = DEFAULT_EXPIRATION): Date {
   const now = new Date();
-  const unit = duration.slice(-1);
-  const value = parseInt(duration.slice(0, -1));
+  
+  // Parse the duration string
+  const match = duration.match(/^(\d+)([dhm])$/);
+  if (!match) {
+    throw new Error(`Invalid duration format: ${duration}. Expected format like "7d", "24h", "60m"`);
+  }
+  
+  const [, value, unit] = match;
+  const numValue = parseInt(value, 10);
   
   switch (unit) {
-    case 'd':
-      return new Date(now.setDate(now.getDate() + value));
-    case 'h':
-      return new Date(now.setHours(now.getHours() + value));
-    case 'm':
-      return new Date(now.setMinutes(now.getMinutes() + value));
+    case 'd': // Days
+      now.setDate(now.getDate() + numValue);
+      break;
+    case 'h': // Hours
+      now.setHours(now.getHours() + numValue);
+      break;
+    case 'm': // Minutes
+      now.setMinutes(now.getMinutes() + numValue);
+      break;
     default:
-      // Default to 7 days if format is invalid
-      return new Date(now.setDate(now.getDate() + 7));
+      throw new Error(`Unsupported duration unit: ${unit}`);
   }
+  
+  return now;
 }

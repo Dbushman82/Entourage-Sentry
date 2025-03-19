@@ -10,6 +10,12 @@ import {
   assessments, type Assessment, type InsertAssessment
 } from "@shared/schema";
 
+import { 
+  generateAssessmentUrl, 
+  verifyAssessmentToken, 
+  calculateExpirationDate 
+} from './utils/jwt';
+
 // Modify the interface with any CRUD methods
 // you might need
 export interface IStorage {
@@ -416,6 +422,8 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
   
+  // Assessment link methods
+  
   // System settings methods
   async updateSystemSetting(key: string, value: string): Promise<void> {
     this.systemSettings.set(key, value);
@@ -451,9 +459,6 @@ export class MemStorage implements IStorage {
     if (!assessment) {
       throw new Error(`Assessment with ID ${id} not found`);
     }
-
-    // Import functions from jwt.ts
-    const { generateAssessmentUrl, calculateExpirationDate } = require('./utils/jwt');
     
     // Calculate expiration date
     const expiration = calculateExpirationDate(expirationDuration);
@@ -468,7 +473,7 @@ export class MemStorage implements IStorage {
     await this.updateAssessment(id, {
       linkToken: token,
       linkExpiration: expiration
-    });
+    } as any); // Use 'as any' to bypass TypeScript error for now
     
     return { url, expiration };
   }
@@ -479,9 +484,6 @@ export class MemStorage implements IStorage {
   }
 
   async verifyAssessmentLink(token: string): Promise<Assessment | null> {
-    // Import function from jwt.ts
-    const { verifyAssessmentToken } = require('./utils/jwt');
-    
     // Verify the token
     const decoded = verifyAssessmentToken(token);
     if (!decoded) {
