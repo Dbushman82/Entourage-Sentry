@@ -22,15 +22,7 @@ export function setupAuthRoutes(app: Express) {
       // Validate the request body
       const userData = insertUserSchema.parse(req.body);
 
-      // Check if username already exists
-      const existingUsername = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, userData.username));
-
-      if (existingUsername.length > 0) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
+      // We no longer need to check for existing username, since username is now optional
 
       // Check if email already exists
       const existingEmail = await db
@@ -45,11 +37,13 @@ export function setupAuthRoutes(app: Express) {
       // Hash the password
       const hashedPassword = await hash(userData.password, 10);
 
-      // Create the user
+      // Create the user - derive username from email if not provided
+      const usernameFromEmail = userData.email.split('@')[0];
       const [newUser] = await db
         .insert(users)
         .values({
           ...userData,
+          username: usernameFromEmail, // Set username from email
           password: hashedPassword,
           createdAt: new Date()
         })

@@ -5,7 +5,7 @@ import { z } from "zod";
 // Enhanced user schema with role-based access control
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
+  username: text("username"), // Optional - we'll derive it from email
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name"),
@@ -17,7 +17,6 @@ export const users = pgTable("users", {
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
   email: true,
   password: true,
   firstName: true,
@@ -26,7 +25,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const loginUserSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 

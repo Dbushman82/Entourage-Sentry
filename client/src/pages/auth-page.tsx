@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -9,17 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Lock, Mail, User, UserPlus, UserCircle } from "lucide-react";
+import { Shield, Lock, Mail, UserPlus } from "lucide-react";
 
 // Login form schema
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 // Registration form schema
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
@@ -38,17 +37,18 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
   
-  // Redirect if already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
+  // Use useEffect for navigation instead of early return
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -57,7 +57,6 @@ export default function AuthPage() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -105,15 +104,16 @@ export default function AuthPage() {
                     <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                       <FormField
                         control={loginForm.control}
-                        name="username"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>Email</FormLabel>
                             <FormControl>
                               <div className="relative">
-                                <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                                 <Input
-                                  placeholder="Enter your username"
+                                  type="email"
+                                  placeholder="Enter your email"
                                   className="pl-10"
                                   {...field}
                                 />
@@ -209,26 +209,7 @@ export default function AuthPage() {
                         />
                       </div>
                       
-                      <FormField
-                        control={registerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <UserCircle className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                  placeholder="Choose a username"
-                                  className="pl-10"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+
                       
                       <FormField
                         control={registerForm.control}
