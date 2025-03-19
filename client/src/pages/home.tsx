@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -33,6 +33,7 @@ import { formatDistanceToNow } from "date-fns";
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [, setLocation] = useLocation();
   
   // Query to get assessments
   const { data: assessments, isLoading } = useQuery({
@@ -186,7 +187,7 @@ const Home = () => {
                 </p>
                 {!searchQuery && (
                   <Button className="bg-primary-600 hover:bg-primary-700" asChild>
-                    <Link href="/assessment">
+                    <Link href="/dashboard">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       New Assessment
                     </Link>
@@ -200,31 +201,34 @@ const Home = () => {
                   const isCompleted = assessment.status === 'completed';
                   
                   return (
-                    <Link key={assessment.id} href={`/assessment/${assessment.id}`}>
-                      <a className="block border border-slate-700 hover:border-primary-500 rounded-md p-4 transition-colors">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="font-medium text-white flex items-center">
-                            <span className="font-mono">{assessment.referenceCode}</span>
-                            <Badge 
-                              className={`ml-3 ${isCompleted ? 'bg-emerald-600' : 'bg-amber-600'}`}
-                            >
-                              {isCompleted ? 'Completed' : `Step ${assessment.currentStep} of 7`}
-                            </Badge>
-                          </div>
-                          <span className="text-sm text-slate-400">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
+                    <div 
+                      key={assessment.id} 
+                      className="border border-slate-700 hover:border-primary-500 rounded-md p-4 transition-colors"
+                      onClick={() => setLocation(`/assessment/${assessment.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="font-medium text-white flex items-center">
+                          <span className="font-mono">{assessment.referenceCode}</span>
+                          <Badge 
+                            className={`ml-3 ${isCompleted ? 'bg-emerald-600' : 'bg-amber-600'}`}
+                          >
+                            {isCompleted ? 'Completed' : `Step ${assessment.currentStep} of 7`}
+                          </Badge>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div className="text-slate-400 text-sm flex items-center">
-                            <Building className="h-4 w-4 mr-1" />
-                            <span>Company ID: {assessment.companyId}</span>
-                            <span className="mx-2">•</span>
-                            <Users className="h-4 w-4 mr-1" />
-                            <span>Contact ID: {assessment.contactId}</span>
-                          </div>
-                          <span className="text-primary-500 text-sm">View details →</span>
+                        <span className="text-sm text-slate-400">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="text-slate-400 text-sm flex items-center">
+                          <Building className="h-4 w-4 mr-1" />
+                          <span>Company ID: {assessment.companyId}</span>
+                          <span className="mx-2">•</span>
+                          <Users className="h-4 w-4 mr-1" />
+                          <span>Contact ID: {assessment.contactId}</span>
                         </div>
-                      </a>
-                    </Link>
+                        <span className="text-primary-500 text-sm">View details →</span>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
