@@ -729,7 +729,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                            <SelectItem value="">Select connection type</SelectItem>
+                            <SelectItem value="unknown">Select connection type</SelectItem>
                             <SelectItem value="fiber">Fiber</SelectItem>
                             <SelectItem value="cable">Cable</SelectItem>
                             <SelectItem value="dsl">DSL</SelectItem>
@@ -820,7 +820,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                         <FormLabel>Network Topology</FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
-                          value={field.value || ""}
+                          value={field.value || "unknown"}
                         >
                           <FormControl>
                             <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -828,13 +828,12 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                            <SelectItem value="_none">Select network topology</SelectItem>
+                            <SelectItem value="unknown">Select network topology</SelectItem>
                             <SelectItem value="star">Star</SelectItem>
                             <SelectItem value="mesh">Mesh</SelectItem>
                             <SelectItem value="bus">Bus</SelectItem>
                             <SelectItem value="ring">Ring</SelectItem>
                             <SelectItem value="hybrid">Hybrid</SelectItem>
-                            <SelectItem value="unknown">Unknown</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
