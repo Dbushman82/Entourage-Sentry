@@ -58,9 +58,7 @@ const Home = () => {
         const queryLower = searchQuery.toLowerCase();
         return (
           assessment.referenceCode?.toLowerCase().includes(queryLower) ||
-          // We would normally include company name, contact name, etc. in the search
-          // But our backend doesn't return related data in the assessments list endpoint
-          false
+          (assessment.companyName && assessment.companyName.toLowerCase().includes(queryLower))
         );
       }) : [] : [];
 
@@ -221,7 +219,8 @@ const Home = () => {
                     >
                       <div className="flex justify-between items-center mb-2">
                         <div className="font-medium text-white flex items-center">
-                          <span className="font-mono">{assessment.referenceCode}</span>
+                          <Building className="h-4 w-4 mr-2" />
+                          <span>{assessment.companyName || 'Unnamed Company'}</span>
                           <Badge 
                             className={`ml-3 ${isCompleted ? 'bg-emerald-600' : 'bg-amber-600'}`}
                           >
@@ -232,8 +231,7 @@ const Home = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="text-slate-400 text-sm flex items-center">
-                          <Building className="h-4 w-4 mr-1" />
-                          <span>Company ID: {assessment.companyId}</span>
+                          <span className="font-mono text-xs">{assessment.referenceCode}</span>
                           <span className="mx-2">•</span>
                           <Users className="h-4 w-4 mr-1" />
                           <span>Contact ID: {assessment.contactId}</span>
