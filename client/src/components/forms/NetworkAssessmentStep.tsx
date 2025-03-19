@@ -66,11 +66,28 @@ interface NetworkAssessmentStepProps {
 const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }: NetworkAssessmentStepProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [assessmentMethod, setAssessmentMethod] = useState<'browser' | 'downloadable' | 'manual'>(
-    defaultValues.method || 'browser'
+  
+  // Define the steps for the network assessment workflow
+  const STEPS = {
+    BROWSER_SCAN: 'browser_scan',
+    CHOOSE_METHOD: 'choose_method',
+    NETWORK_SCANNER: 'network_scanner',
+    MANUAL_ENTRY: 'manual_entry'
+  };
+  
+  // Track the current step
+  const [currentStep, setCurrentStep] = useState(STEPS.BROWSER_SCAN);
+  
+  // Selected assessment method after browser scan
+  const [assessmentMethod, setAssessmentMethod] = useState<'downloadable' | 'manual'>(
+    defaultValues.method === 'downloadable' || defaultValues.method === 'manual' 
+      ? defaultValues.method 
+      : 'downloadable'
   );
+  
   const [scanInProgress, setScanInProgress] = useState(false);
   const [scanResults, setScanResults] = useState<any>(null);
+  const [browserScanComplete, setBrowserScanComplete] = useState(false);
   
   const form = useForm<NetworkFormValues>({
     resolver: zodResolver(manualNetworkSchema),
@@ -93,6 +110,13 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
       ...defaultValues
     },
   });
+  
+  // Run browser scan automatically when the component mounts
+  useEffect(() => {
+    if (!browserScanComplete && !scanResults && !scanInProgress) {
+      startBrowserScan();
+    }
+  }, []);
   
   // Submit network assessment data mutation
   const networkAssessmentMutation = useMutation({
@@ -120,9 +144,16 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     },
   });
   
-  const handleMethodChange = (value: 'browser' | 'downloadable' | 'manual') => {
+  const handleMethodChange = (value: 'downloadable' | 'manual') => {
     setAssessmentMethod(value);
     form.setValue('method', value);
+    
+    // Navigate to the appropriate step
+    if (value === 'downloadable') {
+      setCurrentStep(STEPS.NETWORK_SCANNER);
+    } else if (value === 'manual') {
+      setCurrentStep(STEPS.MANUAL_ENTRY);
+    }
   };
   
   const startBrowserScan = async () => {
@@ -145,6 +176,8 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         userAgent: deviceInfo.userAgent,
         operatingSystem: deviceInfo.operatingSystem,
       });
+      
+      setBrowserScanComplete(true);
     } catch (error) {
       toast({
         title: "Scan failed",
