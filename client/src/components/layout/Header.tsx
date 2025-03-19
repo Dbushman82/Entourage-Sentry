@@ -66,28 +66,40 @@ const Header = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                  <DropdownMenuItem asChild>
+                    <div className="flex cursor-pointer items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </div>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
+                  <DropdownMenuItem asChild>
+                    <div className="flex cursor-pointer items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </div>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>{logoutMutation.isPending ? "Logging out..." : "Log out"}</span>
+                <DropdownMenuItem 
+                  asChild
+                  disabled={logoutMutation.isPending}
+                >
+                  <div 
+                    className="flex cursor-pointer items-center" 
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{logoutMutation.isPending ? "Logging out..." : "Log out"}</span>
+                  </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link href="/auth">
-              <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/auth">
                 Login
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
         </div>
       </div>
