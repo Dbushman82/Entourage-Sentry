@@ -4,6 +4,43 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAssessment } from "@/context/AssessmentContext";
+
+// Define assessment data interface
+interface AssessmentData {
+  id: number;
+  referenceCode: string;
+  companyId: number;
+  currentStep: number;
+  status: string;
+}
+
+// Define details data interface
+interface AssessmentDetails {
+  contact?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  company?: {
+    name: string;
+    website: string;
+    address: string;
+    phone: string;
+    primaryContact: string;
+    industry: string;
+    employeeCount: string;
+    locationCount: string;
+    businessHours: string;
+    overview: string;
+    compliance: Record<string, boolean>;
+    growthPlans: string;
+  };
+  domainData?: {
+    techStack?: string[];
+    [key: string]: any;
+  };
+}
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProgressTracker from "@/components/progress/ProgressTracker";
@@ -50,46 +87,49 @@ const Assessment = () => {
   // Initialize assessment state from loaded data
   useEffect(() => {
     if (assessmentData && assessmentDetails) {
-      setAssessment(assessmentData);
-      setReferenceCode(assessmentData.referenceCode);
-      setCurrentStep(assessmentData.currentStep);
+      const typedAssessmentData = assessmentData as AssessmentData;
+      const typedAssessmentDetails = assessmentDetails as AssessmentDetails;
       
-      if (assessmentData.status === 'completed') {
+      setAssessment(typedAssessmentData);
+      setReferenceCode(typedAssessmentData.referenceCode);
+      setCurrentStep(typedAssessmentData.currentStep);
+      
+      if (typedAssessmentData.status === 'completed') {
         setIsCompleted(true);
       }
       
-      if (assessmentDetails.contact) {
+      if (typedAssessmentDetails.contact) {
         setContactData({
-          firstName: assessmentDetails.contact.firstName,
-          lastName: assessmentDetails.contact.lastName,
-          email: assessmentDetails.contact.email,
-          phone: assessmentDetails.contact.phone,
-          companyWebsite: assessmentDetails.company?.website,
+          firstName: typedAssessmentDetails.contact.firstName,
+          lastName: typedAssessmentDetails.contact.lastName,
+          email: typedAssessmentDetails.contact.email,
+          phone: typedAssessmentDetails.contact.phone,
+          companyWebsite: typedAssessmentDetails.company?.website,
         });
       }
       
-      if (assessmentDetails.company) {
+      if (typedAssessmentDetails.company) {
         setCompanyData({
-          name: assessmentDetails.company.name,
-          website: assessmentDetails.company.website,
-          address: assessmentDetails.company.address,
-          phone: assessmentDetails.company.phone,
-          primaryContact: assessmentDetails.company.primaryContact,
+          name: typedAssessmentDetails.company.name,
+          website: typedAssessmentDetails.company.website,
+          address: typedAssessmentDetails.company.address,
+          phone: typedAssessmentDetails.company.phone,
+          primaryContact: typedAssessmentDetails.company.primaryContact,
         });
         
         setCompanyProfileData({
-          industry: assessmentDetails.company.industry,
-          employeeCount: assessmentDetails.company.employeeCount,
-          locationCount: assessmentDetails.company.locationCount,
-          businessHours: assessmentDetails.company.businessHours,
-          overview: assessmentDetails.company.overview,
-          compliance: assessmentDetails.company.compliance,
-          growthPlans: assessmentDetails.company.growthPlans,
+          industry: typedAssessmentDetails.company.industry,
+          employeeCount: typedAssessmentDetails.company.employeeCount,
+          locationCount: typedAssessmentDetails.company.locationCount,
+          businessHours: typedAssessmentDetails.company.businessHours,
+          overview: typedAssessmentDetails.company.overview,
+          compliance: typedAssessmentDetails.company.compliance,
+          growthPlans: typedAssessmentDetails.company.growthPlans,
         });
       }
       
-      if (assessmentDetails.domainData) {
-        setDomainData(assessmentDetails.domainData);
+      if (typedAssessmentDetails.domainData) {
+        setDomainData(typedAssessmentDetails.domainData);
       }
     }
   }, [assessmentData, assessmentDetails, setAssessment, setCurrentStep, setContactData, setCompanyData, setCompanyProfileData, setDomainData, setReferenceCode]);
@@ -187,23 +227,38 @@ const Assessment = () => {
   };
   
   // Handle company profile submission (Step 3)
-  const handleCompanyProfileSubmit = (data: any) => {
+  const handleCompanyProfileSubmit = async (data: any) => {
     setCompanyProfileData(data);
     
-    if (assessment && assessment.id && companyData) {
-      // Update company data with profile information
-      apiRequest('PUT', `/api/companies/${assessment.companyId}`, {
-        ...companyData,
-        ...data
+    try {
+      if (assessment && assessment.id && companyData) {
+        // Update company data with profile information
+        await apiRequest('PUT', `/api/companies/${assessment.companyId}`, {
+          ...companyData,
+          ...data
+        });
+      }
+      
+      setCurrentStep(4);
+      
+      if (assessment) {
+        updateAssessmentMutation.mutate({
+          currentStep: 4
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error updating company profile",
+        description: (error as Error).message || "An error occurred while updating the company profile.",
+        variant: "destructive",
       });
-    }
-    
-    setCurrentStep(4);
-    
-    if (assessment) {
-      updateAssessmentMutation.mutate({
-        currentStep: 4
-      });
+      // Continue anyway despite error
+      setCurrentStep(4);
+      if (assessment) {
+        updateAssessmentMutation.mutate({
+          currentStep: 4
+        });
+      }
     }
   };
   
@@ -256,7 +311,7 @@ const Assessment = () => {
     );
   }
   
-  if (assessmentId && assessmentData && assessmentData.status === 'completed' && !isCompleted) {
+  if (assessmentId && assessmentData && (assessmentData as AssessmentData).status === 'completed' && !isCompleted) {
     setIsCompleted(true);
   }
 

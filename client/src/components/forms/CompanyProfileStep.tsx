@@ -26,9 +26,9 @@ const complianceOptions = [
 ];
 
 const companyProfileSchema = z.object({
-  industry: z.string().min(1, { message: "Please select an industry" }),
-  employeeCount: z.string().min(1, { message: "Please select employee count" }),
-  locationCount: z.string().min(1, { message: "Please select location count" }),
+  industry: z.string().optional(),
+  employeeCount: z.string().optional(),
+  locationCount: z.string().optional(),
   businessHours: z.string().optional(),
   overview: z.string().optional(),
   compliance: z.record(z.boolean()).default({}),
