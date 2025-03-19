@@ -2,6 +2,9 @@ import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Type for any JSON data
+export type Json = Record<string, any> | Array<any>;
+
 // Enhanced user schema with role-based access control
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -267,3 +270,39 @@ export const insertAssessmentSchema = createInsertSchema(assessments).pick({
 
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessments.$inferSelect;
+
+// System settings schema for storing application configuration
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).pick({
+  key: true,
+  value: true,
+});
+
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+export type SystemSetting = typeof systemSettings.$inferSelect;
+
+// Scanner version schema for storing uploaded scanner tools
+export const scannerVersions = pgTable("scanner_versions", {
+  id: serial("id").primaryKey(),
+  platform: text("platform").notNull(), // 'windows' or 'mac'
+  version: text("version").notNull(),
+  filePath: text("file_path").notNull(),
+  uploadedBy: integer("uploaded_by").notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+export const insertScannerVersionSchema = createInsertSchema(scannerVersions).pick({
+  platform: true,
+  version: true,
+  filePath: true,
+  uploadedBy: true,
+});
+
+export type InsertScannerVersion = z.infer<typeof insertScannerVersionSchema>;
+export type ScannerVersion = typeof scannerVersions.$inferSelect;

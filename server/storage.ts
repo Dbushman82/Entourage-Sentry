@@ -17,6 +17,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
+  getAllUsers(): Promise<User[]>;
 
   // Contact methods
   createContact(contact: InsertContact): Promise<Contact>;
@@ -67,6 +70,16 @@ export interface IStorage {
   updateAssessment(id: number, assessment: Partial<InsertAssessment>): Promise<Assessment | undefined>;
   deleteAssessment(id: number): Promise<boolean>;
   getAssessmentDetails(id: number): Promise<any>; // Returns all related data in a combined object
+  
+  // System settings methods (for branding, etc.)
+  updateSystemSetting(key: string, value: string): Promise<void>;
+  getSystemSetting(key: string): Promise<string | null>;
+  
+  // Scanner version methods
+  createScannerVersion(version: any): Promise<any>;
+  getScannerVersion(id: number): Promise<any | undefined>;
+  getAllScannerVersions(): Promise<any[]>;
+  deleteScannerVersion(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -96,9 +109,21 @@ export class MemStorage implements IStorage {
   
   private assessmentIdCounter: number = 1;
   private assessments: Map<number, Assessment> = new Map();
+  
+  private systemSettings: Map<string, string> = new Map();
+  
+  private scannerVersionIdCounter: number = 1;
+  private scannerVersions: Map<number, any> = new Map();
 
   constructor() {
     // Initialize with some data if needed
+    // Add an admin user by default
+    this.createUser({
+      username: 'Dbushman',
+      email: 'dave@entourageit.com',
+      password: 'e2fc714c4727ee9395f324cd2e7f331f.ab23da5e23ca48eee3c4ba64b3308688', // 'mypassword' hashed
+      role: 'admin'
+    });
   }
 
   // User methods (from template)
@@ -366,6 +391,53 @@ export class MemStorage implements IStorage {
       services,
       costs
     };
+  }
+  
+  // Admin methods
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) return undefined;
+    
+    const updatedUser = { ...existingUser, ...userData };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    return this.users.delete(id);
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
+  // System settings methods
+  async updateSystemSetting(key: string, value: string): Promise<void> {
+    this.systemSettings.set(key, value);
+  }
+  
+  async getSystemSetting(key: string): Promise<string | null> {
+    return this.systemSettings.get(key) || null;
+  }
+  
+  // Scanner version methods
+  async createScannerVersion(version: any): Promise<any> {
+    const id = this.scannerVersionIdCounter++;
+    const newVersion = { ...version, id };
+    this.scannerVersions.set(id, newVersion);
+    return newVersion;
+  }
+  
+  async getScannerVersion(id: number): Promise<any | undefined> {
+    return this.scannerVersions.get(id);
+  }
+  
+  async getAllScannerVersions(): Promise<any[]> {
+    return Array.from(this.scannerVersions.values());
+  }
+  
+  async deleteScannerVersion(id: number): Promise<boolean> {
+    return this.scannerVersions.delete(id);
   }
 }
 
