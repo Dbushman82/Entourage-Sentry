@@ -7,9 +7,14 @@ import { promisify } from 'util';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { User, insertUserSchema } from '@shared/schema';
 
 const scryptAsync = promisify(scrypt);
+
+// Set up paths for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Set up multer for file uploads
 const uploadsDir = path.join(__dirname, '../uploads');

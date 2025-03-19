@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Binoculars, HelpCircle, User, LogOut, Settings } from "lucide-react";
+import { Binoculars, HelpCircle, User, LogOut, Settings, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
@@ -84,6 +84,14 @@ const Header = () => {
                       <span>Settings</span>
                     </div>
                   </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="flex cursor-pointer items-center">
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 

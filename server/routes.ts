@@ -19,6 +19,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import crypto from 'crypto';
 import { setupAuthRoutes } from "./auth";
+import { setupAdminRoutes } from "./admin";
 import { isAuthenticated, isManager, isAdmin } from "./middlewares/auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -702,6 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup authentication routes
   setupAuthRoutes(app);
+  setupAdminRoutes(app);
   
   // Apply authentication middleware to protected routes
   // You can uncomment these lines to secure specific routes
