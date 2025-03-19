@@ -47,7 +47,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import AssessmentLinkGenerator from "@/components/admin/AssessmentLinkGenerator";
-import NewAssessmentDialog from "@/components/NewAssessmentDialog";
+import NewAssessmentDialog from "../components/NewAssessmentDialog";
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");

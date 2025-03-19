@@ -24,6 +24,7 @@ import {
   Clock,
   CheckCircle2,
   Layers,
+  LayoutDashboard,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,9 +63,9 @@ const Home = () => {
             <p className="text-slate-400">Powered by Entourage IT</p>
           </div>
           <Button className="bg-primary-600 hover:bg-primary-700" asChild>
-            <Link href="/assessment">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Assessment
+            <Link href="/dashboard">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Go to Dashboard
             </Link>
           </Button>
         </div>
@@ -234,8 +235,12 @@ const Home = () => {
               <div className="text-sm text-slate-400">
                 Showing {filteredAssessments.length} of {filteredAssessments.length} assessments
               </div>
-              <Button variant="outline" className="border-slate-600 hover:border-slate-500" disabled>
-                View All
+              <Button 
+                variant="outline" 
+                className="border-slate-600 hover:border-slate-500" 
+                asChild
+              >
+                <Link href="/dashboard">View All</Link>
               </Button>
             </CardFooter>
           )}
