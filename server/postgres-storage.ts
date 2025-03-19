@@ -200,22 +200,28 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateNetworkAssessment(id: number, assessment: Partial<InsertNetworkAssessment>): Promise<NetworkAssessment | undefined> {
+    // Create a clean update object without undefined values
+    const updateData: Record<string, any> = {};
+    
+    // Only add defined properties to the update object
+    if (assessment.companyId !== undefined) updateData.companyId = assessment.companyId;
+    if (assessment.method !== undefined) updateData.method = assessment.method;
+    if (assessment.ipAddress !== undefined) updateData.ipAddress = assessment.ipAddress || null;
+    if (assessment.isp !== undefined) updateData.isp = assessment.isp || null;
+    if (assessment.connectionType !== undefined) updateData.connectionType = assessment.connectionType || null;
+    if (assessment.hostname !== undefined) updateData.hostname = assessment.hostname || null;
+    if (assessment.userAgent !== undefined) updateData.userAgent = assessment.userAgent || null;
+    if (assessment.operatingSystem !== undefined) updateData.operatingSystem = assessment.operatingSystem || null;
+    if (assessment.bandwidth !== undefined) updateData.bandwidth = assessment.bandwidth || null;
+    if (assessment.bandwidthUnit !== undefined) updateData.bandwidthUnit = assessment.bandwidthUnit || null;
+    if (assessment.routerModel !== undefined) updateData.routerModel = assessment.routerModel || null;
+    if (assessment.topology !== undefined) updateData.topology = assessment.topology || null;
+    if (assessment.deviceCounts !== undefined) updateData.deviceCounts = assessment.deviceCounts || null;
+    if (assessment.notes !== undefined) updateData.notes = assessment.notes || null;
+    if (assessment.scanData !== undefined) updateData.scanData = assessment.scanData || null;
+    
     const result = await db.update(schema.networkAssessments)
-      .set({
-        ...assessment,
-        ipAddress: assessment.ipAddress !== undefined ? assessment.ipAddress : null,
-        isp: assessment.isp !== undefined ? assessment.isp : null,
-        connectionType: assessment.connectionType !== undefined ? assessment.connectionType : null,
-        hostname: assessment.hostname !== undefined ? assessment.hostname : null,
-        userAgent: assessment.userAgent !== undefined ? assessment.userAgent : null,
-        bandwidthUp: assessment.bandwidthUp !== undefined ? assessment.bandwidthUp : null,
-        bandwidthDown: assessment.bandwidthDown !== undefined ? assessment.bandwidthDown : null,
-        latency: assessment.latency !== undefined ? assessment.latency : null,
-        routerModel: assessment.routerModel !== undefined ? assessment.routerModel : null,
-        topology: assessment.topology !== undefined ? assessment.topology : null,
-        deviceCounts: assessment.deviceCounts !== undefined ? assessment.deviceCounts : null,
-        scanData: assessment.scanData !== undefined ? assessment.scanData : null
-      })
+      .set(updateData)
       .where(eq(schema.networkAssessments.id, id))
       .returning();
     return result[0];
