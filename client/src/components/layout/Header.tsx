@@ -23,6 +23,8 @@ const Header = () => {
       return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`;
     } else if (user.username) {
       return user.username.substring(0, 2).toUpperCase();
+    } else if (user.email) {
+      return user.email.substring(0, 2).toUpperCase();
     }
     
     return "?";
@@ -58,7 +60,11 @@ const Header = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.username}</p>
+                    <p className="text-sm font-medium leading-none">
+                      {user.firstName && user.lastName 
+                        ? `${user.firstName} ${user.lastName}`
+                        : user.username || user.email.split('@')[0]}
+                    </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email || "No email provided"}
                     </p>
