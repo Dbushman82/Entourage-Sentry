@@ -37,9 +37,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Upload, Trash2, UserPlus, Edit, Save, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Upload, Trash2, UserPlus, Edit, Save, X, Link2 } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
+import AssessmentLinkGenerator from '@/components/admin/AssessmentLinkGenerator';
 
 interface User {
   id: number;
@@ -71,6 +73,8 @@ const AdminPage = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [windowsScanner, setWindowsScanner] = useState<File | null>(null);
   const [macScanner, setMacScanner] = useState<File | null>(null);
+  const [selectedAssessment, setSelectedAssessment] = useState<any | null>(null);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
 
   // Check if the current user has admin privileges
   if (!user || user.role !== 'admin') {
@@ -329,6 +333,24 @@ const AdminPage = () => {
     }
   };
 
+  // Assessment Management Tab
+  const { data: assessments, isLoading: isLoadingAssessments } = useQuery({
+    queryKey: ['/api/assessments'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/assessments');
+        return response.json();
+      } catch (error) {
+        toast({
+          title: "Failed to load assessments",
+          description: "There was an error loading the assessment list.",
+          variant: "destructive"
+        });
+        return [];
+      }
+    }
+  });
+
   return (
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
@@ -343,6 +365,7 @@ const AdminPage = () => {
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="assessments">Assessment Links</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="scanners">Scanner Tools</TabsTrigger>
         </TabsList>
@@ -578,6 +601,79 @@ const AdminPage = () => {
               </Card>
             )}
           </div>
+        </TabsContent>
+        
+        {/* Assessment Links Tab */}
+        <TabsContent value="assessments">
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>Assessment Link Management</CardTitle>
+              <CardDescription>Generate and manage secure links for client assessments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAssessments ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <Table>
+                  <TableCaption>List of available assessments</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Reference Code</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Link Expiration</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assessments && assessments.length > 0 ? (
+                      assessments.map((assessment: any) => (
+                        <TableRow key={assessment.id}>
+                          <TableCell className="font-medium">{assessment.referenceCode}</TableCell>
+                          <TableCell>{assessment.companyId || 'Not assigned'}</TableCell>
+                          <TableCell>{new Date(assessment.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              assessment.status === 'completed' ? 'default' : 
+                              assessment.status === 'in_progress' ? 'secondary' : 'outline'
+                            }>
+                              {assessment.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {assessment.linkExpiration ? 
+                              new Date(assessment.linkExpiration).toLocaleString() : 
+                              'No link generated'
+                            }
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                // Show link generator for this assessment
+                              }}
+                            >
+                              Manage Link
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-6">
+                          No assessments found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         {/* Branding Tab */}
