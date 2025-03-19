@@ -9,7 +9,6 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +24,7 @@ const complianceOptions = [
   { id: "other", label: "Other" },
 ];
 
+// Define the schema with no required fields except dropdown selects
 const companyProfileSchema = z.object({
   industry: z.string().refine(val => val !== "_none", {
     message: "Please select an industry",
@@ -35,8 +35,7 @@ const companyProfileSchema = z.object({
   locationCount: z.string().refine(val => val !== "_none", {
     message: "Please select a location count",
   }),
-  businessHours: z.string().min(3, "Please enter business hours"),
-  overview: z.string().min(10, "Please provide a brief company overview"),
+  overview: z.string().optional().default(""),
   compliance: z.record(z.boolean()).default({}),
   growthPlans: z.string().optional().default(""),
 });
@@ -50,7 +49,7 @@ interface CompanyProfileStepProps {
 }
 
 const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfileStepProps) => {
-  // Set up default compliance values - make sure it's initialized with a default empty object
+  // Set up default compliance values
   const defaultValues_safe = defaultValues || {};
   const defaultCompliance_obj = defaultValues_safe.compliance || {};
   
@@ -65,7 +64,6 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
       industry: "_none",
       employeeCount: "_none",
       locationCount: "_none",
-      businessHours: "",
       overview: "",
       compliance: defaultCompliance,
       growthPlans: "",
@@ -84,16 +82,17 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
       values.growthPlans = 'No specific growth plans provided';
     }
     
+    // Same for overview
+    if (!values.overview || values.overview.trim() === '') {
+      values.overview = 'No company overview provided';
+    }
+    
     // Log the form values for debugging
     console.log("Submitting company profile values:", values);
     
     // Call the onNext function with the values
     onNext(values);
   };
-  
-  // Add form error debugging logs
-  console.log("Form errors:", form.formState.errors);
-  
 
   return (
     <div>
@@ -116,7 +115,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                   <FormLabel>Industry</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value || ""}
+                    value={field.value || "_none"}
                   >
                     <FormControl>
                       <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -151,7 +150,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                     <FormLabel>Number of Employees</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value || ""}
+                      value={field.value || "_none"}
                     >
                       <FormControl>
                         <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -181,7 +180,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                     <FormLabel>Number of Locations</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      value={field.value || ""}
+                      value={field.value || "_none"}
                     >
                       <FormControl>
                         <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -205,31 +204,14 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
             
             <FormField
               control={form.control}
-              name="businessHours"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Business Hours</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="e.g., Mon-Fri 9am-5pm"
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
               name="overview"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Company Overview</FormLabel>
                   <FormControl>
                     <Textarea 
-                      {...field} 
+                      value={field.value || ""}
+                      onChange={field.onChange}
                       rows={3}
                       placeholder="Brief description of the company and its operations"
                       className="bg-slate-700 border-slate-600 text-white"
@@ -252,7 +234,7 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                       <FormItem className="flex items-center space-x-2">
                         <FormControl>
                           <Checkbox
-                            checked={field.value}
+                            checked={field.value || false}
                             onCheckedChange={field.onChange}
                             className="h-4 w-4 text-primary-600 border-slate-500 rounded focus:ring-primary-500 bg-slate-700"
                           />
@@ -275,7 +257,8 @@ const CompanyProfileStep = ({ onNext, onBack, defaultValues = {} }: CompanyProfi
                   <FormLabel>Growth Plans and Business Objectives</FormLabel>
                   <FormControl>
                     <Textarea 
-                      {...field} 
+                      value={field.value || ""}
+                      onChange={field.onChange}
                       rows={3}
                       placeholder="Describe future growth plans and key business objectives"
                       className="bg-slate-700 border-slate-600 text-white"
