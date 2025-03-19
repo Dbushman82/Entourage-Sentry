@@ -37,6 +37,9 @@ import { Loader2 } from "lucide-react";
 const newAssessmentSchema = z.object({
   companyName: z.string().min(2, "Company name is required"),
   companyWebsite: z.string().min(3, "Website is required"),
+  firstName: z.string().optional().default(""),
+  lastName: z.string().optional().default(""),
+  email: z.string().email("Please enter a valid email").optional().default(""),
   expirationDuration: z.string().optional().default("7d"),
 });
 
@@ -58,6 +61,9 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
     defaultValues: {
       companyName: "",
       companyWebsite: "",
+      firstName: "",
+      lastName: "",
+      email: "",
       expirationDuration: "7d",
     },
   });
@@ -73,9 +79,9 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
       
       const res = await apiRequest("POST", "/api/assessments", {
         contact: {
-          firstName: "",
-          lastName: "",
-          email: "",
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || "",
           phone: "",
           companyWebsite: formattedWebsite, // Include properly formatted website
         },
@@ -184,6 +190,53 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
                   </FormControl>
                   <FormDescription>
                     Enter the company website URL.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid gap-5 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} className="bg-slate-700 border-slate-600" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} className="bg-slate-700 border-slate-600" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="contact@example.com" {...field} className="bg-slate-700 border-slate-600" />
+                  </FormControl>
+                  <FormDescription>
+                    Optional contact email
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
