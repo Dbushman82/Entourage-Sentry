@@ -318,7 +318,7 @@ const Home = () => {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0 bg-slate-700 text-destructive hover:text-white hover:bg-destructive"
+                          className="h-8 w-8 p-0 bg-slate-700 text-slate-300 hover:text-white hover:bg-destructive"
                           title="Delete Assessment"
                           onClick={() => {
                             setSelectedAssessment(assessment);
@@ -331,7 +331,7 @@ const Home = () => {
                       </div>
                       
                       <div 
-                        className="flex flex-col"
+                        className="flex flex-col pr-20" 
                         onClick={() => setLocation(`/assessment/${assessment.id}`)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -345,7 +345,7 @@ const Home = () => {
                               {isCompleted ? 'Completed' : `Step ${assessment.currentStep} of 7`}
                             </Badge>
                           </div>
-                          <span className="text-sm text-slate-400 mr-8">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
+                          <span className="text-sm text-slate-400">{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
                         </div>
                         
                         <div className="flex justify-between items-center">
@@ -355,7 +355,7 @@ const Home = () => {
                             <Users className="h-4 w-4 mr-1" />
                             <span>Contact ID: {assessment.contactId}</span>
                           </div>
-                          <span className="text-primary-500 text-sm mr-8">View details →</span>
+                          <span className="text-primary-500 text-sm">View details →</span>
                         </div>
                       </div>
                     </div>
