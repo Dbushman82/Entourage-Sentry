@@ -11,6 +11,8 @@ import {
   insertPainPointSchema,
   insertAssessmentSchema
 } from "@shared/schema";
+import * as schema from '@shared/schema';
+import { db } from './db';
 import { z } from "zod";
 import { analyzeDomain } from "./utils/domainRecon";
 import { ZodError } from "zod";
@@ -233,6 +235,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validData = insertCompanySchema.parse(req.body);
       const company = await storage.createCompany(validData);
       res.status(201).json(company);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
+  app.get('/api/companies', async (_req: Request, res: Response) => {
+    try {
+      const companies = await db.select().from(schema.companies);
+      res.json(companies);
     } catch (err) {
       handleError(err, res);
     }
