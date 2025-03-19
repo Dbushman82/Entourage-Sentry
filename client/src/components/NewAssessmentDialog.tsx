@@ -65,17 +65,23 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
   // Create a new assessment and generate a link
   const createAssessmentMutation = useMutation({
     mutationFn: async (data: NewAssessmentFormValues) => {
+      // Format website properly
+      let formattedWebsite = data.companyWebsite.trim();
+      if (formattedWebsite && !formattedWebsite.match(/^https?:\/\//)) {
+        formattedWebsite = `https://${formattedWebsite}`;
+      }
+      
       const res = await apiRequest("POST", "/api/assessments", {
         contact: {
           firstName: "Contact",
           lastName: "Pending",
           email: "pending@example.com",
           phone: "",
-          companyWebsite: data.companyWebsite, // Include website to ensure auto-population
+          companyWebsite: formattedWebsite, // Include properly formatted website
         },
         company: {
           name: data.companyName,
-          website: data.companyWebsite,
+          website: formattedWebsite, // Make sure it's the same format for both
         },
       });
       const result = await res.json();

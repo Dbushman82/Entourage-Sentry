@@ -140,6 +140,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Assessment not found' });
       }
       
+      // Ensure contact.companyWebsite is populated from company.website if missing
+      if (details.contact && !details.contact.companyWebsite && details.company && details.company.website) {
+        details.contact.companyWebsite = details.company.website;
+      }
+      
       res.json(details);
     } catch (err) {
       handleError(err, res);
