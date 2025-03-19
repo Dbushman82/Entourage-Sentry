@@ -21,6 +21,7 @@ const registerSchema = z.object({
   confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  role: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -60,19 +61,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/auth/login", credentials);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Login failed");
+      }
       return await res.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/auth/user"], user);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${user.firstName || user.username}!`,
+        description: `Welcome back, ${user.firstName || user.email}!`,
       });
     },
     onError: (error: Error) => {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: error.message || "Invalid username or password",
+        description: error.message || "Invalid email or password",
         variant: "destructive",
       });
     },
@@ -83,17 +89,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (userData: RegisterData) => {
       // Remove confirmPassword as it's not part of the API model
       const { confirmPassword, ...userDataToSend } = userData;
+      
+      // Set default role if not provided
+      if (!userDataToSend.role) {
+        userDataToSend.role = "user";
+      }
+      
       const res = await apiRequest("POST", "/api/auth/register", userDataToSend);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Registration failed");
+      }
       return await res.json();
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/auth/user"], user);
       toast({
         title: "Registration successful",
-        description: `Welcome to Entourage Sentry, ${user.firstName || user.username}!`,
+        description: `Welcome to Entourage Sentry, ${user.firstName || user.email}!`,
       });
     },
     onError: (error: Error) => {
+      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
         description: error.message || "Could not create account",

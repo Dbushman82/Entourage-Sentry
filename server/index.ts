@@ -36,32 +36,38 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Configure passport local strategy
-passport.use(new LocalStrategy(async (username, password, done) => {
-  try {
-    // Find user by username
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    
-    if (!user) {
-      return done(null, false, { message: "Incorrect username or password" });
+// Configure passport local strategy with custom fields
+passport.use(new LocalStrategy(
+  {
+    usernameField: 'email',
+    passwordField: 'password'
+  },
+  async (email, password, done) => {
+    try {
+      // Find user by email
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      
+      if (!user) {
+        return done(null, false, { message: "Incorrect email or password" });
+      }
+
+      // Verify password
+      const isValid = await compare(password, user.password);
+      if (!isValid) {
+        return done(null, false, { message: "Incorrect email or password" });
+      }
+
+      // Update last login timestamp
+      await db.update(users)
+        .set({ lastLogin: new Date() })
+        .where(eq(users.id, user.id));
+
+      return done(null, user);
+    } catch (err) {
+      return done(err);
     }
-
-    // Verify password
-    const isValid = await compare(password, user.password);
-    if (!isValid) {
-      return done(null, false, { message: "Incorrect username or password" });
-    }
-
-    // Update last login timestamp
-    await db.update(users)
-      .set({ lastLogin: new Date() })
-      .where(eq(users.id, user.id));
-
-    return done(null, user);
-  } catch (err) {
-    return done(err);
   }
-}));
+));
 
 // Serialization and deserialization
 passport.serializeUser((user: any, done) => {
