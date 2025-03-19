@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import Assessment from "@/pages/assessment";
 import AuthPage from "@/pages/auth-page";
 import AdminPage from "@/pages/admin-page";
+import Dashboard from "@/pages/dashboard";
 import { AssessmentProvider } from "@/context/AssessmentContext";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
