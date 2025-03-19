@@ -8,6 +8,11 @@ import {
   Assessment, InsertAssessment
 } from '../shared/schema';
 import { IStorage } from './storage';
+import { 
+  generateAssessmentUrl, 
+  verifyAssessmentToken, 
+  calculateExpirationDate 
+} from './utils/jwt';
 
 
 export class PostgresStorage implements IStorage {
@@ -474,5 +479,61 @@ export class PostgresStorage implements IStorage {
       .where(eq(schema.scannerVersions.id, id))
       .returning();
     return result.length > 0;
+  }
+
+  // Assessment link management
+  async generateAssessmentLink(id: number, expirationDuration: string): Promise<{ url: string, expiration: Date }> {
+    const assessment = await this.getAssessment(id);
+    if (!assessment) {
+      throw new Error(`Assessment with ID ${id} not found`);
+    }
+    
+    // Calculate expiration date
+    const expiration = calculateExpirationDate(expirationDuration);
+    
+    // Generate signed URL
+    const url = generateAssessmentUrl(id, assessment.referenceCode, expirationDuration);
+    
+    // Extract token from the URL
+    const token = url.split('token=')[1];
+    
+    // Update assessment with token and expiration
+    await this.updateAssessment(id, {
+      linkToken: token,
+      linkExpiration: expiration
+    });
+    
+    return { url, expiration };
+  }
+
+  async renewAssessmentLink(id: number, expirationDuration: string): Promise<{ url: string, expiration: Date }> {
+    // Simply reuse the generate function since the logic is the same
+    return this.generateAssessmentLink(id, expirationDuration);
+  }
+
+  async verifyAssessmentLink(token: string): Promise<Assessment | null> {
+    // Verify the token
+    const decoded = verifyAssessmentToken(token);
+    if (!decoded) {
+      return null;
+    }
+    
+    // Get the assessment
+    const assessment = await this.getAssessment(decoded.assessmentId);
+    if (!assessment) {
+      return null;
+    }
+    
+    // Check if the token matches
+    if (assessment.linkToken !== token) {
+      return null;
+    }
+    
+    // Check if the token has expired
+    if (assessment.linkExpiration && new Date(assessment.linkExpiration) < new Date()) {
+      return null;
+    }
+    
+    return assessment;
   }
 }
