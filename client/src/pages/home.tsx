@@ -24,15 +24,16 @@ import {
   Clock,
   CheckCircle2,
   Layers,
-  LayoutDashboard,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import NewAssessmentDialog from "@/components/NewAssessmentDialog";
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [, setLocation] = useLocation();
   
   // Query to get assessments
@@ -63,11 +64,12 @@ const Home = () => {
             <h1 className="text-3xl font-bold mb-2">Entourage Sentry</h1>
             <p className="text-slate-400">Powered by Entourage IT</p>
           </div>
-          <Button className="bg-primary-600 hover:bg-primary-700" asChild>
-            <Link href="/dashboard">
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Go to Dashboard
-            </Link>
+          <Button 
+            className="bg-primary-600 hover:bg-primary-700" 
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Assessment
           </Button>
         </div>
         
@@ -187,10 +189,10 @@ const Home = () => {
                 </p>
                 {!searchQuery && (
                   <Button className="bg-primary-600 hover:bg-primary-700" asChild>
-                    <Link href="/dashboard">
+                    <div onClick={() => setIsDialogOpen(true)}>
                       <PlusCircle className="mr-2 h-4 w-4" />
                       New Assessment
-                    </Link>
+                    </div>
                   </Button>
                 )}
               </div>
@@ -242,9 +244,9 @@ const Home = () => {
               <Button 
                 variant="outline" 
                 className="border-slate-600 hover:border-slate-500" 
-                asChild
+                onClick={() => setIsDialogOpen(true)}
               >
-                <Link href="/dashboard">View All</Link>
+                New Assessment
               </Button>
             </CardFooter>
           )}
@@ -297,6 +299,11 @@ const Home = () => {
       </main>
       
       <Footer />
+      
+      {/* Assessment Dialog */}
+      {isDialogOpen && (
+        <NewAssessmentDialog onClose={() => setIsDialogOpen(false)} />
+      )}
     </div>
   );
 };
