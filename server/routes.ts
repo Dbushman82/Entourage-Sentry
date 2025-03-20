@@ -15,6 +15,7 @@ import * as schema from '@shared/schema';
 import { db } from './db';
 import { z } from "zod";
 import { analyzeDomain } from "./utils/domainRecon";
+import { enrichCompanyByDomain, enrichCompanyByName } from "./utils/pdlEnrichment";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import crypto from 'crypto';
