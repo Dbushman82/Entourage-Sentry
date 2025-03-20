@@ -18,8 +18,8 @@ const SuccessScreen = ({ referenceCode = "ESNT-" + new Date().toISOString().spli
   };
   
   // Get the current assessment ID from URL if available
-  const [, params] = useLocation();
-  const assessmentId = params ? parseInt(params.split('/').pop() || '0') : 0;
+  const [currentPath] = useLocation();
+  const assessmentId = currentPath ? parseInt(currentPath.split('/').pop() || '0') : 0;
   
   return (
     <div className="p-8 text-center">

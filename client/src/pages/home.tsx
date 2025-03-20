@@ -388,7 +388,10 @@ const Home = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredAssessments.slice().reverse().map((assessment: any) => {
+                {filteredAssessments
+                  .slice()
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .map((assessment: any) => {
                   const createdAt = new Date(assessment.createdAt);
                   const isCompleted = assessment.status === 'completed';
                   
