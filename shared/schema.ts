@@ -266,6 +266,7 @@ export const assessments = pgTable("assessments", {
   domainDataId: integer("domain_data_id"),
   networkAssessmentId: integer("network_assessment_id"),
   painPointId: integer("pain_point_id"),
+  securityAssessmentId: integer("security_assessment_id"),
   status: text("status").notNull().default("in_progress"), // 'in_progress', 'completed', 'archived'
   currentStep: integer("current_step").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -281,6 +282,7 @@ export const insertAssessmentSchema = createInsertSchema(assessments).pick({
   domainDataId: true,
   networkAssessmentId: true,
   painPointId: true,
+  securityAssessmentId: true,
   status: true,
   currentStep: true,
   linkExpiration: true,
@@ -325,3 +327,44 @@ export const insertScannerVersionSchema = createInsertSchema(scannerVersions).pi
 
 export type InsertScannerVersion = z.infer<typeof insertScannerVersionSchema>;
 export type ScannerVersion = typeof scannerVersions.$inferSelect;
+
+// Security assessment data - stores findings from domain security scans
+export const securityAssessments = pgTable("security_assessments", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  domain: text("domain").notNull(),
+  securityScore: integer("security_score"),
+  technologies: jsonb("technologies").default([]),
+  exposedServices: jsonb("exposed_services").default([]),
+  vulnerabilitiesHigh: integer("vulnerabilities_high").default(0),
+  vulnerabilitiesMedium: integer("vulnerabilities_medium").default(0),
+  vulnerabilitiesLow: integer("vulnerabilities_low").default(0),
+  vulnerabilitiesInfo: integer("vulnerabilities_info").default(0),
+  presentSecurityHeaders: jsonb("present_security_headers").default([]),
+  missingSecurityHeaders: jsonb("missing_security_headers").default([]),
+  subdomains: jsonb("subdomains").default([]),
+  recommendations: jsonb("recommendations").default([]),
+  scanDate: timestamp("scan_date", { mode: "date" }).defaultNow(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+  rawData: jsonb("raw_data"),
+});
+
+export const insertSecurityAssessmentSchema = createInsertSchema(securityAssessments).pick({
+  companyId: true,
+  domain: true,
+  securityScore: true,
+  technologies: true,
+  exposedServices: true,
+  vulnerabilitiesHigh: true,
+  vulnerabilitiesMedium: true,
+  vulnerabilitiesLow: true,
+  vulnerabilitiesInfo: true,
+  presentSecurityHeaders: true,
+  missingSecurityHeaders: true,
+  subdomains: true,
+  recommendations: true,
+  rawData: true,
+});
+
+export type InsertSecurityAssessment = z.infer<typeof insertSecurityAssessmentSchema>;
+export type SecurityAssessment = typeof securityAssessments.$inferSelect;
