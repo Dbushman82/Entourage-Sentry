@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
+import html2pdf from 'html2pdf.js';
 import { 
   Card, 
   CardContent, 
@@ -22,7 +23,24 @@ import {
   FileDigit,
   ArrowLeft,
   Download,
-  Share2
+  Share2,
+  Globe,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  Briefcase,
+  Hash,
+  Users,
+  BarChart,
+  FileText,
+  Server,
+  Database,
+  Wifi,
+  Printer,
+  Copy,
+  Check,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +48,8 @@ const AssessmentSummary = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const { data: assessment, isLoading: isLoadingAssessment } = useQuery({
     queryKey: [`/api/assessments/${id}`],
@@ -158,24 +178,94 @@ const AssessmentSummary = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div>
-                <span className="text-sm text-gray-500">Name</span>
-                <p className="font-medium">{company?.name || "Not provided"}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div>
+                  <span className="text-sm text-gray-500">Name</span>
+                  <p className="font-medium">{company?.name || "Not provided"}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Website</span>
+                  <p className="font-medium">
+                    {company?.website ? (
+                      <a 
+                        href={company.website.startsWith('http') ? company.website : `https://${company.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {company.website}
+                      </a>
+                    ) : (
+                      "Not provided"
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Industry</span>
+                  <p className="font-medium">{company?.industry || "Not provided"}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Employee Count</span>
+                  <p className="font-medium">{company?.employeeCount || "Not provided"}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Founded</span>
+                  <p className="font-medium">{company?.founded || "Not provided"}</p>
+                </div>
               </div>
-              <div>
-                <span className="text-sm text-gray-500">Website</span>
-                <p className="font-medium">{company?.website || "Not provided"}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500">Industry</span>
-                <p className="font-medium">{company?.industry || "Not provided"}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500">Size</span>
-                <p className="font-medium">{company?.employeeCount || "Not provided"}</p>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-sm text-gray-500">Phone</span>
+                  <p className="font-medium">{company?.phone || "Not provided"}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Address</span>
+                  <p className="font-medium">{company?.address || "Not provided"}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Primary Contact</span>
+                  <p className="font-medium">{company?.primaryContact || "Not provided"}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Company Type</span>
+                  <p className="font-medium">{company?.companyType || "Not provided"}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Revenue</span>
+                  <p className="font-medium">{company?.annualRevenue || "Not provided"}</p>
+                </div>
               </div>
             </div>
+            
+            {company?.description && (
+              <div className="mt-4 border-t pt-4">
+                <span className="text-sm text-gray-500">Description</span>
+                <p className="mt-1">{company.description}</p>
+              </div>
+            )}
+            
+            {company?.compliance && Object.keys(company.compliance).length > 0 && (
+              <div className="mt-4 border-t pt-4">
+                <span className="text-sm text-gray-500 mb-2 block">Compliance Requirements</span>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(company.compliance).map(([key, value]) => 
+                    value ? (
+                      <Badge key={key} variant="outline" className="bg-primary/10">
+                        {key.toUpperCase()}
+                      </Badge>
+                    ) : null
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {company?.growthPlans && (
+              <div className="mt-4 border-t pt-4">
+                <span className="text-sm text-gray-500">Growth Plans</span>
+                <p className="mt-1">{company.growthPlans}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -187,18 +277,50 @@ const AssessmentSummary = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div>
                 <span className="text-sm text-gray-500">Name</span>
                 <p className="font-medium">{contact?.firstName} {contact?.lastName}</p>
               </div>
               <div>
+                <span className="text-sm text-gray-500">Role</span>
+                <p className="font-medium">{contact?.role || "Not provided"}</p>
+              </div>
+              <div>
                 <span className="text-sm text-gray-500">Email</span>
-                <p className="font-medium">{contact?.email || "Not provided"}</p>
+                <p className="font-medium">
+                  {contact?.email ? (
+                    <a 
+                      href={`mailto:${contact.email}`}
+                      className="text-primary hover:underline flex items-center"
+                    >
+                      <Mail className="h-4 w-4 mr-1" />
+                      {contact.email}
+                    </a>
+                  ) : (
+                    "Not provided"
+                  )}
+                </p>
               </div>
               <div>
                 <span className="text-sm text-gray-500">Phone</span>
-                <p className="font-medium">{contact?.phone || "Not provided"}</p>
+                <p className="font-medium">
+                  {contact?.phone ? (
+                    <a 
+                      href={`tel:${contact.phone}`}
+                      className="text-primary hover:underline flex items-center"
+                    >
+                      <Phone className="h-4 w-4 mr-1" />
+                      {contact.phone}
+                    </a>
+                  ) : (
+                    "Not provided"
+                  )}
+                </p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500">Company</span>
+                <p className="font-medium">{company?.name || "Not provided"}</p>
               </div>
             </div>
           </CardContent>
@@ -238,6 +360,102 @@ const AssessmentSummary = () => {
         </Card>
       </div>
 
+      {/* Domain Data */}
+      {domainData && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              <CardTitle>Domain Analysis</CardTitle>
+            </div>
+            <CardDescription>Technical information about {company?.website || 'company domain'}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <h3 className="font-medium mb-2">Registration Info</h3>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm text-gray-500">Domain</span>
+                    <p>{domainData.domain}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Registration Date</span>
+                    <p>{domainData.registrationDate || "Unknown"}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">SSL Expiry</span>
+                    <p>{domainData.sslExpiry || "Unknown"}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Hosting Provider</span>
+                    <p>{domainData.hosting || "Unknown"}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-2">Email Security</h3>
+                {domainData.emailSecurity ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">SPF Record</span>
+                      {JSON.parse(domainData.emailSecurity as string)?.spf ? (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-500">Present</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-red-500/10 text-red-500">Missing</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">DKIM Record</span>
+                      {JSON.parse(domainData.emailSecurity as string)?.dkim ? (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-500">Present</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-red-500/10 text-red-500">Missing</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">DMARC Record</span>
+                      {JSON.parse(domainData.emailSecurity as string)?.dmarc ? (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-500">Present</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-red-500/10 text-red-500">Missing</Badge>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No email security data available</p>
+                )}
+                
+                {domainData.mxRecords && Array.isArray(JSON.parse(domainData.mxRecords as string)) && (
+                  <div className="mt-4">
+                    <span className="text-sm text-gray-500 block mb-1">MX Records</span>
+                    <ul className="text-xs space-y-1">
+                      {JSON.parse(domainData.mxRecords as string).map((record: string, index: number) => (
+                        <li key={index} className="text-xs">{record}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <h3 className="font-medium mb-2">Tech Stack</h3>
+                {domainData.techStack && Array.isArray(JSON.parse(domainData.techStack as string)) ? (
+                  <div className="flex flex-wrap gap-2">
+                    {JSON.parse(domainData.techStack as string).map((tech: string, index: number) => (
+                      <Badge key={index} variant="outline" className="bg-primary/10">{tech}</Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No tech stack data available</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Network Assessment */}
       {networkAssessment && (
         <Card className="mb-6">
@@ -388,6 +606,45 @@ const AssessmentSummary = () => {
         </Card>
       )}
 
+      {/* Services */}
+      {services && services.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Server className="h-5 w-5 text-primary" />
+              <CardTitle>IT Services</CardTitle>
+            </div>
+            <CardDescription>Technology services used by the company</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs uppercase bg-gray-100 dark:bg-gray-800">
+                  <tr>
+                    <th scope="col" className="px-6 py-3">Service Name</th>
+                    <th scope="col" className="px-6 py-3">Type</th>
+                    <th scope="col" className="px-6 py-3">Deployment</th>
+                    <th scope="col" className="px-6 py-3">Licenses</th>
+                    <th scope="col" className="px-6 py-3">Administrator</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {services.map((service, index) => (
+                    <tr key={index} className="border-b dark:border-gray-700">
+                      <td className="px-6 py-4 font-medium">{service.name}</td>
+                      <td className="px-6 py-4">{service.type || "N/A"}</td>
+                      <td className="px-6 py-4">{service.deployment || "N/A"}</td>
+                      <td className="px-6 py-4">{service.licenseCount || "N/A"}</td>
+                      <td className="px-6 py-4">{service.primaryAdmin || "N/A"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* IT Costs */}
       {costs && costs.length > 0 && (
         <Card className="mb-6">
