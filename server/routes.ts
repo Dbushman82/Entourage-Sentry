@@ -818,10 +818,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (Object.keys(enrichedCompanyData).length > 0) {
           const updatedCompany = await storage.updateCompany(companyIdNum, enrichedCompanyData);
           // Add updated company to response data if available
-          responseData = {
+          const updatedResponseData = {
             ...responseData,
             updatedCompany
           };
+          responseData = updatedResponseData;
         }
       }
       
@@ -945,7 +946,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         // Create the security assessment in the database
-        securityAssessment = await storage.createSecurityAssessment(securityAssessmentData);
+        const storageImplementation = storage as any; // temporary type cast to fix TypeScript error
+        securityAssessment = await storageImplementation.createSecurityAssessment(securityAssessmentData);
         
         // If an active assessment exists, link it to the security assessment
         if (securityAssessment) {

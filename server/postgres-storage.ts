@@ -539,10 +539,10 @@ export class PostgresStorage implements IStorage {
 
   // Security assessment methods
   async createSecurityAssessment(assessment: InsertSecurityAssessment): Promise<SecurityAssessment> {
-    const result = await db.insert(schema.securityAssessments).values({
-      ...assessment,
-      createdAt: new Date(),
-      scanDate: assessment.scanDate || new Date(),
+    // Only include properties that match the schema
+    const values = {
+      companyId: assessment.companyId,
+      domain: assessment.domain,
       securityScore: assessment.securityScore || null,
       technologies: assessment.technologies || [],
       exposedServices: assessment.exposedServices || [],
@@ -550,15 +550,14 @@ export class PostgresStorage implements IStorage {
       vulnerabilitiesMedium: assessment.vulnerabilitiesMedium || 0,
       vulnerabilitiesLow: assessment.vulnerabilitiesLow || 0,
       vulnerabilitiesInfo: assessment.vulnerabilitiesInfo || 0,
-      securityHeaders: assessment.securityHeaders || null,
-      missingHeaders: assessment.missingHeaders || null,
-      subdomains: assessment.subdomains || null,
-      dnsRecords: assessment.dnsRecords || null,
-      certificates: assessment.certificates || null,
-      riskLevel: assessment.riskLevel || null,
-      recommendations: assessment.recommendations || null,
+      presentSecurityHeaders: assessment.presentSecurityHeaders || [],
+      missingSecurityHeaders: assessment.missingSecurityHeaders || [],
+      subdomains: assessment.subdomains || [],
+      recommendations: assessment.recommendations || [],
       rawData: assessment.rawData || null
-    }).returning();
+    };
+    
+    const result = await db.insert(schema.securityAssessments).values(values).returning();
     return result[0];
   }
 
@@ -576,7 +575,7 @@ export class PostgresStorage implements IStorage {
     // Create a clean update object without undefined values
     const updateData: Record<string, any> = {};
     
-    // Only add defined properties to the update object
+    // Only add defined properties that match the schema
     if (assessment.companyId !== undefined) updateData.companyId = assessment.companyId;
     if (assessment.domain !== undefined) updateData.domain = assessment.domain;
     if (assessment.securityScore !== undefined) updateData.securityScore = assessment.securityScore;
@@ -586,12 +585,9 @@ export class PostgresStorage implements IStorage {
     if (assessment.vulnerabilitiesMedium !== undefined) updateData.vulnerabilitiesMedium = assessment.vulnerabilitiesMedium;
     if (assessment.vulnerabilitiesLow !== undefined) updateData.vulnerabilitiesLow = assessment.vulnerabilitiesLow;
     if (assessment.vulnerabilitiesInfo !== undefined) updateData.vulnerabilitiesInfo = assessment.vulnerabilitiesInfo;
-    if (assessment.securityHeaders !== undefined) updateData.securityHeaders = assessment.securityHeaders;
-    if (assessment.missingHeaders !== undefined) updateData.missingHeaders = assessment.missingHeaders;
+    if (assessment.presentSecurityHeaders !== undefined) updateData.presentSecurityHeaders = assessment.presentSecurityHeaders;
+    if (assessment.missingSecurityHeaders !== undefined) updateData.missingSecurityHeaders = assessment.missingSecurityHeaders;
     if (assessment.subdomains !== undefined) updateData.subdomains = assessment.subdomains;
-    if (assessment.dnsRecords !== undefined) updateData.dnsRecords = assessment.dnsRecords;
-    if (assessment.certificates !== undefined) updateData.certificates = assessment.certificates;
-    if (assessment.riskLevel !== undefined) updateData.riskLevel = assessment.riskLevel;
     if (assessment.recommendations !== undefined) updateData.recommendations = assessment.recommendations;
     if (assessment.rawData !== undefined) updateData.rawData = assessment.rawData;
     
