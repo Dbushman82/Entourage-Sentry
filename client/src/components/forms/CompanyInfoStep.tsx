@@ -92,14 +92,12 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
         
         toast({
           title: "Company information enriched",
-          description: "We've found additional information about this company.",
-          variant: "success"
+          description: "We've found additional information about this company."
         });
       } else {
         toast({
           title: "Enrichment limited",
-          description: data.enrichment?.error || "We couldn't find additional information about this company.",
-          variant: "warning"
+          description: data.enrichment?.error || "We couldn't find additional information about this company."
         });
       }
     },
@@ -130,14 +128,12 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
       if (data.enrichment?.success && data.enrichment?.data) {
         toast({
           title: "Company information enriched",
-          description: "We've found additional information about this company.",
-          variant: "success"
+          description: "We've found additional information about this company."
         });
       } else {
         toast({
           title: "Enrichment limited",
-          description: data.enrichment?.error || "We couldn't find additional information about this company.",
-          variant: "warning"
+          description: data.enrichment?.error || "We couldn't find additional information about this company."
         });
       }
     },
@@ -309,30 +305,100 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
               </div>
             )}
             
+            {enrichmentData?.enrichment?.data && (
+              <div className="mb-6 p-4 bg-slate-900/50 border border-primary-700/50 rounded-lg">
+                <h3 className="text-sm font-medium text-slate-300 mb-3 flex items-center">
+                  <Building className="h-4 w-4 mr-2 text-primary-400" />
+                  Company Enrichment Data
+                </h3>
+                <div className="space-y-1">
+                  {enrichmentData.enrichment.data.name && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Company Name</span>
+                      <span className="text-xs text-white">{enrichmentData.enrichment.data.name}</span>
+                    </div>
+                  )}
+                  {enrichmentData.enrichment.data.description && (
+                    <div className="flex justify-between items-start">
+                      <span className="text-xs text-slate-400">Description</span>
+                      <span className="text-xs text-white text-right max-w-[60%]">{enrichmentData.enrichment.data.description}</span>
+                    </div>
+                  )}
+                  {enrichmentData.enrichment.data.industry && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Industry</span>
+                      <span className="text-xs text-white">{enrichmentData.enrichment.data.industry}</span>
+                    </div>
+                  )}
+                  {enrichmentData.enrichment.data.employeeCount && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Employee Count</span>
+                      <span className="text-xs text-white">{enrichmentData.enrichment.data.employeeCount}</span>
+                    </div>
+                  )}
+                  {enrichmentData.enrichment.data.founded && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Founded</span>
+                      <span className="text-xs text-white">{enrichmentData.enrichment.data.founded}</span>
+                    </div>
+                  )}
+                  {enrichmentData.enrichment.data.annualRevenue && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-400">Annual Revenue</span>
+                      <span className="text-xs text-white">{enrichmentData.enrichment.data.annualRevenue}</span>
+                    </div>
+                  )}
+                  {enrichmentData.enrichment.data.socialProfiles && (
+                    <div className="flex justify-between items-start">
+                      <span className="text-xs text-slate-400">Social Profiles</span>
+                      <div className="text-xs text-white text-right">
+                        {enrichmentData.enrichment.data.socialProfiles.linkedin && <div>LinkedIn</div>}
+                        {enrichmentData.enrichment.data.socialProfiles.twitter && <div>Twitter</div>}
+                        {enrichmentData.enrichment.data.socialProfiles.facebook && <div>Facebook</div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          className="bg-slate-700 border-slate-600 text-white"
-                        />
-                      </FormControl>
-                      {domainData && (
-                        <div className="flex items-center mt-1">
-                          <Info className="h-3 w-3 text-success-500 mr-1" />
-                          <span className="text-xs text-success-500">Auto-populated from domain</span>
+                <div className="flex items-center justify-between">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem className="flex-1 mr-2">
+                        <FormLabel>Company Name</FormLabel>
+                        <div className="flex">
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              className="bg-slate-700 border-slate-600 text-white rounded-r-none"
+                            />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            variant="secondary"
+                            className="rounded-l-none"
+                            onClick={handleEnrichByName}
+                            disabled={isEnriching}
+                          >
+                            {isEnriching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                          </Button>
                         </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        {domainData && (
+                          <div className="flex items-center mt-1">
+                            <Info className="h-3 w-3 text-success-500 mr-1" />
+                            <span className="text-xs text-success-500">Auto-populated from domain</span>
+                          </div>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <FormField
                   control={form.control}
