@@ -93,6 +93,7 @@ export interface CompanyEnrichmentResult {
 export async function enrichCompanyByDomain(domain: string): Promise<CompanyEnrichmentResult> {
   try {
     if (!PDL_API_KEY) {
+      console.error('PDL API key is not configured');
       return {
         success: false,
         error: 'PDL API key not configured'
@@ -100,10 +101,12 @@ export async function enrichCompanyByDomain(domain: string): Promise<CompanyEnri
     }
 
     // Normalize domain by removing protocol, www, etc.
-    const normalizedDomain = domain.toLowerCase()
+    let normalizedDomain = domain.toLowerCase()
       .replace(/^https?:\/\//, '')
       .replace(/^www\./, '')
       .split('/')[0];
+      
+    console.log(`PDL Enrichment: Normalized domain from "${domain}" to "${normalizedDomain}"`); 
 
     // Make the API request
     const response = await axios.get(PDL_COMPANY_ENDPOINT, {
@@ -254,7 +257,7 @@ function formatCompanyResponse(pdlResponse: PDLCompanyResponse): CompanyEnrichme
   }
 
   // Create a standardized result
-  return {
+  const result = {
     success: true,
     data: {
       name: pdlResponse.display_name || pdlResponse.name || '',
@@ -276,6 +279,15 @@ function formatCompanyResponse(pdlResponse: PDLCompanyResponse): CompanyEnrichme
     },
     raw: pdlResponse
   };
+  
+  // Log the processed data for debugging
+  console.log('PDL Enrichment success! Processed data:', JSON.stringify({
+    name: result.data.name,
+    industry: result.data.industry,
+    employeeCount: result.data.employeeCount
+  }, null, 2));
+  
+  return result;
 }
 
 /**

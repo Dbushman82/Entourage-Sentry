@@ -165,7 +165,49 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
   useEffect(() => {
     if (domainData?.domain && !enrichmentData && !isEnriching) {
       console.log("Starting auto enrichment for domain:", domainData.domain);
-      enrichByDomainMutation.mutate(domainData.domain);
+      
+      // Directly call the API to enrich with domain data
+      const fetchEnrichmentData = async () => {
+        try {
+          setIsEnriching(true);
+          const normalizedDomain = domainData.domain.replace(/^www\./i, "");
+          console.log("Enriching domain (normalized):", normalizedDomain);
+          
+          const res = await apiRequest('POST', '/api/companies/enrich/domain', { domain: normalizedDomain });
+          const data = await res.json();
+          console.log("Enrichment API response:", data);
+          
+          setEnrichmentData(data);
+          
+          // Apply the enrichment data to form fields if available
+          if (data.enrichment?.success && data.enrichment?.data) {
+            const enrichedData = data.enrichment.data;
+            console.log("Applying enriched data to form:", enrichedData);
+            
+            // Update company name if it's not already set or is just the domain-based suggestion
+            if (enrichedData.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion())) {
+              form.setValue('name', enrichedData.name, { shouldDirty: true });
+            }
+            
+            toast({
+              title: "Company data enriched",
+              description: "Additional company information has been found"
+            });
+          }
+          
+          setIsEnriching(false);
+        } catch (error) {
+          console.error("Enrichment error:", error);
+          setIsEnriching(false);
+          toast({
+            title: "Enrichment failed",
+            description: error instanceof Error ? error.message : "Could not enrich company data",
+            variant: "destructive"
+          });
+        }
+      };
+      
+      fetchEnrichmentData();
     }
   }, [domainData]);
   
