@@ -31,7 +31,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     console.error(err);
-    return res.status(500).json({ message: err.message || 'Internal server error' });
+    
+    // Check for database/connection errors
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    if (
+      errorMsg.includes("terminating connection") || 
+      errorMsg.includes("database") || 
+      errorMsg.includes("connection") ||
+      errorMsg.includes("PostgresError")
+    ) {
+      return res.status(500).json({ 
+        message: "Database connection error. Please try refreshing the page.", 
+        dbError: true
+      });
+    }
+    
+    return res.status(500).json({ message: errorMsg || 'Internal server error' });
   };
 
   // Generate a unique reference code for assessments
@@ -93,14 +108,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const assessments = await storage.getAllAssessments();
       
-      // Get company information for each assessment
+      // Get company information for each assessment with more robust error handling
       const assessmentsWithCompanyInfo = await Promise.all(
         assessments.map(async (assessment) => {
-          const company = await storage.getCompany(assessment.companyId);
-          return {
-            ...assessment,
-            companyName: company?.name || 'Unknown Company'
-          };
+          try {
+            const company = await storage.getCompany(assessment.companyId);
+            return {
+              ...assessment,
+              companyName: company?.name || 'Unknown Company'
+            };
+          } catch (companyErr) {
+            console.error(`Error fetching company for assessment ${assessment.id}:`, companyErr);
+            // Continue with partial data rather than failing the entire request
+            return {
+              ...assessment,
+              companyName: 'Unknown Company'
+            };
+          }
         })
       );
       
