@@ -747,9 +747,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log('[PDL] Starting company enrichment for domain:', domain);
-
+      
+      // First, analyze the domain for technical details
+      const domainReconData = await analyzeDomain(domain);
+      console.log('[PDL] Domain analysis complete:', JSON.stringify({
+        domain: domain,
+        hasSSL: !!domainReconData.sslExpiry,
+        hasTechStack: !!domainReconData.techStack && domainReconData.techStack.length > 0
+      }));
+      
+      // Normalize domain for PDL API
+      const normalizedDomain = domain.toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .split('/')[0];
+      console.log('[PDL] Using normalized domain for PDL API:', normalizedDomain);
+      
       // Get enrichment data from PDL API
-      const enrichmentData = await enrichCompanyByDomain(domain);
+      const enrichmentData = await enrichCompanyByDomain(normalizedDomain);
       
       console.log('[PDL] Enrichment result:', 
         enrichmentData.success ? 'Success' : 'Failed', 
