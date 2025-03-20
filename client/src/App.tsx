@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Assessment from "@/pages/assessment";
+import AssessmentSummaryPage from "@/pages/assessment-summary";
 import AuthPage from "@/pages/auth-page";
 import AdminPage from "@/pages/admin-page";
 import Dashboard from "@/pages/dashboard";
@@ -22,6 +23,9 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/assessment/:id">
         <Assessment />
+      </ProtectedRoute>
+      <ProtectedRoute path="/assessment-summary/:id">
+        <AssessmentSummaryPage />
       </ProtectedRoute>
       {/* Admin routes with role requirement */}
       <ProtectedRoute path="/admin" requiredRole="admin">
