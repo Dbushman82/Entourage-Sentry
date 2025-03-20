@@ -738,6 +738,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Company Enrichment APIs
+  app.post('/api/companies/enrich/domain', async (req: Request, res: Response) => {
+    try {
+      const { domain, companyId } = req.body;
+      if (!domain) {
+        return res.status(400).json({ message: 'Domain is required' });
+      }
+
+      // Get enrichment data from PDL API
+      const enrichmentData = await enrichCompanyByDomain(domain);
+      
+      // If companyId is provided, update the company with the enriched data
+      if (companyId && enrichmentData.success && enrichmentData.data) {
+        const companyIdNum = parseInt(companyId);
+        if (isNaN(companyIdNum)) {
+          return res.status(400).json({ message: 'Invalid company ID' });
+        }
+        
+        const company = await storage.getCompany(companyIdNum);
+        if (!company) {
+          return res.status(404).json({ message: 'Company not found' });
+        }
+        
+        // Update the company with enriched data
+        const enrichedCompanyData: any = {
+          logo: enrichmentData.data.logo,
+          description: enrichmentData.data.description,
+          industry: enrichmentData.data.industry || company.industry,
+          employeeCount: enrichmentData.data.employeeCount?.toString() || company.employeeCount,
+          founded: enrichmentData.data.founded,
+          companyType: enrichmentData.data.companyType,
+          annualRevenue: enrichmentData.data.annualRevenue,
+          socialProfiles: enrichmentData.data.socialProfiles ? JSON.stringify(enrichmentData.data.socialProfiles) : null,
+          tags: enrichmentData.data.tags ? JSON.stringify(enrichmentData.data.tags) : null,
+          enrichedAt: new Date().toISOString()
+        };
+        
+        // Remove undefined/null properties
+        Object.keys(enrichedCompanyData).forEach(key => {
+          if (enrichedCompanyData[key] === undefined || enrichedCompanyData[key] === null) {
+            delete enrichedCompanyData[key];
+          }
+        });
+        
+        if (Object.keys(enrichedCompanyData).length > 0) {
+          const updatedCompany = await storage.updateCompany(companyIdNum, enrichedCompanyData);
+          
+          // Return the enrichment data and updated company
+          return res.json({
+            enrichment: enrichmentData,
+            company: updatedCompany
+          });
+        }
+      }
+      
+      // If no companyId or no updates needed, just return the enrichment data
+      res.json({ enrichment: enrichmentData });
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
+  app.post('/api/companies/enrich/name', async (req: Request, res: Response) => {
+    try {
+      const { name, location, companyId } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: 'Company name is required' });
+      }
+
+      // Get enrichment data from PDL API
+      const enrichmentData = await enrichCompanyByName(name, location);
+      
+      // If companyId is provided, update the company with the enriched data
+      if (companyId && enrichmentData.success && enrichmentData.data) {
+        const companyIdNum = parseInt(companyId);
+        if (isNaN(companyIdNum)) {
+          return res.status(400).json({ message: 'Invalid company ID' });
+        }
+        
+        const company = await storage.getCompany(companyIdNum);
+        if (!company) {
+          return res.status(404).json({ message: 'Company not found' });
+        }
+        
+        // Update the company with enriched data
+        const enrichedCompanyData: any = {
+          logo: enrichmentData.data.logo,
+          description: enrichmentData.data.description,
+          industry: enrichmentData.data.industry || company.industry,
+          employeeCount: enrichmentData.data.employeeCount?.toString() || company.employeeCount,
+          founded: enrichmentData.data.founded,
+          companyType: enrichmentData.data.companyType,
+          annualRevenue: enrichmentData.data.annualRevenue,
+          socialProfiles: enrichmentData.data.socialProfiles ? JSON.stringify(enrichmentData.data.socialProfiles) : null,
+          tags: enrichmentData.data.tags ? JSON.stringify(enrichmentData.data.tags) : null,
+          enrichedAt: new Date().toISOString()
+        };
+        
+        // Remove undefined/null properties
+        Object.keys(enrichedCompanyData).forEach(key => {
+          if (enrichedCompanyData[key] === undefined || enrichedCompanyData[key] === null) {
+            delete enrichedCompanyData[key];
+          }
+        });
+        
+        if (Object.keys(enrichedCompanyData).length > 0) {
+          const updatedCompany = await storage.updateCompany(companyIdNum, enrichedCompanyData);
+          
+          // Return the enrichment data and updated company
+          return res.json({
+            enrichment: enrichmentData,
+            company: updatedCompany
+          });
+        }
+      }
+      
+      // If no companyId or no updates needed, just return the enrichment data
+      res.json({ enrichment: enrichmentData });
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
   // Network scanner download routes
   app.get('/api/scanner/:platform', (req: Request, res: Response) => {
     const { platform } = req.params;

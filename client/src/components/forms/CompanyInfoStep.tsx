@@ -14,9 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Info } from "lucide-react";
+import { ArrowLeft, ArrowRight, Info, Building, Globe, Search, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 const companyFormSchema = z.object({
@@ -53,6 +53,8 @@ interface CompanyInfoStepProps {
 const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: CompanyInfoStepProps) => {
   const { toast } = useToast();
   const [domainData, setDomainData] = useState<any>(null);
+  const [enrichmentData, setEnrichmentData] = useState<any>(null);
+  const [isEnriching, setIsEnriching] = useState(false);
   
   // Clean up the initialDomain if needed
   const cleanedDomain = initialDomain?.replace(/^https?:\/\//, '') || '';
@@ -71,11 +73,104 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
     enabled: !!cleanedDomain
   });
   
+  // Mutation for company enrichment by domain
+  const enrichByDomainMutation = useMutation({
+    mutationFn: async (domain: string) => {
+      setIsEnriching(true);
+      const res = await apiRequest('POST', '/api/companies/enrich/domain', { domain });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setIsEnriching(false);
+      setEnrichmentData(data);
+      
+      if (data.enrichment?.success && data.enrichment?.data) {
+        // Auto-fill company name if it's provided in enrichment data
+        if (data.enrichment.data.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion())) {
+          form.setValue('name', data.enrichment.data.name);
+        }
+        
+        toast({
+          title: "Company information enriched",
+          description: "We've found additional information about this company.",
+          variant: "success"
+        });
+      } else {
+        toast({
+          title: "Enrichment limited",
+          description: data.enrichment?.error || "We couldn't find additional information about this company.",
+          variant: "warning"
+        });
+      }
+    },
+    onError: (error: Error) => {
+      setIsEnriching(false);
+      toast({
+        title: "Enrichment failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Mutation for company enrichment by name
+  const enrichByNameMutation = useMutation({
+    mutationFn: async ({ name, location }: { name: string, location?: string }) => {
+      setIsEnriching(true);
+      const res = await apiRequest('POST', '/api/companies/enrich/name', { 
+        name,
+        location
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setIsEnriching(false);
+      setEnrichmentData(data);
+      
+      if (data.enrichment?.success && data.enrichment?.data) {
+        toast({
+          title: "Company information enriched",
+          description: "We've found additional information about this company.",
+          variant: "success"
+        });
+      } else {
+        toast({
+          title: "Enrichment limited",
+          description: data.enrichment?.error || "We couldn't find additional information about this company.",
+          variant: "warning"
+        });
+      }
+    },
+    onError: (error: Error) => {
+      setIsEnriching(false);
+      toast({
+        title: "Enrichment failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Helper function to get a company name suggestion from domain
+  const domainNameSuggestion = () => {
+    if (!cleanedDomain) return "";
+    const domain = cleanedDomain.replace(/^www\./, '').split('/')[0];
+    const domainParts = domain.split('.');
+    return domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
+  };
+  
   useEffect(() => {
     if (domainReconData) {
       setDomainData(domainReconData);
     }
   }, [domainReconData]);
+  
+  // Start enrichment automatically when domain data is available
+  useEffect(() => {
+    if (domainData?.domain && !enrichmentData && !isEnriching) {
+      enrichByDomainMutation.mutate(domainData.domain);
+    }
+  }, [domainData]);
   
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
