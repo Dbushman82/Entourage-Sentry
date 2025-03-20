@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -65,10 +65,37 @@ const Home = () => {
     };
   }, []);
   
-  // Query to get assessments
-  const { data: assessments, isLoading } = useQuery({
+  // Query to get assessments with error handling
+  const { data: assessments, isLoading, error: assessmentsError } = useQuery({
     queryKey: ['/api/assessments'],
+    retry: 3, // Retry 3 times before failing
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000) // Exponential backoff
   });
+
+  // Handle assessment loading errors
+  React.useEffect(() => {
+    if (assessmentsError) {
+      console.error("Error fetching assessments:", assessmentsError);
+      const errorMessage = assessmentsError.message.toLowerCase();
+      if (
+        errorMessage.includes("database") || 
+        errorMessage.includes("connection") || 
+        errorMessage.includes("terminating")
+      ) {
+        toast({
+          title: "Database Connection Error",
+          description: "There was a problem connecting to the database. Please refresh the page to try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error Loading Assessments",
+          description: assessmentsError.message,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [assessmentsError, toast]);
   
   // Delete assessment mutation
   const deleteAssessmentMutation = useMutation({
@@ -85,11 +112,28 @@ const Home = () => {
       setIsDeleteDialogOpen(false);
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error deleting assessment",
-        description: error.message || "An error occurred while deleting the assessment",
-        variant: "destructive"
-      });
+      console.error("Error deleting assessment:", error);
+      const errorMessage = error.message.toLowerCase();
+      if (
+        errorMessage.includes("database") || 
+        errorMessage.includes("connection") || 
+        errorMessage.includes("terminating")
+      ) {
+        toast({
+          title: "Database Connection Error",
+          description: "There was a problem connecting to the database. Please try again in a moment.",
+          variant: "destructive",
+        });
+        
+        // Automatically invalidate the query to force a refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/assessments'] });
+      } else {
+        toast({
+          title: "Error deleting assessment",
+          description: error.message || "An error occurred while deleting the assessment",
+          variant: "destructive"
+        });
+      }
     }
   });
   
@@ -124,11 +168,28 @@ const Home = () => {
       }
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error generating link",
-        description: error.message || "An error occurred while generating the assessment link",
-        variant: "destructive"
-      });
+      console.error("Error generating link:", error);
+      const errorMessage = error.message.toLowerCase();
+      if (
+        errorMessage.includes("database") || 
+        errorMessage.includes("connection") || 
+        errorMessage.includes("terminating")
+      ) {
+        toast({
+          title: "Database Connection Error",
+          description: "There was a problem connecting to the database. Please try again in a moment.",
+          variant: "destructive",
+        });
+        
+        // Automatically invalidate the query to force a refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/assessments'] });
+      } else {
+        toast({
+          title: "Error generating link",
+          description: error.message || "An error occurred while generating the assessment link",
+          variant: "destructive"
+        });
+      }
     }
   });
   

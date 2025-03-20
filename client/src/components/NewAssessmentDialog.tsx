@@ -136,11 +136,30 @@ const NewAssessmentDialog = ({ open, onClose }: NewAssessmentDialogProps) => {
       onClose();
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error Creating Assessment",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("Assessment creation error:", error);
+      
+      // Check if it's a database connection error
+      const errorMessage = error.message.toLowerCase();
+      if (
+        errorMessage.includes("database") || 
+        errorMessage.includes("connection") || 
+        errorMessage.includes("terminating")
+      ) {
+        toast({
+          title: "Database Connection Error",
+          description: "There was a problem connecting to the database. Please try again in a moment.",
+          variant: "destructive",
+        });
+        
+        // Automatically invalidate the query to force a refresh when the user tries again
+        queryClient.invalidateQueries({ queryKey: ["/api/assessments"] });
+      } else {
+        toast({
+          title: "Error Creating Assessment",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
   
