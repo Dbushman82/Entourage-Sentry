@@ -198,6 +198,31 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
     }
   }, [domainReconData, form, initialDomain, defaultValues]);
   
+  // Apply enrichment data to form fields when it becomes available
+  useEffect(() => {
+    if (enrichmentData?.enrichment?.success && enrichmentData?.enrichment?.data) {
+      const data = enrichmentData.enrichment.data;
+      console.log("Applying enrichment data to form:", data);
+      
+      // Only update fields if they have values and current form values are empty or default
+      if (data.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion())) {
+        form.setValue('name', data.name);
+      }
+      
+      // Set website if not already set and available in enrichment
+      if (data.website && !form.getValues('website')) {
+        form.setValue('website', data.website);
+      }
+      
+      // Set address if available (we'll need to handle address format)
+      // This would need more complex logic for formatting the address properly
+      
+      // Set phone if available
+      // PDL doesn't directly provide phone in a standard format, would need additional
+      // processing if it's available in a future API update
+    }
+  }, [enrichmentData]);
+  
   const handleSubmit = (values: CompanyFormValues) => {
     // Combine both domain data and enrichment data
     const combinedData = {

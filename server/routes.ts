@@ -754,6 +754,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[PDL] Enrichment result:', 
         enrichmentData.success ? 'Success' : 'Failed', 
         enrichmentData.error || '');
+        
+      if (enrichmentData.success && enrichmentData.data) {
+        console.log('[PDL] Received data:', JSON.stringify({
+          name: enrichmentData.data.name,
+          industry: enrichmentData.data.industry,
+          employeeCount: enrichmentData.data.employeeCount,
+          founded: enrichmentData.data.founded
+        }, null, 2));
+      }
       
       // If companyId is provided, update the company with the enriched data
       if (companyId && enrichmentData.success && enrichmentData.data) {
