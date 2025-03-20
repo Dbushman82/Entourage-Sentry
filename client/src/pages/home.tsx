@@ -73,7 +73,7 @@ const Home = () => {
   });
 
   // Handle assessment loading errors
-  React.useEffect(() => {
+  useEffect(() => {
     if (assessmentsError) {
       console.error("Error fetching assessments:", assessmentsError);
       const errorMessage = assessmentsError.message.toLowerCase();
@@ -208,11 +208,28 @@ const Home = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assessments'] });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error duplicating assessment",
-        description: error.message || "An error occurred while duplicating the assessment",
-        variant: "destructive"
-      });
+      console.error("Error duplicating assessment:", error);
+      const errorMessage = error.message.toLowerCase();
+      if (
+        errorMessage.includes("database") || 
+        errorMessage.includes("connection") || 
+        errorMessage.includes("terminating")
+      ) {
+        toast({
+          title: "Database Connection Error",
+          description: "There was a problem connecting to the database. Please try again in a moment.",
+          variant: "destructive",
+        });
+        
+        // Automatically invalidate the query to force a refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/assessments'] });
+      } else {
+        toast({
+          title: "Error duplicating assessment",
+          description: error.message || "An error occurred while duplicating the assessment",
+          variant: "destructive"
+        });
+      }
     }
   });
   
