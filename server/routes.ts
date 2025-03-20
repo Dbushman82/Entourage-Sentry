@@ -776,7 +776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Prepare the complete response object
-      const responseData = {
+      let responseData: any = {
         domain,
         domainData: domainReconData,
         enrichment: enrichmentData,
@@ -818,11 +818,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (Object.keys(enrichedCompanyData).length > 0) {
           const updatedCompany = await storage.updateCompany(companyIdNum, enrichedCompanyData);
           // Add updated company to response data if available
-          const updatedResponseData = {
+          responseData = {
             ...responseData,
             updatedCompany
           };
-          responseData = updatedResponseData;
         }
       }
       
