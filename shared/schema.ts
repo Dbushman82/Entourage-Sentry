@@ -75,6 +75,17 @@ export const companies = pgTable("companies", {
   overview: text("overview"),
   compliance: jsonb("compliance"),
   growthPlans: text("growth_plans"),
+  
+  // Enrichment fields
+  logo: text("logo"),                     // URL to company logo
+  description: text("description"),       // Company description
+  founded: text("founded"),               // Year company was founded
+  companyType: text("company_type"),      // Public, private, non-profit, etc.
+  annualRevenue: text("annual_revenue"),  // Revenue estimate
+  socialProfiles: jsonb("social_profiles"), // Social media URLs
+  tags: jsonb("tags"),                    // Industry tags/keywords
+  enrichedAt: timestamp("enriched_at"),   // When enrichment was performed
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
