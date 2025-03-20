@@ -39,6 +39,9 @@ const companyFormSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   primaryContact: z.string().optional(),
+  // Additional fields for enrichment data
+  industry: z.string().optional(),
+  employeeCount: z.string().optional(),
 });
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
