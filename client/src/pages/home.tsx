@@ -323,6 +323,21 @@ const Home = () => {
                         className="absolute right-3 top-3 z-10 flex space-x-2"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        {isCompleted && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 bg-slate-700 text-slate-300 hover:text-white hover:bg-primary-600"
+                            title="View Assessment Summary"
+                            onClick={() => {
+                              setLocation(`/assessment-summary/${assessment.id}`);
+                            }}
+                          >
+                            <FileCheck className="h-4 w-4" />
+                            <span className="sr-only">View Summary</span>
+                          </Button>
+                        )}
+                        
                         <Button 
                           variant="ghost" 
                           size="sm" 

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { CheckCircle2, FileText, PlusCircle, Mail, Users, Phone } from "lucide-react";
+import { CheckCircle2, FileText, PlusCircle, Mail, Users, Phone, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SuccessScreenProps {
@@ -16,6 +16,10 @@ const SuccessScreen = ({ referenceCode = "ESNT-" + new Date().toISOString().spli
     queryClient.invalidateQueries({ queryKey: [`/api/assessments`] });
     setLocation('/assessment');
   };
+  
+  // Get the current assessment ID from URL if available
+  const [, params] = useLocation();
+  const assessmentId = params ? parseInt(params.split('/').pop() || '0') : 0;
   
   return (
     <div className="p-8 text-center">
@@ -54,6 +58,19 @@ const SuccessScreen = ({ referenceCode = "ESNT-" + new Date().toISOString().spli
       </div>
       
       <div className="flex flex-col sm:flex-row justify-center gap-4">
+        {assessmentId > 0 && (
+          <Button
+            variant="outline"
+            className="bg-slate-800 hover:bg-slate-700 border-slate-700"
+            asChild
+          >
+            <Link href={`/assessment-summary/${assessmentId}`}>
+              <FileCheck className="mr-2" size={16} />
+              <span>View Assessment Summary</span>
+            </Link>
+          </Button>
+        )}
+        
         <Button
           variant="outline"
           className="bg-slate-800 hover:bg-slate-700 border-slate-700"
@@ -61,9 +78,10 @@ const SuccessScreen = ({ referenceCode = "ESNT-" + new Date().toISOString().spli
         >
           <Link href="/">
             <FileText className="mr-2" size={16} />
-            <span>View Assessments</span>
+            <span>View All Assessments</span>
           </Link>
         </Button>
+        
         <Button
           className="bg-primary-600 hover:bg-primary-700"
           onClick={handleStartNewAssessment}
