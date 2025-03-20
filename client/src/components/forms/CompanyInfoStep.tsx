@@ -148,10 +148,15 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
   });
   
   // Helper function to get a company name suggestion from domain
-  const domainNameSuggestion = () => {
-    if (!cleanedDomain) return "";
-    const domain = cleanedDomain.replace(/^www\./, '').split('/')[0];
+  const domainNameSuggestion = (customDomain?: string) => {
+    const domainToUse = customDomain || cleanedDomain;
+    if (!domainToUse) return "";
+    
+    // Clean up the domain to get just the main part
+    const domain = domainToUse.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
     const domainParts = domain.split('.');
+    
+    // Return capitalized first part of domain
     return domainParts[0].charAt(0).toUpperCase() + domainParts[0].slice(1);
   };
   
