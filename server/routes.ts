@@ -297,13 +297,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create a new contact based on the original
-      const contact = await storage.createContact({
+      // Note: Extended schema in the route already handles companyWebsite
+      const contactData = {
         firstName: details.contact?.firstName || "",
         lastName: details.contact?.lastName || "",
         email: details.contact?.email || "",
-        phone: details.contact?.phone || null,
+        phone: details.contact?.phone || null
+      };
+      
+      // We'll add companyWebsite to the request body since our extendedContactSchema supports it
+      const reqBody = {
+        ...contactData,
         companyWebsite: details.contact?.companyWebsite || null
+      };
+      
+      const extendedContactSchema = insertContactSchema.extend({
+        companyWebsite: z.string().nullable().optional(),
       });
+      
+      const validContactData = extendedContactSchema.parse(reqBody);
+      const contact = await storage.createContact(contactData);
       
       // Create a new company based on the original
       const company = await storage.createCompany({

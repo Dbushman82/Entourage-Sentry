@@ -28,6 +28,7 @@ import {
   Layers,
   Trash2,
   Link2,
+  Copy,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -126,6 +127,29 @@ const Home = () => {
       toast({
         title: "Error generating link",
         description: error.message || "An error occurred while generating the assessment link",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Duplicate assessment mutation
+  const duplicateAssessmentMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest('POST', `/api/assessments/${id}/duplicate`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Assessment duplicated",
+        description: "The assessment has been duplicated successfully",
+        variant: "default"
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/assessments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error duplicating assessment",
+        description: error.message || "An error occurred while duplicating the assessment",
         variant: "destructive"
       });
     }
@@ -313,6 +337,19 @@ const Home = () => {
                         >
                           <Link2 className="h-4 w-4" />
                           <span className="sr-only">Copy Link</span>
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600"
+                          title="Duplicate Assessment"
+                          onClick={() => {
+                            duplicateAssessmentMutation.mutate(assessment.id);
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                          <span className="sr-only">Duplicate</span>
                         </Button>
                         
                         <Button 
