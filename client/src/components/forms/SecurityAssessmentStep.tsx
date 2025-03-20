@@ -123,8 +123,8 @@ const SecurityAssessmentStep = ({
 
   // Calculate overall security percentage for the progress bar
   const calculateSecurityPercentage = (): number => {
-    if (!securityData?.securityAssessment?.securityScore) return 50;
-    return securityData.securityAssessment.securityScore;
+    if (!securityData?.data?.securityScore) return 50;
+    return securityData.data.securityScore;
   };
 
   return (
@@ -164,7 +164,7 @@ const SecurityAssessmentStep = ({
               </div>
             )}
             
-            {securityData?.securityAssessment && (
+            {securityData?.data && (
               <div className="mb-6 space-y-6">
                 <Card className="border-slate-700 bg-slate-800/50">
                   <CardHeader className="pb-3">
@@ -197,25 +197,25 @@ const SecurityAssessmentStep = ({
                         <div className="bg-slate-900/50 p-3 rounded-md">
                           <div className="text-xs text-slate-400 mb-1">High Vulnerabilities</div>
                           <div className="text-lg font-semibold text-red-500">
-                            {securityData.securityAssessment.vulnerabilitiesHigh || 0}
+                            {securityData.data.vulnerabilities?.high || 0}
                           </div>
                         </div>
                         <div className="bg-slate-900/50 p-3 rounded-md">
                           <div className="text-xs text-slate-400 mb-1">Medium Vulnerabilities</div>
                           <div className="text-lg font-semibold text-orange-500">
-                            {securityData.securityAssessment.vulnerabilitiesMedium || 0}
+                            {securityData.data.vulnerabilities?.medium || 0}
                           </div>
                         </div>
                         <div className="bg-slate-900/50 p-3 rounded-md">
                           <div className="text-xs text-slate-400 mb-1">Low Vulnerabilities</div>
                           <div className="text-lg font-semibold text-yellow-500">
-                            {securityData.securityAssessment.vulnerabilitiesLow || 0}
+                            {securityData.data.vulnerabilities?.low || 0}
                           </div>
                         </div>
                         <div className="bg-slate-900/50 p-3 rounded-md">
                           <div className="text-xs text-slate-400 mb-1">Informational Issues</div>
                           <div className="text-lg font-semibold text-blue-500">
-                            {securityData.securityAssessment.vulnerabilitiesInfo || 0}
+                            {securityData.data.vulnerabilities?.info || 0}
                           </div>
                         </div>
                       </div>
@@ -224,7 +224,7 @@ const SecurityAssessmentStep = ({
                 </Card>
                 
                 {/* Exposed Services */}
-                {securityData.securityAssessment.exposedServices?.length > 0 && (
+                {securityData.data.exposedServices?.length > 0 && (
                   <Card className="border-slate-700 bg-slate-800/50">
                     <CardHeader>
                       <CardTitle className="text-base">Exposed Services</CardTitle>
@@ -234,8 +234,8 @@ const SecurityAssessmentStep = ({
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        {Array.isArray(securityData.securityAssessment.exposedServices) && 
-                          securityData.securityAssessment.exposedServices.map((service: string, index: number) => (
+                        {Array.isArray(securityData.data.exposedServices) && 
+                          securityData.data.exposedServices.map((service: string, index: number) => (
                             <span key={index} className="px-2 py-1 text-xs bg-slate-700 rounded-full">
                               {service}
                             </span>
@@ -247,7 +247,7 @@ const SecurityAssessmentStep = ({
                 )}
                 
                 {/* Technologies */}
-                {securityData.securityAssessment.technologies?.length > 0 && (
+                {securityData.data.technologies?.length > 0 && (
                   <Card className="border-slate-700 bg-slate-800/50">
                     <CardHeader>
                       <CardTitle className="text-base">Detected Technologies</CardTitle>
@@ -257,8 +257,8 @@ const SecurityAssessmentStep = ({
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        {Array.isArray(securityData.securityAssessment.technologies) && 
-                          securityData.securityAssessment.technologies.map((tech: string, index: number) => (
+                        {Array.isArray(securityData.data.technologies) && 
+                          securityData.data.technologies.map((tech: string, index: number) => (
                             <span key={index} className="px-2 py-1 text-xs bg-slate-700 rounded-full">
                               {tech}
                             </span>
@@ -270,7 +270,7 @@ const SecurityAssessmentStep = ({
                 )}
                 
                 {/* Security Recommendations */}
-                {securityData.securityAssessment.recommendations?.length > 0 && (
+                {securityData.data.recommendations?.length > 0 && (
                   <Card className="border-slate-700 bg-slate-800/50">
                     <CardHeader>
                       <CardTitle className="text-base">Security Recommendations</CardTitle>
@@ -280,8 +280,8 @@ const SecurityAssessmentStep = ({
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-2">
-                        {Array.isArray(securityData.securityAssessment.recommendations) && 
-                          securityData.securityAssessment.recommendations.map((rec: string, index: number) => (
+                        {Array.isArray(securityData.data.recommendations) && 
+                          securityData.data.recommendations.map((rec: string, index: number) => (
                             <li key={index} className="flex items-start">
                               <CheckCircle className="h-4 w-4 text-primary-500 mr-2 mt-0.5 flex-shrink-0" />
                               <span className="text-sm text-slate-300">{rec}</span>
