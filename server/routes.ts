@@ -817,7 +817,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (Object.keys(enrichedCompanyData).length > 0) {
           const updatedCompany = await storage.updateCompany(companyIdNum, enrichedCompanyData);
-          responseData.company = updatedCompany;
+          // Add updated company to response data if available
+          responseData = {
+            ...responseData,
+            updatedCompany
+          };
         }
       }
       
@@ -945,13 +949,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If an active assessment exists, link it to the security assessment
         if (securityAssessment) {
-          const assessments = await db.select()
-            .from(schema.assessments)
-            .where((eb) => eb.eq(schema.assessments.companyId, companyIdNum))
-            .where((eb) => eb.eq(schema.assessments.status, 'in_progress'));
+          // Find in-progress assessments for this company
+          const inProgressAssessments = await storage.getAllAssessments().then(
+            assessments => assessments.filter(a => 
+              a.companyId === companyIdNum && 
+              a.status === 'in_progress'
+            )
+          );
             
-          if (assessments.length > 0) {
-            await storage.updateAssessment(assessments[0].id, {
+          if (inProgressAssessments.length > 0) {
+            await storage.updateAssessment(inProgressAssessments[0].id, {
               securityAssessmentId: securityAssessment.id
             });
           }

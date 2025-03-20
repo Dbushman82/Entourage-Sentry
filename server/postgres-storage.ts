@@ -5,7 +5,7 @@ import {
   User, InsertUser, Contact, InsertContact, Company, InsertCompany,
   DomainData, InsertDomainData, Service, InsertService, NetworkAssessment,
   InsertNetworkAssessment, Cost, InsertCost, PainPoint, InsertPainPoint,
-  Assessment, InsertAssessment
+  Assessment, InsertAssessment, SecurityAssessment, InsertSecurityAssessment
 } from '../shared/schema';
 import { IStorage } from './storage';
 import { 
@@ -535,5 +535,70 @@ export class PostgresStorage implements IStorage {
     }
     
     return assessment;
+  }
+
+  // Security assessment methods
+  async createSecurityAssessment(assessment: InsertSecurityAssessment): Promise<SecurityAssessment> {
+    const result = await db.insert(schema.securityAssessments).values({
+      ...assessment,
+      createdAt: new Date(),
+      scanDate: assessment.scanDate || new Date(),
+      securityScore: assessment.securityScore || null,
+      technologies: assessment.technologies || [],
+      exposedServices: assessment.exposedServices || [],
+      vulnerabilitiesHigh: assessment.vulnerabilitiesHigh || 0,
+      vulnerabilitiesMedium: assessment.vulnerabilitiesMedium || 0,
+      vulnerabilitiesLow: assessment.vulnerabilitiesLow || 0,
+      vulnerabilitiesInfo: assessment.vulnerabilitiesInfo || 0,
+      securityHeaders: assessment.securityHeaders || null,
+      missingHeaders: assessment.missingHeaders || null,
+      subdomains: assessment.subdomains || null,
+      dnsRecords: assessment.dnsRecords || null,
+      certificates: assessment.certificates || null,
+      riskLevel: assessment.riskLevel || null,
+      recommendations: assessment.recommendations || null,
+      rawData: assessment.rawData || null
+    }).returning();
+    return result[0];
+  }
+
+  async getSecurityAssessment(id: number): Promise<SecurityAssessment | undefined> {
+    const assessments = await db.select().from(schema.securityAssessments).where(eq(schema.securityAssessments.id, id));
+    return assessments[0];
+  }
+
+  async getSecurityAssessmentByCompanyId(companyId: number): Promise<SecurityAssessment | undefined> {
+    const assessments = await db.select().from(schema.securityAssessments).where(eq(schema.securityAssessments.companyId, companyId));
+    return assessments[0];
+  }
+
+  async updateSecurityAssessment(id: number, assessment: Partial<InsertSecurityAssessment>): Promise<SecurityAssessment | undefined> {
+    // Create a clean update object without undefined values
+    const updateData: Record<string, any> = {};
+    
+    // Only add defined properties to the update object
+    if (assessment.companyId !== undefined) updateData.companyId = assessment.companyId;
+    if (assessment.domain !== undefined) updateData.domain = assessment.domain;
+    if (assessment.securityScore !== undefined) updateData.securityScore = assessment.securityScore;
+    if (assessment.technologies !== undefined) updateData.technologies = assessment.technologies;
+    if (assessment.exposedServices !== undefined) updateData.exposedServices = assessment.exposedServices;
+    if (assessment.vulnerabilitiesHigh !== undefined) updateData.vulnerabilitiesHigh = assessment.vulnerabilitiesHigh;
+    if (assessment.vulnerabilitiesMedium !== undefined) updateData.vulnerabilitiesMedium = assessment.vulnerabilitiesMedium;
+    if (assessment.vulnerabilitiesLow !== undefined) updateData.vulnerabilitiesLow = assessment.vulnerabilitiesLow;
+    if (assessment.vulnerabilitiesInfo !== undefined) updateData.vulnerabilitiesInfo = assessment.vulnerabilitiesInfo;
+    if (assessment.securityHeaders !== undefined) updateData.securityHeaders = assessment.securityHeaders;
+    if (assessment.missingHeaders !== undefined) updateData.missingHeaders = assessment.missingHeaders;
+    if (assessment.subdomains !== undefined) updateData.subdomains = assessment.subdomains;
+    if (assessment.dnsRecords !== undefined) updateData.dnsRecords = assessment.dnsRecords;
+    if (assessment.certificates !== undefined) updateData.certificates = assessment.certificates;
+    if (assessment.riskLevel !== undefined) updateData.riskLevel = assessment.riskLevel;
+    if (assessment.recommendations !== undefined) updateData.recommendations = assessment.recommendations;
+    if (assessment.rawData !== undefined) updateData.rawData = assessment.rawData;
+    
+    const result = await db.update(schema.securityAssessments)
+      .set(updateData)
+      .where(eq(schema.securityAssessments.id, id))
+      .returning();
+    return result[0];
   }
 }

@@ -7,7 +7,8 @@ import {
   networkAssessments, type NetworkAssessment, type InsertNetworkAssessment,
   costs, type Cost, type InsertCost,
   painPoints, type PainPoint, type InsertPainPoint,
-  assessments, type Assessment, type InsertAssessment
+  assessments, type Assessment, type InsertAssessment,
+  securityAssessments, type SecurityAssessment, type InsertSecurityAssessment
 } from "@shared/schema";
 
 import { 
