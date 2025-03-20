@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -218,10 +219,12 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
                     <FormItem>
                       <FormLabel>Company Address</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          {...field} 
+                        <AddressAutocomplete
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          placeholder="Start typing address..."
                           className="bg-slate-700 border-slate-600 text-white"
-                          rows={2}
+                          disabled={false}
                         />
                       </FormControl>
                       <FormMessage />
