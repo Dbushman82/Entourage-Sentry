@@ -743,18 +743,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { domain, companyId } = req.body;
       if (!domain) {
-        return res.status(400).json({ message: 'Domain is required' });
+        return res.status(400).json({ error: 'Domain is required' });
       }
-
+      
       console.log('[PDL] Starting company enrichment for domain:', domain);
       
       // First, analyze the domain for technical details
       const domainReconData = await analyzeDomain(domain);
-      console.log('[PDL] Domain analysis complete:', JSON.stringify({
-        domain: domain,
-        hasSSL: !!domainReconData.sslExpiry,
-        hasTechStack: !!domainReconData.techStack && domainReconData.techStack.length > 0
-      }));
+      console.log('[PDL] Domain analysis complete for', domain);
       
       // Normalize domain for PDL API
       const normalizedDomain = domain.toLowerCase()
@@ -779,16 +775,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }, null, 2));
       }
       
+      // Prepare the complete response object
+      const responseData = {
+        domain,
+        domainData: domainReconData,
+        enrichment: enrichmentData,
+      };
+      
       // If companyId is provided, update the company with the enriched data
       if (companyId && enrichmentData.success && enrichmentData.data) {
         const companyIdNum = parseInt(companyId);
         if (isNaN(companyIdNum)) {
-          return res.status(400).json({ message: 'Invalid company ID' });
+          return res.status(400).json({ error: 'Invalid company ID' });
         }
         
         const company = await storage.getCompany(companyIdNum);
         if (!company) {
-          return res.status(404).json({ message: 'Company not found' });
+          return res.status(404).json({ error: 'Company not found' });
         }
         
         // Update the company with enriched data
@@ -814,19 +817,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (Object.keys(enrichedCompanyData).length > 0) {
           const updatedCompany = await storage.updateCompany(companyIdNum, enrichedCompanyData);
-          
-          // Return the enrichment data and updated company
-          return res.json({
-            enrichment: enrichmentData,
-            company: updatedCompany
-          });
+          responseData.company = updatedCompany;
         }
       }
       
-      // If no companyId or no updates needed, just return the enrichment data
-      res.json({ enrichment: enrichmentData });
-    } catch (err) {
-      handleError(err, res);
+      // Return the complete response with all data
+      res.json(responseData);
+    } catch (error) {
+      console.error('[PDL] Error in domain enrichment:', error);
+      handleError(error, res);
     }
   });
   

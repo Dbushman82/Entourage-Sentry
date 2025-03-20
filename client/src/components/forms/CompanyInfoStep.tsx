@@ -161,53 +161,75 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
     }
   }, [domainReconData]);
   
+  // Function to fetch domain enrichment data directly
+  const fetchDomainEnrichment = async (domain: string) => {
+    if (!domain) return;
+
+    try {
+      setIsEnriching(true);
+      console.log("Fetching enrichment for domain:", domain);
+      
+      // Normalize the domain before sending to API
+      const normalizedDomain = domain.toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .split('/')[0];
+      
+      // Make the API request
+      const response = await apiRequest('POST', '/api/companies/enrich/domain', { domain: normalizedDomain });
+      const data = await response.json();
+      
+      console.log("Domain enrichment API response:", data);
+      
+      // Set both the domain data and enrichment data
+      setDomainData(data.domainData);
+      setEnrichmentData(data);
+      
+      // Apply the enrichment data to form fields if available
+      if (data.enrichment?.success && data.enrichment?.data) {
+        const enrichedData = data.enrichment.data;
+        
+        // Update form fields with enriched data
+        console.log("Applying enriched data to form:", enrichedData);
+        
+        // Update company name if valid and form value is empty or auto-suggested
+        if (enrichedData.name && 
+            (!form.getValues('name') || form.getValues('name') === domainNameSuggestion(normalizedDomain))) {
+          form.setValue('name', enrichedData.name, { shouldDirty: true, shouldValidate: true });
+        }
+        
+        // Try to update other fields if available
+        if (enrichedData.industry) {
+          form.setValue('industry', enrichedData.industry, { shouldDirty: true });
+        }
+        
+        if (enrichedData.employeeCount) {
+          form.setValue('employeeCount', String(enrichedData.employeeCount), { shouldDirty: true });
+        }
+        
+        toast({
+          title: "Company data enriched",
+          description: "Additional company information has been found"
+        });
+      }
+      
+      setIsEnriching(false);
+    } catch (error) {
+      console.error("Enrichment error:", error);
+      setIsEnriching(false);
+      toast({
+        title: "Enrichment failed",
+        description: error instanceof Error ? error.message : "Could not enrich company data",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Start enrichment automatically when domain data is available
   useEffect(() => {
     if (domainData?.domain && !enrichmentData && !isEnriching) {
       console.log("Starting auto enrichment for domain:", domainData.domain);
-      
-      // Directly call the API to enrich with domain data
-      const fetchEnrichmentData = async () => {
-        try {
-          setIsEnriching(true);
-          const normalizedDomain = domainData.domain.replace(/^www\./i, "");
-          console.log("Enriching domain (normalized):", normalizedDomain);
-          
-          const res = await apiRequest('POST', '/api/companies/enrich/domain', { domain: normalizedDomain });
-          const data = await res.json();
-          console.log("Enrichment API response:", data);
-          
-          setEnrichmentData(data);
-          
-          // Apply the enrichment data to form fields if available
-          if (data.enrichment?.success && data.enrichment?.data) {
-            const enrichedData = data.enrichment.data;
-            console.log("Applying enriched data to form:", enrichedData);
-            
-            // Update company name if it's not already set or is just the domain-based suggestion
-            if (enrichedData.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion())) {
-              form.setValue('name', enrichedData.name, { shouldDirty: true });
-            }
-            
-            toast({
-              title: "Company data enriched",
-              description: "Additional company information has been found"
-            });
-          }
-          
-          setIsEnriching(false);
-        } catch (error) {
-          console.error("Enrichment error:", error);
-          setIsEnriching(false);
-          toast({
-            title: "Enrichment failed",
-            description: error instanceof Error ? error.message : "Could not enrich company data",
-            variant: "destructive"
-          });
-        }
-      };
-      
-      fetchEnrichmentData();
+      fetchDomainEnrichment(domainData.domain);
     }
   }, [domainData]);
   
@@ -247,21 +269,24 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
       console.log("Applying enrichment data to form:", data);
       
       // Only update fields if they have values and current form values are empty or default
-      if (data.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion())) {
-        form.setValue('name', data.name);
+      if (data.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion(form.getValues('website')))) {
+        form.setValue('name', data.name, { shouldDirty: true, shouldValidate: true });
       }
       
       // Set website if not already set and available in enrichment
       if (data.website && !form.getValues('website')) {
-        form.setValue('website', data.website);
+        form.setValue('website', data.website, { shouldDirty: true });
       }
       
-      // Set address if available (we'll need to handle address format)
-      // This would need more complex logic for formatting the address properly
+      // Set industry if available and form value is empty
+      if (data.industry && !form.getValues('industry')) {
+        form.setValue('industry', data.industry, { shouldDirty: true });
+      }
       
-      // Set phone if available
-      // PDL doesn't directly provide phone in a standard format, would need additional
-      // processing if it's available in a future API update
+      // Set employee count if available and form value is empty
+      if (data.employeeCount && !form.getValues('employeeCount')) {
+        form.setValue('employeeCount', String(data.employeeCount), { shouldDirty: true });
+      }
     }
   }, [enrichmentData]);
   
