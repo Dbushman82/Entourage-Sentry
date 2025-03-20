@@ -889,6 +889,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(err, res);
     }
   });
+  
+  // Security assessment endpoint
+  app.post('/api/companies/security/domain', async (req: Request, res: Response) => {
+    try {
+      const { domain, companyId } = req.body;
+      
+      if (!domain) {
+        return res.status(400).json({
+          success: false,
+          error: 'Domain is required'
+        });
+      }
+      
+      // Import the security analysis utility
+      const { fetchSecurityData } = await import('./utils/securityAnalysis');
+      
+      // Step 1: Fetch security data from the API
+      const securityData = await fetchSecurityData(domain);
+      
+      // Step 2: Store in the database if company ID is provided
+      let securityAssessment = null;
+      
+      if (companyId && securityData && !securityData.error) {
+        const companyIdNum = parseInt(companyId);
+        if (isNaN(companyIdNum)) {
+          return res.status(400).json({ message: 'Invalid company ID' });
+        }
+        
+        const company = await storage.getCompany(companyIdNum);
+        if (!company) {
+          return res.status(404).json({ message: 'Company not found' });
+        }
+        
+        // Prepare the data for insertion
+        const securityAssessmentData: schema.InsertSecurityAssessment = {
+          companyId: companyIdNum,
+          domain: securityData.domain,
+          securityScore: securityData.securityScore,
+          technologies: securityData.technologies || [],
+          exposedServices: securityData.exposedServices || [],
+          vulnerabilitiesHigh: securityData.vulnerabilities?.high || 0,
+          vulnerabilitiesMedium: securityData.vulnerabilities?.medium || 0,
+          vulnerabilitiesLow: securityData.vulnerabilities?.low || 0,
+          vulnerabilitiesInfo: securityData.vulnerabilities?.info || 0,
+          presentSecurityHeaders: securityData.securityHeaders?.present || [],
+          missingSecurityHeaders: securityData.securityHeaders?.missing || [],
+          subdomains: securityData.subdomains || [],
+          recommendations: securityData.recommendations || [],
+          rawData: securityData
+        };
+        
+        // Create the security assessment in the database
+        securityAssessment = await storage.createSecurityAssessment(securityAssessmentData);
+        
+        // If an active assessment exists, link it to the security assessment
+        if (securityAssessment) {
+          const assessments = await db.select()
+            .from(schema.assessments)
+            .where((eb) => eb.eq(schema.assessments.companyId, companyIdNum))
+            .where((eb) => eb.eq(schema.assessments.status, 'in_progress'));
+            
+          if (assessments.length > 0) {
+            await storage.updateAssessment(assessments[0].id, {
+              securityAssessmentId: securityAssessment.id
+            });
+          }
+        }
+      }
+      
+      // Step 3: Return the combined data
+      res.json({
+        success: !securityData.error,
+        error: securityData.error,
+        data: securityData,
+        securityAssessmentId: securityAssessment?.id
+      });
+    } catch (error) {
+      console.error('Error processing security assessment:', error);
+      handleError(error, res);
+    }
+  });
 
   // Network scanner download routes
   app.get('/api/scanner/:platform', (req: Request, res: Response) => {

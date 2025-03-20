@@ -91,6 +91,12 @@ export interface IStorage {
   getScannerVersion(id: number): Promise<any | undefined>;
   getAllScannerVersions(): Promise<any[]>;
   deleteScannerVersion(id: number): Promise<boolean>;
+  
+  // Security assessment methods
+  createSecurityAssessment(assessment: InsertSecurityAssessment): Promise<SecurityAssessment>;
+  getSecurityAssessment(id: number): Promise<SecurityAssessment | undefined>;
+  getSecurityAssessmentByCompanyId(companyId: number): Promise<SecurityAssessment | undefined>;
+  updateSecurityAssessment(id: number, assessment: Partial<InsertSecurityAssessment>): Promise<SecurityAssessment | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -125,6 +131,9 @@ export class MemStorage implements IStorage {
   
   private scannerVersionIdCounter: number = 1;
   private scannerVersions: Map<number, any> = new Map();
+  
+  private securityAssessmentIdCounter: number = 1;
+  private securityAssessments: Map<number, SecurityAssessment> = new Map();
 
   constructor() {
     // Initialize with some data if needed
@@ -451,6 +460,49 @@ export class MemStorage implements IStorage {
   
   async deleteScannerVersion(id: number): Promise<boolean> {
     return this.scannerVersions.delete(id);
+  }
+  
+  // Security assessment methods
+  async createSecurityAssessment(assessment: InsertSecurityAssessment): Promise<SecurityAssessment> {
+    const id = this.securityAssessmentIdCounter++;
+    const now = new Date();
+    const newAssessment: SecurityAssessment = { 
+      ...assessment, 
+      id, 
+      createdAt: now,
+      scanDate: now,
+      technologies: assessment.technologies || [],
+      exposedServices: assessment.exposedServices || [],
+      vulnerabilitiesHigh: assessment.vulnerabilitiesHigh || 0,
+      vulnerabilitiesMedium: assessment.vulnerabilitiesMedium || 0,
+      vulnerabilitiesLow: assessment.vulnerabilitiesLow || 0,
+      vulnerabilitiesInfo: assessment.vulnerabilitiesInfo || 0, 
+      presentSecurityHeaders: assessment.presentSecurityHeaders || [],
+      missingSecurityHeaders: assessment.missingSecurityHeaders || [],
+      subdomains: assessment.subdomains || [],
+      recommendations: assessment.recommendations || []
+    };
+    this.securityAssessments.set(id, newAssessment);
+    return newAssessment;
+  }
+
+  async getSecurityAssessment(id: number): Promise<SecurityAssessment | undefined> {
+    return this.securityAssessments.get(id);
+  }
+
+  async getSecurityAssessmentByCompanyId(companyId: number): Promise<SecurityAssessment | undefined> {
+    return Array.from(this.securityAssessments.values()).find(
+      (assessment) => assessment.companyId === companyId
+    );
+  }
+
+  async updateSecurityAssessment(id: number, assessment: Partial<InsertSecurityAssessment>): Promise<SecurityAssessment | undefined> {
+    const existingAssessment = this.securityAssessments.get(id);
+    if (!existingAssessment) return undefined;
+    
+    const updatedAssessment = { ...existingAssessment, ...assessment };
+    this.securityAssessments.set(id, updatedAssessment);
+    return updatedAssessment;
   }
 
   // Assessment link management

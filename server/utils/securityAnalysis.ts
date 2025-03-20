@@ -4,7 +4,33 @@
  * Utilities for analyzing domain security using the FullHunt.io API
  */
 
-import { normalizeDomain } from './domainRecon';
+// The domainRecon.ts file contains analyzeDomain but not a dedicated normalizeDomain function
+// For security scanning, we need our own domain normalization function
+function normalizeDomain(url: string): string {
+  if (!url) return '';
+  
+  try {
+    // Remove protocol
+    let normalized = url.trim().toLowerCase();
+    normalized = normalized.replace(/^(https?:\/\/)?(www\.)?/, '');
+    
+    // Remove path, query string, and fragment
+    normalized = normalized.split('/')[0];
+    normalized = normalized.split('?')[0];
+    normalized = normalized.split('#')[0];
+    
+    // Validate basic domain format
+    if (!/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}$/i.test(normalized)) {
+      console.warn('Invalid domain format:', normalized);
+      return '';
+    }
+    
+    return normalized;
+  } catch (error) {
+    console.error('Error normalizing domain:', error);
+    return '';
+  }
+}
 
 /**
  * Security analysis result with standardized format
