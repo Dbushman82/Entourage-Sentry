@@ -105,6 +105,46 @@ const AssessmentSummary = () => {
       });
     }
   };
+  
+  const handleExportPdf = async () => {
+    if (!reportRef.current) return;
+    
+    setIsExporting(true);
+    
+    try {
+      // Create a deep clone of the element to avoid modifying the visible DOM
+      const clone = reportRef.current.cloneNode(true) as HTMLElement;
+      
+      // Find elements to remove from the PDF (e.g., buttons)
+      const actionsToRemove = clone.querySelectorAll('.pdf-exclude');
+      actionsToRemove.forEach(el => el.remove());
+      
+      // Set PDF options
+      const options = {
+        margin: [10, 10, 10, 10],
+        filename: `${assessment.referenceCode || 'assessment'}_report.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      // Generate PDF
+      await html2pdf().from(clone).set(options).save();
+      
+      toast({
+        title: "Export successful",
+        description: "PDF report has been generated and downloaded",
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "An error occurred while generating the PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoadingAssessment || isLoadingDetails) {
     return (
@@ -143,9 +183,10 @@ const AssessmentSummary = () => {
 
   return (
     <div className="container p-6 mx-auto">
+      <div ref={reportRef} className="assessment-report">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <Link href="/">
+          <Link href="/" className="pdf-exclude">
             <Button variant="outline" className="flex items-center gap-2 mb-4">
               <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Button>
@@ -153,7 +194,7 @@ const AssessmentSummary = () => {
           <h1 className="text-3xl font-bold">{assessment.referenceCode}</h1>
           <p className="text-gray-500">Completed on {new Date(assessment.completedAt).toLocaleDateString()}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 pdf-exclude">
           {shareUrl ? (
             <Button variant="outline" onClick={copyShareLink} className="flex items-center gap-2">
               <Share2 className="h-4 w-4" /> Copy Link
@@ -163,8 +204,20 @@ const AssessmentSummary = () => {
               <Share2 className="h-4 w-4" /> Generate Share Link
             </Button>
           )}
-          <Button className="flex items-center gap-2">
-            <Download className="h-4 w-4" /> Export PDF
+          <Button 
+            onClick={handleExportPdf}
+            disabled={isExporting}
+            className="flex items-center gap-2"
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" /> Export PDF
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -752,6 +805,7 @@ const AssessmentSummary = () => {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 };
