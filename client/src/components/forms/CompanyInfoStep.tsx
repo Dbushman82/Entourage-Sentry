@@ -164,9 +164,15 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
   // Start enrichment automatically when domain data is available
   useEffect(() => {
     if (domainData?.domain && !enrichmentData && !isEnriching) {
+      console.log("Starting auto enrichment for domain:", domainData.domain);
       enrichByDomainMutation.mutate(domainData.domain);
     }
   }, [domainData]);
+  
+  // Log enrichment data when it changes
+  useEffect(() => {
+    console.log("Enrichment data updated:", enrichmentData);
+  }, [enrichmentData]);
   
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),

@@ -746,8 +746,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Domain is required' });
       }
 
+      console.log('[PDL] Starting company enrichment for domain:', domain);
+
       // Get enrichment data from PDL API
       const enrichmentData = await enrichCompanyByDomain(domain);
+      
+      console.log('[PDL] Enrichment result:', 
+        enrichmentData.success ? 'Success' : 'Failed', 
+        enrichmentData.error || '');
       
       // If companyId is provided, update the company with the enriched data
       if (companyId && enrichmentData.success && enrichmentData.data) {
