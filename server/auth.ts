@@ -72,17 +72,40 @@ export function setupAuthRoutes(app: Express) {
     }
   });
 
-  // Login route
+  // Login route with enhanced debugging
   app.post('/api/auth/login', (req: Request, res: Response, next) => {
     try {
+      console.log("==== LOGIN ATTEMPT ====");
+      console.log("Login payload:", {
+        email: req.body.email,
+        hasPassword: !!req.body.password,
+        body: req.body
+      });
+      
+      // For debugging, let's check if the user exists first
+      const checkUserExists = async () => {
+        try {
+          const [user] = await db.select().from(users).where(eq(users.email, req.body.email));
+          if (user) {
+            console.log("User found in database:", {
+              id: user.id,
+              email: user.email,
+              hashedPasswordExists: !!user.password,
+              passwordLength: user.password?.length || 0
+            });
+          } else {
+            console.log("User NOT found in database.");
+          }
+        } catch (err) {
+          console.error("Error checking user existence:", err);
+        }
+      };
+      
+      // Perform the user existence check
+      checkUserExists();
+      
       // Validate login data
       loginUserSchema.parse(req.body);
-      
-      // Log the entire login payload for debugging
-      console.log("Login attempt with payload:", {
-        email: req.body.email,
-        hasPassword: !!req.body.password
-      });
       
       passport.authenticate('local', (err: any, user: any, info: any) => {
         if (err) {

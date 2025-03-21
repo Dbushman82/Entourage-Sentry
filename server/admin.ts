@@ -74,7 +74,55 @@ const scannerVersionSchema = z.object({
 });
 
 export function setupAdminRoutes(app: Express) {
-  // Apply admin middleware to all routes
+  // Create a special route for initializing the first admin user
+  // This route doesn't require authentication and is meant to bootstrap the system
+  app.post('/api/admin/init', async (req: Request, res: Response) => {
+    try {
+      // Check if there are any existing users
+      const existingUsers = await storage.getAllUsers();
+      
+      // Only allow initialization if there are no users
+      if (existingUsers.length > 0) {
+        return res.status(403).json({ 
+          message: 'Cannot initialize: Users already exist in the system' 
+        });
+      }
+      
+      // Parse and validate user data
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: 'Invalid user data', 
+          errors: result.error.errors 
+        });
+      }
+      
+      // Create the initial admin user
+      const { password, ...userData } = result.data;
+      const hashedPassword = await hashPassword(password);
+      
+      // Generate username from email if not provided
+      const username = userData.email.split('@')[0];
+      
+      const user = await storage.createUser({
+        ...userData,
+        username,
+        password: hashedPassword,
+        role: 'admin', // Force admin role
+        active: true,
+      });
+      
+      // Return the created user (without password)
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+      
+    } catch (error) {
+      console.error('Error initializing admin user:', error);
+      res.status(500).json({ message: 'Failed to initialize admin user' });
+    }
+  });
+  
+  // Apply admin middleware to all other admin routes
   app.use('/api/admin', isAdmin);
 
   // User Management Routes
