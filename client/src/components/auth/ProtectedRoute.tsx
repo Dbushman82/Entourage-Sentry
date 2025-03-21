@@ -38,9 +38,9 @@ export function ProtectedRoute({ path, children, requiredRole }: ProtectedRouteP
           );
         }
         
-        // Redirect to login page if not authenticated
+        // Redirect to auth page if not authenticated
         if (!user) {
-          return <Redirect to="/login" />;
+          return <Redirect to="/auth" />;
         }
         
         // Redirect to home if missing required role

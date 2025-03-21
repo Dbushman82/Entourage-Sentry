@@ -47,7 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       console.log("Attempting login with:", { email: credentials.email });
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
+      // Convert email field to username field for compatibility with Passport
+      const loginData = {
+        username: credentials.email, // Our backend passport is configured to use username, but we collect email
+        password: credentials.password
+      };
+      
+      const res = await apiRequest("POST", "/api/auth/login", loginData);
       
       // Log response status for debugging
       console.log("Login response status:", res.status);

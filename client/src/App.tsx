@@ -16,7 +16,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 function Router() {
   return (
     <Switch>
-      <Route path="/login" component={AuthPage} />
+      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/">
         <Home />
       </ProtectedRoute>
