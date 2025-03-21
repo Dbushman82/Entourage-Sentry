@@ -37,7 +37,7 @@ const Header = () => {
   return (
     <header className="bg-slate-800 border-b border-slate-700">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center space-x-2">
+        <Link href={user ? "/" : "/login"} className="flex items-center space-x-2">
           <Binoculars className="text-primary h-6 w-6" />
           <span className="text-xl font-semibold">Entourage Sentry</span>
         </Link>
@@ -119,7 +119,7 @@ const Header = () => {
             </DropdownMenu>
           ) : (
             <Button variant="outline" size="sm" asChild>
-              <Link href="/">
+              <Link href="/login">
                 Login
               </Link>
             </Button>
