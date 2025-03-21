@@ -387,7 +387,6 @@ const AdminPage = () => {
                     <TableCaption>List of system users</TableCaption>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Username</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Status</TableHead>
@@ -398,7 +397,6 @@ const AdminPage = () => {
                       {users && users.length > 0 ? (
                         users.map((user: User) => (
                           <TableRow key={user.id}>
-                            <TableCell>{user.username}</TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>
                               <Badge variant={
@@ -483,14 +481,6 @@ const AdminPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-username">Username</Label>
-                    <Input 
-                      id="edit-username" 
-                      value={editingUser.username} 
-                      onChange={(e) => setEditingUser({...editingUser, username: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="edit-email">Email</Label>
                     <Input 
                       id="edit-email" 
@@ -541,14 +531,6 @@ const AdminPage = () => {
                   <CardDescription>Create a new system user</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-username">Username</Label>
-                    <Input 
-                      id="new-username" 
-                      value={newUser.username} 
-                      onChange={(e) => setNewUser({...newUser, username: e.target.value})}
-                    />
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-email">Email</Label>
                     <Input 
