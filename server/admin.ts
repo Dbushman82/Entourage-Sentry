@@ -169,7 +169,7 @@ export function setupAdminRoutes(app: Express) {
       const id = parseInt(req.params.id);
       
       // Prevent admin from deleting themselves
-      if (req.user?.id === id) {
+      if (req.user && 'id' in req.user && req.user.id === id) {
         return res.status(400).json({ message: 'Cannot delete your own account' });
       }
 
@@ -247,7 +247,7 @@ export function setupAdminRoutes(app: Express) {
       const newVersion = {
         platform,
         version,
-        uploadedBy: req.user!.id,  // Current user ID
+        uploadedBy: req.user && 'id' in req.user ? req.user.id : 1,  // Current user ID or fallback
         uploadedAt: new Date(),
         filePath: req.file.path
       };
@@ -259,7 +259,7 @@ export function setupAdminRoutes(app: Express) {
         platform,
         version,
         uploadedAt: scannerVersion.uploadedAt,
-        uploadedBy: req.user!.id
+        uploadedBy: req.user && 'id' in req.user ? req.user.id : 1
       });
     } catch (error) {
       console.error('Error uploading scanner:', error);

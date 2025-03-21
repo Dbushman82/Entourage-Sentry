@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import React, { createContext, ReactNode, useContext } from "react";
 import {
   useQuery,
   useMutation,
@@ -16,18 +16,18 @@ export const loginSchema = z.object({
 });
 
 // Type definitions
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-};
+}
 
 type LoginData = z.infer<typeof loginSchema>;
 
 // Create context
-export const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -100,25 +100,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const value = {
+    user: user ?? null,
+    isLoading,
+    error,
+    loginMutation,
+    logoutMutation,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user: user ?? null,
-        isLoading,
-        error,
-        loginMutation,
-        logoutMutation,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 // Hook for using auth context
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
