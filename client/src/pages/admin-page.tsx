@@ -64,7 +64,6 @@ const AdminPage = () => {
   const { user } = useAuth();
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
-    username: '',
     email: '',
     password: '',
     role: 'user'
@@ -148,7 +147,6 @@ const AdminPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       setNewUser({
-        username: '',
         email: '',
         password: '',
         role: 'user'
@@ -322,7 +320,7 @@ const AdminPage = () => {
   };
 
   const handleCreateUser = () => {
-    if (newUser.username && newUser.email && newUser.password) {
+    if (newUser.email && newUser.password) {
       createUserMutation.mutate(newUser);
     } else {
       toast({
