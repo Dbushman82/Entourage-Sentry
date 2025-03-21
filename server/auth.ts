@@ -78,22 +78,29 @@ export function setupAuthRoutes(app: Express) {
       // Validate login data
       loginUserSchema.parse(req.body);
       
+      // Log the login attempt for debugging
+      console.log(`Login attempt for email: ${req.body.email}`);
+      
       passport.authenticate('local', (err: any, user: any, info: any) => {
         if (err) {
+          console.error("Authentication error:", err);
           return next(err);
         }
         
         if (!user) {
-          return res.status(401).json({ message: info.message || "Invalid credentials" });
+          console.log("Authentication failed:", info?.message);
+          return res.status(401).json({ message: info?.message || "Incorrect email or password" });
         }
         
         req.login(user, (loginErr) => {
           if (loginErr) {
+            console.error("Login error:", loginErr);
             return next(loginErr);
           }
           
           // Return user data without password
           const { password, ...userWithoutPassword } = user;
+          console.log("User authenticated successfully:", userWithoutPassword.email);
           return res.json(userWithoutPassword);
         });
       })(req, res, next);
@@ -104,6 +111,7 @@ export function setupAuthRoutes(app: Express) {
           errors: formatZodError(err) 
         });
       }
+      console.error("Login error:", err);
       return next(err);
     }
   });
