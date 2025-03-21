@@ -113,9 +113,13 @@ export function setupAdminRoutes(app: Express) {
 
       const { password, ...userData } = result.data;
       const hashedPassword = await hashPassword(password);
+      
+      // Generate username from email if not provided
+      const username = userData.email.split('@')[0];
 
       const user = await storage.createUser({
         ...userData,
+        username, // Add username derived from email
         password: hashedPassword,
         role: userData.role || 'user',
         active: true,
@@ -141,6 +145,11 @@ export function setupAdminRoutes(app: Express) {
       // Hash password if provided
       if (req.body.password) {
         req.body.password = await hashPassword(req.body.password);
+      }
+
+      // If email is changed, update username to match new email
+      if (req.body.email) {
+        req.body.username = req.body.email.split('@')[0];
       }
 
       const updatedUser = await storage.updateUser(id, req.body);
