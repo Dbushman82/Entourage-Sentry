@@ -66,7 +66,8 @@ const AdminPage = () => {
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
-    role: 'user'
+    role: 'user',
+    username: '' // Will be set automatically based on email
   });
   const [brandLogo, setBrandLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -149,7 +150,8 @@ const AdminPage = () => {
       setNewUser({
         email: '',
         password: '',
-        role: 'user'
+        role: 'user',
+        username: ''
       });
       toast({
         title: "User created",
