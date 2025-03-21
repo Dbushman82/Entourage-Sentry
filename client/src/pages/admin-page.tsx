@@ -323,7 +323,12 @@ const AdminPage = () => {
 
   const handleCreateUser = () => {
     if (newUser.email && newUser.password) {
-      createUserMutation.mutate(newUser);
+      // Set username based on email before submission
+      const userData = {
+        ...newUser,
+        username: newUser.email.split('@')[0]
+      };
+      createUserMutation.mutate(userData);
     } else {
       toast({
         title: "Validation Error",
