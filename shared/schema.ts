@@ -26,6 +26,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   lastName: true,
   role: true,
   username: true, // Added username to insert schema
+  active: true,
 });
 
 export const loginUserSchema = z.object({
