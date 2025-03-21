@@ -40,12 +40,12 @@ export function ProtectedRoute({ path, children, requiredRole }: ProtectedRouteP
         
         // Redirect to login page if not authenticated
         if (!user) {
-          return <Redirect to="/" />;
+          return <Redirect to="/login" />;
         }
         
-        // Redirect to dashboard if missing required role
+        // Redirect to home if missing required role
         if (requiredRole && !hasRequiredRole()) {
-          return <Redirect to="/dashboard" />;
+          return <Redirect to="/" />;
         }
         
         // Render the children if authenticated and authorized
