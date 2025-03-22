@@ -8,7 +8,8 @@ import {
   costs, type Cost, type InsertCost,
   painPoints, type PainPoint, type InsertPainPoint,
   assessments, type Assessment, type InsertAssessment,
-  securityAssessments, type SecurityAssessment, type InsertSecurityAssessment
+  securityAssessments, type SecurityAssessment, type InsertSecurityAssessment,
+  assessmentRequests, type AssessmentRequest, type InsertAssessmentRequest
 } from "@shared/schema";
 
 import { 
