@@ -5,7 +5,8 @@ import {
   User, InsertUser, Contact, InsertContact, Company, InsertCompany,
   DomainData, InsertDomainData, Service, InsertService, NetworkAssessment,
   InsertNetworkAssessment, Cost, InsertCost, PainPoint, InsertPainPoint,
-  Assessment, InsertAssessment, SecurityAssessment, InsertSecurityAssessment
+  Assessment, InsertAssessment, SecurityAssessment, InsertSecurityAssessment,
+  AssessmentRequest, InsertAssessmentRequest
 } from '../shared/schema';
 import { IStorage } from './storage';
 import { 

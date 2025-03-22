@@ -5,6 +5,35 @@ import { z } from "zod";
 // Type for any JSON data
 export type Json = Record<string, any> | Array<any>;
 
+// Assessment request schema for prospects
+export const assessmentRequests = pgTable("assessment_requests", {
+  id: serial("id").primaryKey(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  companyName: text("company_name").notNull(),
+  companyWebsite: text("company_website"),
+  message: text("message"),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected, completed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+  processedBy: integer("processed_by").references(() => users.id),
+});
+
+export const insertAssessmentRequestSchema = createInsertSchema(assessmentRequests).pick({
+  firstName: true,
+  lastName: true,
+  email: true,
+  phone: true,
+  companyName: true,
+  companyWebsite: true,
+  message: true,
+});
+
+export type InsertAssessmentRequest = z.infer<typeof insertAssessmentRequestSchema>;
+export type AssessmentRequest = typeof assessmentRequests.$inferSelect;
+
 // Enhanced user schema with role-based access control
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

@@ -28,6 +28,13 @@ export interface IStorage {
   deleteUser(id: number): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
 
+  // Assessment request methods (for prospects)
+  createAssessmentRequest(request: InsertAssessmentRequest): Promise<AssessmentRequest>;
+  getAssessmentRequest(id: number): Promise<AssessmentRequest | undefined>;
+  getAllAssessmentRequests(): Promise<AssessmentRequest[]>;
+  getPendingAssessmentRequests(): Promise<AssessmentRequest[]>;
+  updateAssessmentRequest(id: number, request: Partial<AssessmentRequest>): Promise<AssessmentRequest | undefined>;
+  
   // Contact methods
   createContact(contact: InsertContact): Promise<Contact>;
   getContact(id: number): Promise<Contact | undefined>;
@@ -103,6 +110,9 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private userIdCounter: number = 1;
   private users: Map<number, User> = new Map();
+  
+  private assessmentRequestIdCounter: number = 1;
+  private assessmentRequests: Map<number, AssessmentRequest> = new Map();
   
   private contactIdCounter: number = 1;
   private contacts: Map<number, Contact> = new Map();
@@ -430,6 +440,44 @@ export class MemStorage implements IStorage {
   
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+  
+  // Assessment request methods
+  async createAssessmentRequest(request: InsertAssessmentRequest): Promise<AssessmentRequest> {
+    const id = this.assessmentRequestIdCounter++;
+    const now = new Date();
+    const newRequest: AssessmentRequest = {
+      ...request,
+      id,
+      status: "pending",
+      createdAt: now,
+      processedAt: null,
+      processedBy: null
+    };
+    this.assessmentRequests.set(id, newRequest);
+    return newRequest;
+  }
+  
+  async getAssessmentRequest(id: number): Promise<AssessmentRequest | undefined> {
+    return this.assessmentRequests.get(id);
+  }
+  
+  async getAllAssessmentRequests(): Promise<AssessmentRequest[]> {
+    return Array.from(this.assessmentRequests.values());
+  }
+  
+  async getPendingAssessmentRequests(): Promise<AssessmentRequest[]> {
+    return Array.from(this.assessmentRequests.values())
+      .filter(request => request.status === "pending");
+  }
+  
+  async updateAssessmentRequest(id: number, requestData: Partial<AssessmentRequest>): Promise<AssessmentRequest | undefined> {
+    const existingRequest = this.assessmentRequests.get(id);
+    if (!existingRequest) return undefined;
+    
+    const updatedRequest = { ...existingRequest, ...requestData };
+    this.assessmentRequests.set(id, updatedRequest);
+    return updatedRequest;
   }
   
   // Assessment link methods
