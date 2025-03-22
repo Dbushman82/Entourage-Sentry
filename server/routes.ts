@@ -1177,6 +1177,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   */
   
+  // Public assessment request endpoint - no authentication required
+  app.post('/api/assessment-requests', async (req: Request, res: Response) => {
+    try {
+      const validData = insertAssessmentRequestSchema.parse(req.body);
+      const assessmentRequest = await storage.createAssessmentRequest(validData);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Assessment request submitted successfully',
+        data: assessmentRequest
+      });
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }

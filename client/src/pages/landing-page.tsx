@@ -1,35 +1,43 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Link } from "wouter";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  CheckCircle2, 
-  Shield, 
-  BarChart,
-  Lock, 
-  Search,
-  Clock,
-  FileText,
-  Mail
-} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
-// Form schema for prospect assessment request
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { CheckCircle } from "lucide-react";
+
+// Form schema for assessment requests
 const assessmentRequestSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   companyName: z.string().min(2, "Company name is required"),
-  companyWebsite: z.string().url("Please enter a valid URL").optional(),
+  companyWebsite: z.string().min(3, "Company website is required"),
   message: z.string().optional(),
 });
 
@@ -37,10 +45,9 @@ type AssessmentRequestFormValues = z.infer<typeof assessmentRequestSchema>;
 
 export default function LandingPage() {
   const { toast } = useToast();
-  const [, navigate] = useLocation();
-  const [submitted, setSubmitted] = useState(false);
-  
-  // Form setup
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
+
+  // Create form
   const form = useForm<AssessmentRequestFormValues>({
     resolver: zodResolver(assessmentRequestSchema),
     defaultValues: {
@@ -53,271 +60,247 @@ export default function LandingPage() {
       message: "",
     },
   });
-  
-  // Request mutation
-  const requestMutation = useMutation({
+
+  // Submit assessment request
+  const assessmentRequestMutation = useMutation({
     mutationFn: async (data: AssessmentRequestFormValues) => {
-      const res = await apiRequest("POST", "/api/assessment-requests", data);
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to submit request");
-      }
-      return await res.json();
+      const response = await apiRequest("POST", "/api/assessment-requests", data);
+      return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Request submitted",
-        description: "Thank you for your interest. We'll get back to you shortly.",
-      });
-      setSubmitted(true);
+      setRequestSubmitted(true);
+      form.reset();
     },
     onError: (error: Error) => {
       toast({
-        title: "Submission failed",
+        title: "Error submitting request",
         description: error.message,
         variant: "destructive",
       });
     },
   });
-  
-  // Handle form submission
+
   const onSubmit = (values: AssessmentRequestFormValues) => {
-    requestMutation.mutate(values);
+    assessmentRequestMutation.mutate(values);
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-primary/90 text-white">
-        <div className="container mx-auto py-4 px-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <Shield className="h-8 w-8 mr-2" />
-            <h1 className="text-xl font-bold">Entourage Sentry</h1>
-          </div>
-          <div className="space-x-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/auth")}
-              className="text-white border-white hover:bg-white hover:text-primary"
+      <header className="w-full bg-primary text-white p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-8 w-8"
             >
-              Login
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <span className="text-xl font-bold">Entourage Sentry</span>
+          </div>
+          <nav>
+            <Link href="/auth">
+              <a className="px-4 py-2 rounded bg-white/20 hover:bg-white/30 transition-colors">
+                Login
+              </a>
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-16 bg-gradient-to-b from-primary/90 to-primary/50 text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl font-bold mb-4">
+              Comprehensive Client Assessment Platform
+            </h1>
+            <p className="text-xl mb-8">
+              Streamline your technology assessments with our powerful, data-enriched platform designed for Managed Service Providers.
+            </p>
+            <Button 
+              size="lg" 
+              variant="secondary"
+              onClick={() => document.getElementById('request-form')?.scrollIntoView({behavior: 'smooth'})}
+            >
+              Request an Assessment
             </Button>
           </div>
         </div>
-      </header>
-      
-      {/* Hero section */}
-      <section className="bg-primary text-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-10 md:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                Comprehensive Client Assessment Platform
-              </h1>
-              <p className="text-xl mb-8">
-                Gain valuable insights into your organization's technology infrastructure, 
-                security posture, and optimization opportunities.
-              </p>
-              <Button 
-                size="lg"
-                className="bg-white text-primary hover:bg-white/90"
-                onClick={() => {
-                  const requestFormElement = document.getElementById('request-form');
-                  requestFormElement?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Request an Assessment
-              </Button>
-            </div>
-            <div className="md:w-1/2 flex justify-center">
-              <div className="bg-white/10 p-8 rounded-lg max-w-md">
-                <Shield className="h-20 w-20 mb-6 mx-auto" />
-                <h3 className="text-2xl font-bold text-center mb-4">
-                  Client Sentry Assessment
-                </h3>
-                <ul className="space-y-4">
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-6 w-6 mr-2 flex-shrink-0" />
-                    <span>Comprehensive security and infrastructure analysis</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-6 w-6 mr-2 flex-shrink-0" />
-                    <span>Domain intelligence and technology stack insights</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-6 w-6 mr-2 flex-shrink-0" />
-                    <span>Cost optimization recommendations</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="h-6 w-6 mr-2 flex-shrink-0" />
-                    <span>Tailored service recommendations</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
-      
-      {/* Features section */}
-      <section className="py-20 bg-slate-50">
+
+      {/* Features Section */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Key Platform Features</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-primary/10 p-3 w-fit mb-4">
-                  <Lock className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Security Assessment</h3>
-                <p className="text-slate-600">
-                  Identify vulnerabilities, security gaps, and compliance issues in your
-                  digital infrastructure.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-primary/10 p-3 w-fit mb-4">
-                  <Search className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Domain Intelligence</h3>
-                <p className="text-slate-600">
-                  Gather insights about your online presence, tech stack, and digital footprint.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-primary/10 p-3 w-fit mb-4">
-                  <BarChart className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Cost Analysis</h3>
-                <p className="text-slate-600">
-                  Discover optimization opportunities and track technology spending across your organization.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-primary/10 p-3 w-fit mb-4">
-                  <Clock className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Time-Limited Access</h3>
-                <p className="text-slate-600">
-                  Secure, time-limited assessment links ensure your data remains protected.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-primary/10 p-3 w-fit mb-4">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Comprehensive Reports</h3>
-                <p className="text-slate-600">
-                  Detailed reports with actionable recommendations and visual data presentation.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-primary/10 p-3 w-fit mb-4">
-                  <Shield className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">MSP-Ready Insights</h3>
-                <p className="text-slate-600">
-                  Tailored insights for Managed Service Providers to better serve their clients.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-      
-      {/* How it works section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="rounded-full bg-primary/10 p-4 w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-primary font-bold text-xl">1</span>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Request Assessment</h3>
-              <p className="text-slate-600">
-                Fill out the form to request your personalized assessment.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="rounded-full bg-primary/10 p-4 w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-primary font-bold text-xl">2</span>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Receive Access Link</h3>
-              <p className="text-slate-600">
-                Get a secure, time-limited link to complete your assessment.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="rounded-full bg-primary/10 p-4 w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-primary font-bold text-xl">3</span>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Complete Assessment</h3>
-              <p className="text-slate-600">
-                Answer questions about your organization and infrastructure.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="rounded-full bg-primary/10 p-4 w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span className="text-primary font-bold text-xl">4</span>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Review Insights</h3>
-              <p className="text-slate-600">
-                Get detailed analysis and recommendations for improvement.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Request form section */}
-      <section id="request-form" className="py-20 bg-slate-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-4">Request an Assessment</h2>
-            <p className="text-center text-slate-600 mb-12">
-              Fill out the form below to request your personalized Entourage Sentry assessment.
-            </p>
-            
-            {submitted ? (
-              <div className="text-center p-8 bg-white rounded-lg shadow-sm border">
-                <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold mb-2">Thank You!</h3>
-                <p className="text-slate-600 mb-6">
-                  Your assessment request has been submitted successfully. Our team will review 
-                  your information and contact you shortly.
-                </p>
-                <Button
-                  onClick={() => setSubmitted(false)}
-                  variant="outline"
+            <div className="flex flex-col items-center text-center p-4">
+              <div className="bg-primary/10 p-4 rounded-full mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary h-8 w-8"
                 >
-                  Submit Another Request
-                </Button>
+                  <path d="M20 7h-9"></path>
+                  <path d="M14 17H5"></path>
+                  <circle cx="17" cy="17" r="3"></circle>
+                  <circle cx="7" cy="7" r="3"></circle>
+                </svg>
               </div>
+              <h3 className="text-xl font-semibold mb-2">Data Enrichment</h3>
+              <p className="text-gray-600">
+                Automatically enrich company data with industry, size, and relevant business details to streamline assessments.
+              </p>
+            </div>
+            <div className="flex flex-col items-center text-center p-4">
+              <div className="bg-primary/10 p-4 rounded-full mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary h-8 w-8"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Security Assessment</h3>
+              <p className="text-gray-600">
+                Identify security vulnerabilities, exposed services, and missing security headers to protect your clients.
+              </p>
+            </div>
+            <div className="flex flex-col items-center text-center p-4">
+              <div className="bg-primary/10 p-4 rounded-full mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary h-8 w-8"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Client Collaboration</h3>
+              <p className="text-gray-600">
+                Share secure, time-limited assessment links with clients for easy collaboration and data collection.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-16 bg-slate-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Benefits for MSPs</h2>
+          <div className="max-w-4xl mx-auto">
+            <div className="space-y-6">
+              <div className="flex items-start">
+                <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Streamlined Discovery Process</h3>
+                  <p className="text-gray-600">Reduce manual data entry and speed up the client onboarding journey.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Enhanced Security Insights</h3>
+                  <p className="text-gray-600">Identify and prioritize security vulnerabilities to protect client businesses.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Comprehensive Service Tracking</h3>
+                  <p className="text-gray-600">Document all client services, contracts, and costs to identify optimization opportunities.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-xl font-semibold mb-1">Professional Reporting</h3>
+                  <p className="text-gray-600">Generate branded assessment reports to showcase your expertise and findings.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Request Form Section */}
+      <section id="request-form" className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-12">Request an Assessment</h2>
+            
+            {requestSubmitted ? (
+              <Card className="border-green-200 bg-green-50">
+                <CardHeader>
+                  <div className="flex items-center justify-center mb-4">
+                    <CheckCircle className="h-16 w-16 text-green-500" />
+                  </div>
+                  <CardTitle className="text-center text-2xl">Request Submitted Successfully!</CardTitle>
+                  <CardDescription className="text-center text-lg">
+                    Thank you for your interest in Entourage Sentry.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-center text-gray-600 mb-4">
+                    Our team will review your request and contact you shortly to discuss the next steps.
+                  </p>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setRequestSubmitted(false)}
+                  >
+                    Submit Another Request
+                  </Button>
+                </CardFooter>
+              </Card>
             ) : (
               <Card>
-                <CardContent className="pt-6">
+                <CardHeader>
+                  <CardTitle>Assessment Request Form</CardTitle>
+                  <CardDescription>
+                    Fill out the form below to request a comprehensive technology assessment for your business.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid md:grid-cols-2 gap-6">
+                      <div className="grid md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="firstName"
@@ -325,13 +308,12 @@ export default function LandingPage() {
                             <FormItem>
                               <FormLabel>First Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your first name" {...field} />
+                                <Input placeholder="John" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        
                         <FormField
                           control={form.control}
                           name="lastName"
@@ -339,36 +321,32 @@ export default function LandingPage() {
                             <FormItem>
                               <FormLabel>Last Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your last name" {...field} />
+                                <Input placeholder="Doe" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-                      
-                      <div className="grid md:grid-cols-2 gap-6">
+
+                      <div className="grid md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email Address</FormLabel>
+                              <FormLabel>Email</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                  <Input
-                                    placeholder="Enter your email"
-                                    className="pl-10"
-                                    {...field}
-                                  />
-                                </div>
+                                <Input
+                                  type="email"
+                                  placeholder="john.doe@example.com"
+                                  {...field}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        
                         <FormField
                           control={form.control}
                           name="phone"
@@ -376,15 +354,17 @@ export default function LandingPage() {
                             <FormItem>
                               <FormLabel>Phone (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your phone number" {...field} />
+                                <Input placeholder="(555) 123-4567" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-                      
-                      <div className="grid md:grid-cols-2 gap-6">
+
+                      <Separator />
+
+                      <div className="grid md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="companyName"
@@ -392,19 +372,18 @@ export default function LandingPage() {
                             <FormItem>
                               <FormLabel>Company Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your company name" {...field} />
+                                <Input placeholder="Acme Inc." {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        
                         <FormField
                           control={form.control}
                           name="companyWebsite"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Company Website (Optional)</FormLabel>
+                              <FormLabel>Company Website</FormLabel>
                               <FormControl>
                                 <Input placeholder="https://example.com" {...field} />
                               </FormControl>
@@ -413,7 +392,7 @@ export default function LandingPage() {
                           )}
                         />
                       </div>
-                      
+
                       <FormField
                         control={form.control}
                         name="message"
@@ -422,23 +401,28 @@ export default function LandingPage() {
                             <FormLabel>Additional Information (Optional)</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Tell us about any specific areas of interest or concerns"
-                                className="min-h-[120px]"
+                                placeholder="Tell us about your specific needs or concerns"
+                                className="resize-none"
+                                rows={4}
                                 {...field}
                               />
                             </FormControl>
+                            <FormDescription>
+                              Share any specific areas you'd like the assessment to focus on.
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <Button 
                         type="submit" 
                         className="w-full" 
-                        size="lg"
-                        disabled={requestMutation.isPending}
+                        disabled={assessmentRequestMutation.isPending}
                       >
-                        {requestMutation.isPending ? "Submitting..." : "Submit Request"}
+                        {assessmentRequestMutation.isPending
+                          ? "Submitting..."
+                          : "Submit Request"}
                       </Button>
                     </form>
                   </Form>
@@ -448,21 +432,45 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-      
+
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
+      <footer className="bg-slate-800 text-white py-8">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center mb-6 md:mb-0">
-              <Shield className="h-8 w-8 mr-2" />
-              <span className="text-xl font-bold">Entourage Sentry</span>
-            </div>
-            <div className="text-center md:text-right">
-              <p>© {new Date().getFullYear()} Entourage IT. All rights reserved.</p>
-              <p className="text-slate-400 mt-2">
-                Contact: <a href="mailto:support@entourageit.com" className="underline">support@entourageit.com</a>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-6 w-6"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                <span className="text-lg font-bold">Entourage Sentry</span>
+              </div>
+              <p className="text-slate-300 max-w-md">
+                A comprehensive client assessment platform for Managed Service
+                Providers, leveraging advanced data enrichment and network
+                reconnaissance technologies.
               </p>
             </div>
+            <div className="flex flex-col md:items-end">
+              <h3 className="text-lg font-semibold mb-2">Contact Us</h3>
+              <p className="text-slate-300">Email: support@entourageit.com</p>
+              <div className="mt-4">
+                <Link href="/auth">
+                  <a className="text-slate-300 hover:text-white">Partner Login</a>
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-700 mt-8 pt-4 text-center text-slate-400">
+            <p>&copy; {new Date().getFullYear()} Entourage IT. All rights reserved.</p>
           </div>
         </div>
       </footer>

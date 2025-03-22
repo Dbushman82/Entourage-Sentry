@@ -8,7 +8,7 @@ import Assessment from "@/pages/assessment";
 import AssessmentSummaryPage from "@/pages/assessment-summary";
 import AuthPage from "@/pages/auth-page";
 import AdminPage from "@/pages/admin-page";
-import Dashboard from "@/pages/dashboard";
+import LandingPage from "@/pages/landing-page";
 import { AssessmentProvider } from "@/context/AssessmentContext";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -16,6 +16,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 function Router() {
   return (
     <Switch>
+      <Route path="/landing" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/">
         <Home />
