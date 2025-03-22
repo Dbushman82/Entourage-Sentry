@@ -257,25 +257,25 @@ export default function LandingPage() {
       </section>
 
       {/* Request Form Section */}
-      <section id="request-form" className="py-16 bg-white">
+      <section id="request-form" className="py-16 bg-slate-900">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Request an Assessment</h2>
+            <h2 className="text-3xl font-bold text-center mb-12 text-white">Request an Assessment</h2>
             
             {requestSubmitted ? (
-              <Card className="border-green-200 bg-green-50">
+              <Card className="border-green-600 bg-green-900/20 text-white">
                 <CardHeader>
                   <div className="flex items-center justify-center mb-4">
-                    <CheckCircle className="h-16 w-16 text-green-500" />
+                    <CheckCircle className="h-16 w-16 text-green-400" />
                   </div>
                   <CardTitle className="text-center text-2xl">Request Submitted Successfully!</CardTitle>
-                  <CardDescription className="text-center text-lg">
+                  <CardDescription className="text-center text-lg text-slate-300">
                     Thank you for your interest in Entourage Sentry.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-center text-gray-600 mb-4">
-                    Our team will review your request and contact you shortly to discuss the next steps.
+                  <p className="text-center text-slate-300 mb-4">
+                    Our team will review your request within 24 hours and contact you to discuss the next steps.
                   </p>
                 </CardContent>
                 <CardFooter className="flex justify-center">
@@ -288,11 +288,12 @@ export default function LandingPage() {
                 </CardFooter>
               </Card>
             ) : (
-              <Card>
+              <Card className="bg-slate-800 border-slate-700 text-white">
                 <CardHeader>
                   <CardTitle>Assessment Request Form</CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-slate-300">
                     Fill out the form below to request a comprehensive technology assessment for your business.
+                    All requests are reviewed within 24 hours.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -304,9 +305,9 @@ export default function LandingPage() {
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>First Name</FormLabel>
+                              <FormLabel className="text-slate-200">First Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="John" {...field} />
+                                <Input placeholder="John" {...field} className="bg-slate-700 border-slate-600" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -317,9 +318,9 @@ export default function LandingPage() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Last Name</FormLabel>
+                              <FormLabel className="text-slate-200">Last Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Doe" {...field} />
+                                <Input placeholder="Doe" {...field} className="bg-slate-700 border-slate-600" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -333,12 +334,13 @@ export default function LandingPage() {
                           name="email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email</FormLabel>
+                              <FormLabel className="text-slate-200">Email</FormLabel>
                               <FormControl>
                                 <Input
                                   type="email"
                                   placeholder="john.doe@example.com"
                                   {...field}
+                                  className="bg-slate-700 border-slate-600"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -350,9 +352,9 @@ export default function LandingPage() {
                           name="phone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Phone (Optional)</FormLabel>
+                              <FormLabel className="text-slate-200">Phone (Optional)</FormLabel>
                               <FormControl>
-                                <Input placeholder="(555) 123-4567" {...field} />
+                                <Input placeholder="(555) 123-4567" {...field} className="bg-slate-700 border-slate-600" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -360,7 +362,7 @@ export default function LandingPage() {
                         />
                       </div>
 
-                      <Separator />
+                      <Separator className="bg-slate-600" />
 
                       <div className="grid md:grid-cols-2 gap-4">
                         <FormField
@@ -368,9 +370,9 @@ export default function LandingPage() {
                           name="companyName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Company Name</FormLabel>
+                              <FormLabel className="text-slate-200">Company Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Acme Inc." {...field} />
+                                <Input placeholder="Acme Inc." {...field} className="bg-slate-700 border-slate-600" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -381,9 +383,9 @@ export default function LandingPage() {
                           name="companyWebsite"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Company Website</FormLabel>
+                              <FormLabel className="text-slate-200">Company Website</FormLabel>
                               <FormControl>
-                                <Input placeholder="https://example.com" {...field} />
+                                <Input placeholder="https://example.com" {...field} className="bg-slate-700 border-slate-600" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -396,16 +398,16 @@ export default function LandingPage() {
                         name="message"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Additional Information (Optional)</FormLabel>
+                            <FormLabel className="text-slate-200">Additional Information (Optional)</FormLabel>
                             <FormControl>
                               <Textarea
                                 placeholder="Tell us about your specific needs or concerns"
-                                className="resize-none"
+                                className="resize-none bg-slate-700 border-slate-600"
                                 rows={4}
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
+                            <FormDescription className="text-slate-400">
                               Share any specific areas you'd like the assessment to focus on.
                             </FormDescription>
                             <FormMessage />
@@ -461,8 +463,8 @@ export default function LandingPage() {
               <h3 className="text-lg font-semibold mb-2">Contact Us</h3>
               <p className="text-slate-300">Email: support@entourageit.com</p>
               <div className="mt-4">
-                <Link href="/auth">
-                  <a className="text-slate-300 hover:text-white">Partner Login</a>
+                <Link href="/auth" className="text-slate-300 hover:text-white">
+                  Partner Login
                 </Link>
               </div>
             </div>
