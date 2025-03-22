@@ -43,9 +43,9 @@ export function ProtectedRoute({ path, children, requiredRole }: ProtectedRouteP
           return <Redirect to="/auth" />;
         }
         
-        // Redirect to home if missing required role
+        // Redirect to dashboard if missing required role
         if (requiredRole && !hasRequiredRole()) {
-          return <Redirect to="/" />;
+          return <Redirect to="/dashboard" />;
         }
         
         // Render the children if authenticated and authorized

@@ -22,10 +22,10 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
   const { user, loginMutation } = useAuth();
   
-  // Redirect to home page if already logged in
+  // Redirect to dashboard if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [user, navigate]);
   

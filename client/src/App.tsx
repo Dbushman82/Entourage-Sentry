@@ -16,9 +16,13 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 function Router() {
   return (
     <Switch>
-      <Route path="/landing" component={LandingPage} />
+      {/* Public routes */}
+      <Route path="/" component={LandingPage} />
+      <Route path="/landing" component={LandingPage} /> {/* Keep for backward compatibility */}
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/">
+      
+      {/* Protected routes requiring authentication */}
+      <ProtectedRoute path="/dashboard">
         <Home />
       </ProtectedRoute>
       <ProtectedRoute path="/assessment">
@@ -30,10 +34,12 @@ function Router() {
       <ProtectedRoute path="/assessment-summary/:id">
         <AssessmentSummaryPage />
       </ProtectedRoute>
+      
       {/* Admin routes with role requirement */}
       <ProtectedRoute path="/admin" requiredRole="admin">
         <AdminPage />
       </ProtectedRoute>
+      
       <Route component={NotFound} />
     </Switch>
   );
