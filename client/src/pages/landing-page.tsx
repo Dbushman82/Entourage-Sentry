@@ -85,9 +85,9 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900 text-slate-100">
       {/* Header */}
-      <header className="w-full bg-primary text-white p-4">
+      <header className="w-full bg-slate-800 text-white p-4 border-b border-slate-700">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <svg
@@ -98,18 +98,16 @@ export default function LandingPage() {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-8 w-8"
+              className="h-8 w-8 text-primary"
             >
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             <span className="text-xl font-bold">Entourage Sentry</span>
           </div>
           <nav>
-            <Link href="/auth">
-              <a className="px-4 py-2 rounded bg-white/20 hover:bg-white/30 transition-colors">
-                Login
-              </a>
-            </Link>
+            <Button variant="ghost" asChild>
+              <Link href="/auth">Login</Link>
+            </Button>
           </nav>
         </div>
       </header>
@@ -136,12 +134,12 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-slate-800">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Key Platform Features</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">Key Platform Features</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center p-4">
-              <div className="bg-primary/10 p-4 rounded-full mb-4">
+            <div className="flex flex-col items-center text-center p-4 bg-slate-700 rounded-lg shadow-md">
+              <div className="bg-primary/20 p-4 rounded-full mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -160,13 +158,13 @@ export default function LandingPage() {
                   <circle cx="7" cy="7" r="3"></circle>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Data Enrichment</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 text-white">Data Enrichment</h3>
+              <p className="text-slate-300">
                 Automatically enrich company data with industry, size, and relevant business details to streamline assessments.
               </p>
             </div>
-            <div className="flex flex-col items-center text-center p-4">
-              <div className="bg-primary/10 p-4 rounded-full mb-4">
+            <div className="flex flex-col items-center text-center p-4 bg-slate-700 rounded-lg shadow-md">
+              <div className="bg-primary/20 p-4 rounded-full mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -185,13 +183,13 @@ export default function LandingPage() {
                   <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Security Assessment</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 text-white">Security Assessment</h3>
+              <p className="text-slate-300">
                 Identify security vulnerabilities, exposed services, and missing security headers to protect your clients.
               </p>
             </div>
-            <div className="flex flex-col items-center text-center p-4">
-              <div className="bg-primary/10 p-4 rounded-full mb-4">
+            <div className="flex flex-col items-center text-center p-4 bg-slate-700 rounded-lg shadow-md">
+              <div className="bg-primary/20 p-4 rounded-full mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -210,8 +208,8 @@ export default function LandingPage() {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Client Collaboration</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 text-white">Client Collaboration</h3>
+              <p className="text-slate-300">
                 Share secure, time-limited assessment links with clients for easy collaboration and data collection.
               </p>
             </div>
@@ -220,37 +218,37 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-16 bg-slate-50">
+      <section className="py-16 bg-slate-700">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Benefits for MSPs</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">Benefits for MSPs</h2>
           <div className="max-w-4xl mx-auto">
             <div className="space-y-6">
-              <div className="flex items-start">
+              <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Streamlined Discovery Process</h3>
-                  <p className="text-gray-600">Reduce manual data entry and speed up the client onboarding journey.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">Streamlined Discovery Process</h3>
+                  <p className="text-slate-200">Reduce manual data entry and speed up the client onboarding journey.</p>
                 </div>
               </div>
-              <div className="flex items-start">
+              <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Enhanced Security Insights</h3>
-                  <p className="text-gray-600">Identify and prioritize security vulnerabilities to protect client businesses.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">Enhanced Security Insights</h3>
+                  <p className="text-slate-200">Identify and prioritize security vulnerabilities to protect client businesses.</p>
                 </div>
               </div>
-              <div className="flex items-start">
+              <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Comprehensive Service Tracking</h3>
-                  <p className="text-gray-600">Document all client services, contracts, and costs to identify optimization opportunities.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">Comprehensive Service Tracking</h3>
+                  <p className="text-slate-200">Document all client services, contracts, and costs to identify optimization opportunities.</p>
                 </div>
               </div>
-              <div className="flex items-start">
+              <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1">Professional Reporting</h3>
-                  <p className="text-gray-600">Generate branded assessment reports to showcase your expertise and findings.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">Professional Reporting</h3>
+                  <p className="text-slate-200">Generate branded assessment reports to showcase your expertise and findings.</p>
                 </div>
               </div>
             </div>
