@@ -424,6 +424,46 @@ export class PostgresStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(schema.users);
   }
+  
+  // Assessment request methods
+  async createAssessmentRequest(request: InsertAssessmentRequest): Promise<AssessmentRequest> {
+    const result = await db.insert(schema.assessmentRequests).values({
+      ...request,
+      createdAt: new Date(),
+      status: "pending",
+      processedAt: null,
+      processedBy: null
+    }).returning();
+    return result[0];
+  }
+  
+  async getAssessmentRequest(id: number): Promise<AssessmentRequest | undefined> {
+    const requests = await db.select().from(schema.assessmentRequests).where(eq(schema.assessmentRequests.id, id));
+    return requests[0];
+  }
+  
+  async getAllAssessmentRequests(): Promise<AssessmentRequest[]> {
+    return await db.select().from(schema.assessmentRequests);
+  }
+  
+  async getPendingAssessmentRequests(): Promise<AssessmentRequest[]> {
+    return await db.select().from(schema.assessmentRequests).where(eq(schema.assessmentRequests.status, "pending"));
+  }
+  
+  async updateAssessmentRequest(id: number, requestData: Partial<AssessmentRequest>): Promise<AssessmentRequest | undefined> {
+    const result = await db.update(schema.assessmentRequests)
+      .set({
+        ...requestData,
+        phone: requestData.phone !== undefined ? requestData.phone : null,
+        companyWebsite: requestData.companyWebsite !== undefined ? requestData.companyWebsite : null,
+        message: requestData.message !== undefined ? requestData.message : null,
+        processedAt: requestData.processedAt || null,
+        processedBy: requestData.processedBy || null
+      })
+      .where(eq(schema.assessmentRequests.id, id))
+      .returning();
+    return result[0];
+  }
 
   // System settings methods for branding
   async updateSystemSetting(key: string, value: string): Promise<void> {

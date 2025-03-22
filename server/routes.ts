@@ -9,7 +9,8 @@ import {
   insertNetworkAssessmentSchema,
   insertCostSchema,
   insertPainPointSchema,
-  insertAssessmentSchema
+  insertAssessmentSchema,
+  insertAssessmentRequestSchema
 } from "@shared/schema";
 import * as schema from '@shared/schema';
 import { db } from './db';
