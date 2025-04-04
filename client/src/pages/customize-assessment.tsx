@@ -127,7 +127,8 @@ const CustomizeAssessment = () => {
       const res = await apiRequest('POST', '/api/questions', { 
         ...data,
         assessmentId: 0, // 0 means global question
-        global: true
+        global: true,
+        createdBy: 1 // Default to admin user ID 1
       });
       return res.json();
     },
