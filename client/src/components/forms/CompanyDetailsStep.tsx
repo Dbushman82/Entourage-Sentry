@@ -224,10 +224,8 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
     } else if (activeTab === "questions") {
       setActiveTab("compliance");
     } else if (activeTab === "compliance") {
-      // Use direct submit to ensure form submission works
-      document.querySelector('form[class*="space-y-4 pb-6"]')?.dispatchEvent(
-        new Event('submit', { bubbles: true, cancelable: true })
-      );
+      // Directly call handleSubmit with current form values
+      handleSubmit(form.getValues());
     }
   };
   
@@ -476,7 +474,7 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
                                   />
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
-                                  <FormLabel className="text-sm font-medium cursor-pointer">
+                                  <FormLabel className="text-sm text-slate-100 font-medium cursor-pointer">
                                     {option.label}
                                   </FormLabel>
                                 </div>
@@ -501,31 +499,22 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
               
-              {activeTab === "compliance" ? (
-                <Button 
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Submitting...
-                    </>
-                  ) : (
-                    <>
-                      Continue <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button 
-                  type="button"
-                  className="flex items-center gap-2"
-                  onClick={handleContinue}
-                >
-                  Continue <ArrowRight className="h-4 w-4" />
-                </Button>
-              )}
+              <Button 
+                type="button"
+                disabled={isSubmitting}
+                className="flex items-center gap-2"
+                onClick={handleContinue}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Submitting...
+                  </>
+                ) : (
+                  <>
+                    Continue <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
             </div>
           </form>
         </Form>
