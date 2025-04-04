@@ -1185,9 +1185,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get global custom questions (not tied to a specific assessment)
   app.get('/api/questions/global', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Using assessmentId 0 to indicate global questions
+      // Get questions with global flag
       const questions = await storage.getCustomQuestionsByAssessmentId(0);
       res.json(questions);
+    } catch (err) {
+      handleError(err, res);
+    }
+  })
+  
+  // Get all questions for an assessment (including global ones)
+  app.get('/api/assessments/:assessmentId/questions', async (req: Request, res: Response) => {
+    try {
+      const assessmentId = parseInt(req.params.assessmentId);
+      if (isNaN(assessmentId)) {
+        return res.status(400).json({ message: 'Invalid assessment ID' });
+      }
+      
+      // First get assessment-specific questions
+      const assessmentQuestions = await storage.getCustomQuestionsByAssessmentId(assessmentId);
+      
+      // Then get global questions
+      const globalQuestions = await storage.getCustomQuestionsByAssessmentId(0);
+      
+      // Combine them, with assessment-specific questions taking precedence
+      const allQuestions = [...globalQuestions, ...assessmentQuestions];
+      
+      res.json(allQuestions);
     } catch (err) {
       handleError(err, res);
     }

@@ -28,6 +28,7 @@ import {
   Layers,
   Trash2,
   Link2,
+  Settings,
   Copy,
 } from "lucide-react";
 import {
@@ -413,6 +414,19 @@ const Home = () => {
                         className="absolute right-3 top-3 z-10 flex space-x-2"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 bg-slate-700 text-slate-300 hover:text-white hover:bg-primary-600"
+                          title="Customize Assessment Questions"
+                          onClick={() => {
+                            setLocation(`/assessments/${assessment.id}/customize`);
+                          }}
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span className="sr-only">Customize Questions</span>
+                        </Button>
+                        
                         {isCompleted && (
                           <Button 
                             variant="ghost" 

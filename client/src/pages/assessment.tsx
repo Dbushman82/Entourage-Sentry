@@ -461,9 +461,8 @@ const Assessment = () => {
               {currentStep === 8 && assessment && (
                 <CustomQuestionsStep 
                   onNext={() => handleGoToStep(9)} 
-                  onBack={() => handleGoToStep(7)}
+                  onPrevious={() => handleGoToStep(7)}
                   assessmentId={assessment.id}
-                  userId={1} // Default to admin user ID for now
                 />
               )}
               
