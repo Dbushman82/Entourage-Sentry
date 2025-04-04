@@ -254,13 +254,22 @@ const Home = () => {
             <h1 className="text-3xl font-bold mb-2">Entourage Sentry</h1>
             <p className="text-slate-400">Powered by Entourage IT</p>
           </div>
-          <Button 
-            className="bg-primary-600 hover:bg-primary-700" 
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Assessment
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline"
+              onClick={() => setLocation("/customize-assessment")}
+            >
+              <FileCheck className="mr-2 h-4 w-4" />
+              Customize Assessments
+            </Button>
+            <Button 
+              className="bg-primary-600 hover:bg-primary-700" 
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Assessment
+            </Button>
+          </div>
         </div>
         
         {/* Overview Cards */}

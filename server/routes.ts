@@ -1181,6 +1181,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(err, res);
     }
   });
+  
+  // Get global custom questions (not tied to a specific assessment)
+  app.get('/api/questions/global', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Using assessmentId 0 to indicate global questions
+      const questions = await storage.getCustomQuestionsByAssessmentId(0);
+      res.json(questions);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
 
   app.get('/api/questions/:id', async (req: Request, res: Response) => {
     try {

@@ -9,6 +9,7 @@ import AssessmentSummaryPage from "@/pages/assessment-summary";
 import AuthPage from "@/pages/auth-page";
 import AdminPage from "@/pages/admin-page";
 import LandingPage from "@/pages/landing-page";
+import CustomizeAssessment from "@/pages/customize-assessment";
 import { AssessmentProvider } from "@/context/AssessmentContext";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -33,6 +34,10 @@ function Router() {
       </ProtectedRoute>
       <ProtectedRoute path="/assessment-summary/:id">
         <AssessmentSummaryPage />
+      </ProtectedRoute>
+      
+      <ProtectedRoute path="/customize-assessment">
+        <CustomizeAssessment />
       </ProtectedRoute>
       
       {/* Admin routes with role requirement */}
