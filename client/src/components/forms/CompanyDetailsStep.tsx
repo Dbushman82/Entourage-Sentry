@@ -130,6 +130,7 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
   const handleSubmit = (values: CompanyProfileFormValues) => {
     console.log("Continue clicked with values:", values);
     
+    // Only do this check if we're on the questions tab
     if (activeTab === "questions" && !checkCustomQuestionsValid()) {
       toast({
         title: "Required questions",
@@ -163,9 +164,12 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
       try {
         // Skip if no questions exist
         if (!questions || questions.length === 0) {
+          console.log("No questions to save, proceeding to next step");
           onNext(fixedValues);
           return;
         }
+        
+        console.log("Saving custom question responses...");
         
         // Create array of promises for question response submissions
         const responsePromises = questions.map(async (question: any) => {
@@ -191,8 +195,10 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
         
         // Wait for all responses to be submitted
         await Promise.all(responsePromises);
+        console.log("Question responses saved successfully");
         
         // Proceed to next step
+        console.log("Proceeding to next step with data:", fixedValues);
         onNext(fixedValues, customResponses);
       } catch (error) {
         console.error("Error submitting question responses:", error);
@@ -201,6 +207,9 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
           description: "There was a problem saving your responses. Please try again.",
           variant: "destructive"
         });
+        
+        // Still proceed to next step despite error
+        onNext(fixedValues, customResponses);
       } finally {
         setIsSubmitting(false);
       }
@@ -215,7 +224,10 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
     } else if (activeTab === "questions") {
       setActiveTab("compliance");
     } else if (activeTab === "compliance") {
-      form.handleSubmit(handleSubmit)();
+      // Use direct submit to ensure form submission works
+      document.querySelector('form[class*="space-y-4 pb-6"]')?.dispatchEvent(
+        new Event('submit', { bubbles: true, cancelable: true })
+      );
     }
   };
   
