@@ -405,7 +405,8 @@ export const questionTypes = pgEnum('question_type', ['text', 'textarea', 'selec
 
 export const customQuestions = pgTable('custom_questions', {
   id: serial('id').primaryKey(),
-  assessmentId: integer('assessment_id').references(() => assessments.id).notNull(),
+  assessmentId: integer('assessment_id').references(() => assessments.id), // Making this nullable for global questions
+  global: boolean('global').notNull().default(false), // Indicate if it's a global question
   question: text('question').notNull(),
   description: text('description'),
   type: questionTypes('type').notNull().default('text'),
@@ -419,8 +420,10 @@ export const customQuestions = pgTable('custom_questions', {
 export const insertCustomQuestionSchema = createInsertSchema(customQuestions, {
   options: z.array(z.string()),
   required: z.boolean(),
+  global: z.boolean(),
 }).pick({
   assessmentId: true,
+  global: true,
   question: true,
   description: true,
   type: true,

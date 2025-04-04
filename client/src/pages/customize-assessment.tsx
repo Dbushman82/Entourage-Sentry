@@ -126,7 +126,7 @@ const CustomizeAssessment = () => {
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       const res = await apiRequest('POST', '/api/questions', { 
         ...data,
-        assessmentId: 0, // 0 means global question
+        assessmentId: null, // null for global questions
         global: true,
         createdBy: 1 // Default to admin user ID 1
       });
