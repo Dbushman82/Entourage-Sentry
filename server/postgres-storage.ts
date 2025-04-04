@@ -6,7 +6,8 @@ import {
   DomainData, InsertDomainData, Service, InsertService, NetworkAssessment,
   InsertNetworkAssessment, Cost, InsertCost, PainPoint, InsertPainPoint,
   Assessment, InsertAssessment, SecurityAssessment, InsertSecurityAssessment,
-  AssessmentRequest, InsertAssessmentRequest
+  AssessmentRequest, InsertAssessmentRequest, CustomQuestion, InsertCustomQuestion,
+  CustomQuestionResponse, InsertCustomQuestionResponse
 } from '../shared/schema';
 import { IStorage } from './storage';
 import { 
@@ -635,6 +636,88 @@ export class PostgresStorage implements IStorage {
     const result = await db.update(schema.securityAssessments)
       .set(updateData)
       .where(eq(schema.securityAssessments.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Custom question methods
+  async createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion> {
+    const result = await db.insert(schema.customQuestions).values({
+      ...question,
+      createdAt: new Date(),
+      description: question.description || null,
+      type: question.type || 'text',
+      options: question.options || [],
+      order: question.order || 0
+    }).returning();
+    return result[0];
+  }
+  
+  async getCustomQuestion(id: number): Promise<CustomQuestion | undefined> {
+    const questions = await db.select().from(schema.customQuestions).where(eq(schema.customQuestions.id, id));
+    return questions[0];
+  }
+  
+  async getCustomQuestionsByAssessmentId(assessmentId: number): Promise<CustomQuestion[]> {
+    return await db.select()
+      .from(schema.customQuestions)
+      .where(eq(schema.customQuestions.assessmentId, assessmentId))
+      .orderBy(schema.customQuestions.order);
+  }
+  
+  async updateCustomQuestion(id: number, question: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined> {
+    const updateData: Record<string, any> = {};
+    
+    if (question.assessmentId !== undefined) updateData.assessmentId = question.assessmentId;
+    if (question.question !== undefined) updateData.question = question.question;
+    if (question.description !== undefined) updateData.description = question.description || null;
+    if (question.type !== undefined) updateData.type = question.type;
+    if (question.options !== undefined) updateData.options = question.options;
+    if (question.required !== undefined) updateData.required = question.required;
+    if (question.order !== undefined) updateData.order = question.order;
+    if (question.createdBy !== undefined) updateData.createdBy = question.createdBy;
+    
+    const result = await db.update(schema.customQuestions)
+      .set(updateData)
+      .where(eq(schema.customQuestions.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deleteCustomQuestion(id: number): Promise<boolean> {
+    const result = await db.delete(schema.customQuestions).where(eq(schema.customQuestions.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  // Custom question response methods
+  async createCustomQuestionResponse(response: InsertCustomQuestionResponse): Promise<CustomQuestionResponse> {
+    const result = await db.insert(schema.customQuestionResponses).values({
+      ...response,
+      createdAt: new Date()
+    }).returning();
+    return result[0];
+  }
+  
+  async getCustomQuestionResponse(id: number): Promise<CustomQuestionResponse | undefined> {
+    const responses = await db.select().from(schema.customQuestionResponses).where(eq(schema.customQuestionResponses.id, id));
+    return responses[0];
+  }
+  
+  async getCustomQuestionResponsesByQuestionId(questionId: number): Promise<CustomQuestionResponse[]> {
+    return await db.select()
+      .from(schema.customQuestionResponses)
+      .where(eq(schema.customQuestionResponses.questionId, questionId));
+  }
+  
+  async updateCustomQuestionResponse(id: number, response: Partial<InsertCustomQuestionResponse>): Promise<CustomQuestionResponse | undefined> {
+    const updateData: Record<string, any> = {};
+    
+    if (response.questionId !== undefined) updateData.questionId = response.questionId;
+    if (response.response !== undefined) updateData.response = response.response;
+    
+    const result = await db.update(schema.customQuestionResponses)
+      .set(updateData)
+      .where(eq(schema.customQuestionResponses.id, id))
       .returning();
     return result[0];
   }

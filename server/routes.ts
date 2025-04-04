@@ -10,7 +10,9 @@ import {
   insertCostSchema,
   insertPainPointSchema,
   insertAssessmentSchema,
-  insertAssessmentRequestSchema
+  insertAssessmentRequestSchema,
+  insertCustomQuestionSchema,
+  insertCustomQuestionResponseSchema
 } from "@shared/schema";
 import * as schema from '@shared/schema';
 import { db } from './db';
@@ -1155,6 +1157,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup authentication routes
   setupAuthRoutes(app);
+  // Custom question APIs
+  app.post('/api/questions', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const validData = insertCustomQuestionSchema.parse(req.body);
+      const question = await storage.createCustomQuestion(validData);
+      res.status(201).json(question);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/questions/assessment/:assessmentId', async (req: Request, res: Response) => {
+    try {
+      const assessmentId = parseInt(req.params.assessmentId);
+      if (isNaN(assessmentId)) {
+        return res.status(400).json({ message: 'Invalid assessment ID' });
+      }
+      
+      const questions = await storage.getCustomQuestionsByAssessmentId(assessmentId);
+      res.json(questions);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/questions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
+      
+      const question = await storage.getCustomQuestion(id);
+      if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      
+      res.json(question);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.put('/api/questions/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
+      
+      const question = await storage.getCustomQuestion(id);
+      if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      
+      const updateSchema = insertCustomQuestionSchema.partial();
+      const validData = updateSchema.parse(req.body);
+      
+      const updatedQuestion = await storage.updateCustomQuestion(id, validData);
+      res.json(updatedQuestion);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.delete('/api/questions/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
+      
+      const deleted = await storage.deleteCustomQuestion(id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      
+      res.status(204).send();
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  // Custom question response APIs
+  app.post('/api/question-responses', async (req: Request, res: Response) => {
+    try {
+      const validData = insertCustomQuestionResponseSchema.parse(req.body);
+      const response = await storage.createCustomQuestionResponse(validData);
+      res.status(201).json(response);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/question-responses/question/:questionId', async (req: Request, res: Response) => {
+    try {
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
+      
+      const responses = await storage.getCustomQuestionResponsesByQuestionId(questionId);
+      res.json(responses);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/question-responses/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid response ID' });
+      }
+      
+      const response = await storage.getCustomQuestionResponse(id);
+      if (!response) {
+        return res.status(404).json({ message: 'Response not found' });
+      }
+      
+      res.json(response);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.put('/api/question-responses/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid response ID' });
+      }
+      
+      const response = await storage.getCustomQuestionResponse(id);
+      if (!response) {
+        return res.status(404).json({ message: 'Response not found' });
+      }
+      
+      const updateSchema = insertCustomQuestionResponseSchema.partial();
+      const validData = updateSchema.parse(req.body);
+      
+      const updatedResponse = await storage.updateCustomQuestionResponse(id, validData);
+      res.json(updatedResponse);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
   setupAdminRoutes(app);
   
   // Apply authentication middleware to protected routes

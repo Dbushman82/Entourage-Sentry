@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -399,3 +399,53 @@ export const insertSecurityAssessmentSchema = createInsertSchema(securityAssessm
 
 export type InsertSecurityAssessment = z.infer<typeof insertSecurityAssessmentSchema>;
 export type SecurityAssessment = typeof securityAssessments.$inferSelect;
+
+// Custom questions schema
+export const questionTypes = pgEnum('question_type', ['text', 'textarea', 'select', 'multiselect', 'checkbox', 'radio']);
+
+export const customQuestions = pgTable('custom_questions', {
+  id: serial('id').primaryKey(),
+  assessmentId: integer('assessment_id').references(() => assessments.id).notNull(),
+  question: text('question').notNull(),
+  description: text('description'),
+  type: questionTypes('type').notNull().default('text'),
+  options: text('options').array(), // For select, multiselect, checkbox, and radio types
+  required: boolean('required').notNull().default(false),
+  order: integer('order').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  createdBy: integer('created_by').references(() => users.id).notNull(),
+});
+
+export const insertCustomQuestionSchema = createInsertSchema(customQuestions, {
+  options: z.array(z.string()),
+  required: z.boolean(),
+}).pick({
+  assessmentId: true,
+  question: true,
+  description: true,
+  type: true,
+  options: true,
+  required: true,
+  order: true,
+  createdBy: true,
+});
+
+export type InsertCustomQuestion = z.infer<typeof insertCustomQuestionSchema>;
+export type CustomQuestion = typeof customQuestions.$inferSelect;
+
+export const customQuestionResponses = pgTable('custom_question_responses', {
+  id: serial('id').primaryKey(),
+  questionId: integer('question_id').references(() => customQuestions.id).notNull(),
+  response: text('response').array(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const insertCustomQuestionResponseSchema = createInsertSchema(customQuestionResponses, {
+  response: z.array(z.string()),
+}).pick({
+  questionId: true,
+  response: true,
+});
+
+export type InsertCustomQuestionResponse = z.infer<typeof insertCustomQuestionResponseSchema>;
+export type CustomQuestionResponse = typeof customQuestionResponses.$inferSelect;

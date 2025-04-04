@@ -53,6 +53,7 @@ import TechStackStep from "@/components/forms/TechStackStep";
 import NetworkAssessmentStep from "@/components/forms/NetworkAssessmentStep";
 import ServiceCostStep from "@/components/forms/ServiceCostStep";
 import SecurityAssessmentStep from "@/components/forms/SecurityAssessmentStep";
+import CustomQuestionsStep from "@/components/forms/CustomQuestionsStep";
 import PainPointsStep from "@/components/forms/PainPointsStep";
 import SuccessScreen from "@/components/success/SuccessScreen";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -384,7 +385,7 @@ const Assessment = () => {
         </div>
         
         {!isCompleted && (
-          <ProgressTracker currentStep={currentStep} totalSteps={8} />
+          <ProgressTracker currentStep={currentStep} totalSteps={9} />
         )}
         
         <div className="bg-slate-800 rounded-lg border border-slate-700 shadow-lg overflow-hidden">
@@ -458,9 +459,18 @@ const Assessment = () => {
               )}
               
               {currentStep === 8 && assessment && (
+                <CustomQuestionsStep 
+                  onNext={() => handleGoToStep(9)} 
+                  onBack={() => handleGoToStep(7)}
+                  assessmentId={assessment.id}
+                  userId={1} // Default to admin user ID for now
+                />
+              )}
+              
+              {currentStep === 9 && assessment && (
                 <PainPointsStep 
                   onSubmit={handleAssessmentComplete} 
-                  onBack={() => handleGoToStep(7)}
+                  onBack={() => handleGoToStep(8)}
                   companyId={assessment.companyId}
                 />
               )}

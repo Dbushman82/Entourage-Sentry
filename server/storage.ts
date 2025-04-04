@@ -9,7 +9,9 @@ import {
   painPoints, type PainPoint, type InsertPainPoint,
   assessments, type Assessment, type InsertAssessment,
   securityAssessments, type SecurityAssessment, type InsertSecurityAssessment,
-  assessmentRequests, type AssessmentRequest, type InsertAssessmentRequest
+  assessmentRequests, type AssessmentRequest, type InsertAssessmentRequest,
+  customQuestions, type CustomQuestion, type InsertCustomQuestion,
+  customQuestionResponses, type CustomQuestionResponse, type InsertCustomQuestionResponse
 } from "@shared/schema";
 
 import { 
@@ -106,6 +108,19 @@ export interface IStorage {
   getSecurityAssessment(id: number): Promise<SecurityAssessment | undefined>;
   getSecurityAssessmentByCompanyId(companyId: number): Promise<SecurityAssessment | undefined>;
   updateSecurityAssessment(id: number, assessment: Partial<InsertSecurityAssessment>): Promise<SecurityAssessment | undefined>;
+  
+  // Custom questions methods
+  createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion>;
+  getCustomQuestion(id: number): Promise<CustomQuestion | undefined>;
+  getCustomQuestionsByAssessmentId(assessmentId: number): Promise<CustomQuestion[]>;
+  updateCustomQuestion(id: number, question: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined>;
+  deleteCustomQuestion(id: number): Promise<boolean>;
+  
+  // Custom question responses methods
+  createCustomQuestionResponse(response: InsertCustomQuestionResponse): Promise<CustomQuestionResponse>;
+  getCustomQuestionResponse(id: number): Promise<CustomQuestionResponse | undefined>;
+  getCustomQuestionResponsesByQuestionId(questionId: number): Promise<CustomQuestionResponse[]>;
+  updateCustomQuestionResponse(id: number, response: Partial<InsertCustomQuestionResponse>): Promise<CustomQuestionResponse | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -146,6 +161,12 @@ export class MemStorage implements IStorage {
   
   private securityAssessmentIdCounter: number = 1;
   private securityAssessments: Map<number, SecurityAssessment> = new Map();
+  
+  private customQuestionIdCounter: number = 1;
+  private customQuestions: Map<number, CustomQuestion> = new Map();
+  
+  private customQuestionResponseIdCounter: number = 1;
+  private customQuestionResponses: Map<number, CustomQuestionResponse> = new Map();
 
   constructor() {
     // Initialize with some data if needed
@@ -412,6 +433,18 @@ export class MemStorage implements IStorage {
     const painPoint = assessment.painPointId ? await this.getPainPoint(assessment.painPointId) : null;
     const services = company ? await this.getServicesByCompanyId(company.id) : [];
     const costs = company ? await this.getCostsByCompanyId(company.id) : [];
+    const customQuestions = await this.getCustomQuestionsByAssessmentId(assessment.id);
+    
+    // Get all responses for each question
+    const customQuestionsWithResponses = await Promise.all(
+      customQuestions.map(async (question) => {
+        const responses = await this.getCustomQuestionResponsesByQuestionId(question.id);
+        return {
+          ...question,
+          responses
+        };
+      })
+    );
 
     return {
       assessment,
@@ -421,7 +454,8 @@ export class MemStorage implements IStorage {
       networkAssessment,
       painPoint,
       services,
-      costs
+      costs,
+      customQuestions: customQuestionsWithResponses
     };
   }
   
@@ -553,6 +587,73 @@ export class MemStorage implements IStorage {
     const updatedAssessment = { ...existingAssessment, ...assessment };
     this.securityAssessments.set(id, updatedAssessment);
     return updatedAssessment;
+  }
+  
+  // Custom question methods
+  async createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion> {
+    const id = this.customQuestionIdCounter++;
+    const now = new Date();
+    const newQuestion: CustomQuestion = { 
+      ...question, 
+      id, 
+      createdAt: now 
+    };
+    this.customQuestions.set(id, newQuestion);
+    return newQuestion;
+  }
+  
+  async getCustomQuestion(id: number): Promise<CustomQuestion | undefined> {
+    return this.customQuestions.get(id);
+  }
+  
+  async getCustomQuestionsByAssessmentId(assessmentId: number): Promise<CustomQuestion[]> {
+    return Array.from(this.customQuestions.values())
+      .filter(question => question.assessmentId === assessmentId)
+      .sort((a, b) => a.order - b.order);
+  }
+  
+  async updateCustomQuestion(id: number, question: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined> {
+    const existingQuestion = this.customQuestions.get(id);
+    if (!existingQuestion) return undefined;
+    
+    const updatedQuestion = { ...existingQuestion, ...question };
+    this.customQuestions.set(id, updatedQuestion);
+    return updatedQuestion;
+  }
+  
+  async deleteCustomQuestion(id: number): Promise<boolean> {
+    return this.customQuestions.delete(id);
+  }
+  
+  // Custom question response methods
+  async createCustomQuestionResponse(response: InsertCustomQuestionResponse): Promise<CustomQuestionResponse> {
+    const id = this.customQuestionResponseIdCounter++;
+    const now = new Date();
+    const newResponse: CustomQuestionResponse = { 
+      ...response, 
+      id, 
+      createdAt: now 
+    };
+    this.customQuestionResponses.set(id, newResponse);
+    return newResponse;
+  }
+  
+  async getCustomQuestionResponse(id: number): Promise<CustomQuestionResponse | undefined> {
+    return this.customQuestionResponses.get(id);
+  }
+  
+  async getCustomQuestionResponsesByQuestionId(questionId: number): Promise<CustomQuestionResponse[]> {
+    return Array.from(this.customQuestionResponses.values())
+      .filter(response => response.questionId === questionId);
+  }
+  
+  async updateCustomQuestionResponse(id: number, response: Partial<InsertCustomQuestionResponse>): Promise<CustomQuestionResponse | undefined> {
+    const existingResponse = this.customQuestionResponses.get(id);
+    if (!existingResponse) return undefined;
+    
+    const updatedResponse = { ...existingResponse, ...response };
+    this.customQuestionResponses.set(id, updatedResponse);
+    return updatedResponse;
   }
 
   // Assessment link management
