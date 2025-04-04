@@ -48,12 +48,11 @@ import Footer from "@/components/layout/Footer";
 import ProgressTracker from "@/components/progress/ProgressTracker";
 import ContactInfoStep from "@/components/forms/ContactInfoStep";
 import CompanyInfoStep from "@/components/forms/CompanyInfoStep";
-import CompanyProfileStep from "@/components/forms/CompanyProfileStep";
+import CompanyDetailsStep from "@/components/forms/CompanyDetailsStep";
 import TechStackStep from "@/components/forms/TechStackStep";
 import NetworkAssessmentStep from "@/components/forms/NetworkAssessmentStep";
 import ServiceCostStep from "@/components/forms/ServiceCostStep";
 import SecurityAssessmentStep from "@/components/forms/SecurityAssessmentStep";
-import CustomQuestionsStep from "@/components/forms/CustomQuestionsStep";
 import PainPointsStep from "@/components/forms/PainPointsStep";
 import SuccessScreen from "@/components/success/SuccessScreen";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -385,7 +384,7 @@ const Assessment = () => {
         </div>
         
         {!isCompleted && (
-          <ProgressTracker currentStep={currentStep} totalSteps={9} />
+          <ProgressTracker currentStep={currentStep} totalSteps={7} />
         )}
         
         <div className="bg-slate-800 rounded-lg border border-slate-700 shadow-lg overflow-hidden">
@@ -410,9 +409,10 @@ const Assessment = () => {
                 />
               )}
               
-              {currentStep === 3 && (
-                <CompanyProfileStep 
-                  onNext={handleCompanyProfileSubmit} 
+              {currentStep === 3 && assessment && (
+                <CompanyDetailsStep
+                  assessmentId={assessment.id}
+                  onNext={handleCompanyProfileSubmit}
                   onBack={() => handleGoToStep(2)}
                   defaultValues={companyProfileData}
                 />
@@ -434,10 +434,11 @@ const Assessment = () => {
               )}
               
               {currentStep === 5 && assessment && (
-                <NetworkAssessmentStep 
+                <SecurityAssessmentStep 
                   onNext={() => handleGoToStep(6)} 
                   onBack={() => handleGoToStep(4)}
                   companyId={assessment.companyId}
+                  domain={companyData?.website || ""}
                 />
               )}
               
@@ -450,26 +451,9 @@ const Assessment = () => {
               )}
               
               {currentStep === 7 && assessment && (
-                <SecurityAssessmentStep 
-                  onNext={() => handleGoToStep(8)} 
-                  onBack={() => handleGoToStep(6)}
-                  companyId={assessment.companyId}
-                  domain={companyData?.website || ""}
-                />
-              )}
-              
-              {currentStep === 8 && assessment && (
-                <CustomQuestionsStep 
-                  onNext={() => handleGoToStep(9)} 
-                  onPrevious={() => handleGoToStep(7)}
-                  assessmentId={assessment.id}
-                />
-              )}
-              
-              {currentStep === 9 && assessment && (
                 <PainPointsStep 
                   onSubmit={handleAssessmentComplete} 
-                  onBack={() => handleGoToStep(8)}
+                  onBack={() => handleGoToStep(6)}
                   companyId={assessment.companyId}
                 />
               )}
