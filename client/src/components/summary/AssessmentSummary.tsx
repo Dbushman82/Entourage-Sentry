@@ -160,7 +160,7 @@ const AssessmentSummary = () => {
         <div className="text-center p-10 border border-dashed rounded-lg">
           <h2 className="text-2xl font-bold mb-4">Assessment Not Found</h2>
           <p className="mb-6">The assessment you're looking for doesn't exist or you don't have access to it.</p>
-          <Link href="/">
+          <Link href="/dashboard">
             <Button className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Button>
@@ -186,7 +186,7 @@ const AssessmentSummary = () => {
       <div ref={reportRef} className="assessment-report">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <Link href="/" className="pdf-exclude">
+          <Link href="/dashboard" className="pdf-exclude">
             <Button variant="outline" className="flex items-center gap-2 mb-4">
               <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Button>

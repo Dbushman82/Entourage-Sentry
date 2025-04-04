@@ -283,7 +283,7 @@ const AssessmentCustomize = () => {
           <div className="text-center">
             <h1 className="text-3xl font-bold">Invalid Assessment</h1>
             <p className="text-slate-400 my-4">The assessment you are trying to customize does not exist or you don't have permission to access it.</p>
-            <Button onClick={() => setLocation("/")}>Return to Dashboard</Button>
+            <Button onClick={() => setLocation("/dashboard")}>Return to Dashboard</Button>
           </div>
         </main>
         <Footer />
@@ -298,7 +298,7 @@ const AssessmentCustomize = () => {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div className="flex items-center">
-            <Button variant="ghost" onClick={() => setLocation("/")} className="mr-4">
+            <Button variant="ghost" onClick={() => setLocation("/dashboard")} className="mr-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>

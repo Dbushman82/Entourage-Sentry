@@ -91,7 +91,7 @@ const AdminPage = () => {
             <p>This area is restricted to administrators only.</p>
           </CardContent>
           <CardFooter>
-            <Link href="/">
+            <Link href="/dashboard">
               <Button>Back to Dashboard</Button>
             </Link>
           </CardFooter>
@@ -360,7 +360,7 @@ const AdminPage = () => {
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Administration</h1>
-        <Link href="/">
+        <Link href="/dashboard">
           <Button variant="outline">
             Back to Dashboard
           </Button>
