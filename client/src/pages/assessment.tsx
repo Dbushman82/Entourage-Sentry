@@ -51,7 +51,7 @@ import CompanyInfoStep from "@/components/forms/CompanyInfoStep";
 import CompanyDetailsStep from "@/components/forms/CompanyDetailsStep";
 import TechStackStep from "@/components/forms/TechStackStep";
 import NetworkAssessmentStep from "@/components/forms/NetworkAssessmentStep";
-import ServiceCostStep from "@/components/forms/ServiceCostStep";
+import ExpensesStep from "@/components/forms/ExpensesStep";
 import SecurityAssessmentStep from "@/components/forms/SecurityAssessmentStep";
 import PainPointsStep from "@/components/forms/PainPointsStep";
 import SuccessScreen from "@/components/success/SuccessScreen";
@@ -443,7 +443,7 @@ const Assessment = () => {
               )}
               
               {currentStep === 6 && assessment && (
-                <ServiceCostStep 
+                <ExpensesStep 
                   onNext={() => handleGoToStep(7)} 
                   onBack={() => handleGoToStep(5)}
                   companyId={assessment.companyId}

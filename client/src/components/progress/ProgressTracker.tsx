@@ -11,9 +11,9 @@ const ProgressTracker = ({ currentStep, totalSteps = 7 }: ProgressTrackerProps) 
     { name: 'Contact', icon: <Shield className="h-3 w-3" /> },
     { name: 'Company', icon: <Building className="h-3 w-3" /> },
     { name: 'Profile', icon: <FileText className="h-3 w-3" /> },
-    { name: 'Services', icon: <AppWindow className="h-3 w-3" /> },
+    { name: 'Expenses', icon: <DollarSign className="h-3 w-3" /> },
     { name: 'Network', icon: <Router className="h-3 w-3" /> },
-    { name: 'Costs', icon: <DollarSign className="h-3 w-3" /> },
+    { name: 'Security', icon: <AppWindow className="h-3 w-3" /> },
     { name: 'Needs', icon: <CheckSquare className="h-3 w-3" /> },
   ];
 
@@ -35,12 +35,16 @@ const ProgressTracker = ({ currentStep, totalSteps = 7 }: ProgressTrackerProps) 
       <div className="flex justify-between mt-4 text-xs text-slate-400 overflow-x-auto pb-2">
         {steps.map((step, index) => (
           <div key={index} className="flex flex-col items-center min-w-[60px]">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white mb-1 ${
-              index + 1 <= currentStep ? 'bg-primary-500' : 'bg-slate-700 text-slate-400'
-            }`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 
+              ${index + 1 === currentStep 
+                ? 'bg-primary-500 ring-2 ring-primary-300 text-white' 
+                : index + 1 < currentStep 
+                  ? 'bg-primary-500 text-white' 
+                  : 'bg-slate-700 text-slate-400'
+              }`}>
               {step.icon}
             </div>
-            <span>{step.name}</span>
+            <span className={index + 1 === currentStep ? 'font-medium text-primary-300' : ''}>{step.name}</span>
           </div>
         ))}
       </div>

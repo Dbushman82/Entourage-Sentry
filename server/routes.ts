@@ -8,6 +8,7 @@ import {
   insertServiceSchema,
   insertNetworkAssessmentSchema,
   insertCostSchema,
+  insertExpenseSchema,
   insertPainPointSchema,
   insertAssessmentSchema,
   insertAssessmentRequestSchema,
@@ -697,6 +698,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deleted = await storage.deleteCost(id);
       if (!deleted) {
         return res.status(404).json({ message: 'Cost not found' });
+      }
+      
+      res.status(204).send();
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  // Expenses APIs
+  app.post('/api/expenses', async (req: Request, res: Response) => {
+    try {
+      const validData = insertExpenseSchema.parse(req.body);
+      const expense = await storage.createExpense(validData);
+      res.status(201).json(expense);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/expenses/company/:companyId', async (req: Request, res: Response) => {
+    try {
+      const companyId = parseInt(req.params.companyId);
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: 'Invalid company ID' });
+      }
+      
+      const expenses = await storage.getExpensesByCompanyId(companyId);
+      res.json(expenses);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.put('/api/expenses/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid expense ID' });
+      }
+      
+      const updateSchema = insertExpenseSchema.partial();
+      const validData = updateSchema.parse(req.body);
+      
+      const updatedExpense = await storage.updateExpense(id, validData);
+      if (!updatedExpense) {
+        return res.status(404).json({ message: 'Expense not found' });
+      }
+      
+      res.json(updatedExpense);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.delete('/api/expenses/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid expense ID' });
+      }
+      
+      const deleted = await storage.deleteExpense(id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Expense not found' });
       }
       
       res.status(204).send();

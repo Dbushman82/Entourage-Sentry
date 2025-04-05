@@ -23,7 +23,7 @@ import {
   DollarSign,
   BarChart,
   AlertCircle,
-  Select as SelectIcon
+  TableProperties as SelectIcon
 } from "lucide-react";
 import {
   Select,
@@ -245,25 +245,25 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   return (
     <div>
       <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Service Cost Tracking</h2>
+        <h2 className="text-xl font-semibold">IT Expenses Tracking</h2>
         <div className="flex space-x-2">
           <span className="px-2 py-1 bg-primary-900/50 text-primary-400 text-xs rounded-md">Step 6 of 7</span>
         </div>
       </div>
       <div className="p-6">
-        <p className="text-slate-400 mb-6">Track IT-related expenses and identify cost-saving opportunities.</p>
+        <p className="text-slate-400 mb-6">Track your IT-related expenses and identify cost-saving opportunities.</p>
         
-        {/* Cost Summary */}
+        {/* Expense Summary */}
         <div className="mb-6 p-4 bg-slate-800 border border-slate-700 rounded-lg">
-          <h3 className="text-md font-medium text-white mb-3">Cost Summary</h3>
+          <h3 className="text-md font-medium text-white mb-3">Expense Summary</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-3 bg-slate-900/50 rounded-md">
               <h4 className="text-xs font-medium text-slate-400 mb-1">Monthly Expenses</h4>
-              <span className="text-xl text-white font-semibold">${monthlyCostsTotal}</span>
+              <span className="text-xl text-white font-semibold">${monthlyExpensesTotal}</span>
             </div>
             <div className="p-3 bg-slate-900/50 rounded-md">
               <h4 className="text-xs font-medium text-slate-400 mb-1">Annual Expenses</h4>
-              <span className="text-xl text-white font-semibold">${annualCostsTotal}</span>
+              <span className="text-xl text-white font-semibold">${annualExpensesTotal}</span>
             </div>
             <div className="p-3 bg-slate-900/50 rounded-md">
               <h4 className="text-xs font-medium text-slate-400 mb-1">Cost Per User</h4>
@@ -272,15 +272,15 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
           </div>
         </div>
         
-        {/* Service Cost Table */}
+        {/* Expenses Table */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-md font-medium text-white">IT Services Costs</h3>
+            <h3 className="text-md font-medium text-white">IT Expenses</h3>
             <Button 
               className="px-3 py-1 bg-primary-600 hover:bg-primary-700 h-auto text-sm"
-              onClick={handleAddCost}
+              onClick={handleAddExpense}
             >
-              <Plus className="h-4 w-4 mr-1" /> Add Cost
+              <Plus className="h-4 w-4 mr-1" /> Add Expense
             </Button>
           </div>
           
@@ -290,18 +290,18 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                 <span className="sr-only">Loading...</span>
               </div>
             </div>
-          ) : costs.length === 0 ? (
+          ) : expenses.length === 0 ? (
             <div className="text-center p-8 bg-slate-800 border border-slate-700 rounded-lg">
               <div className="mx-auto w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center mb-4">
                 <DollarSign className="h-6 w-6 text-slate-400" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">No costs added yet</h3>
-              <p className="text-slate-400 mb-4">Start tracking IT-related expenses by adding your first service cost.</p>
+              <h3 className="text-lg font-medium text-white mb-2">No expenses added yet</h3>
+              <p className="text-slate-400 mb-4">Start tracking IT-related expenses by adding your first expense item.</p>
               <Button 
                 className="bg-primary-600 hover:bg-primary-700"
-                onClick={handleAddCost}
+                onClick={handleAddExpense}
               >
-                <Plus className="h-4 w-4 mr-2" /> Add Your First Cost
+                <Plus className="h-4 w-4 mr-2" /> Add Your First Expense
               </Button>
             </div>
           ) : (
@@ -309,7 +309,8 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
               <table className="min-w-full divide-y divide-slate-700">
                 <thead className="bg-slate-800">
                   <tr>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Service</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Type</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Provider</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Monthly Cost</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Users</th>
@@ -318,26 +319,27 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                   </tr>
                 </thead>
                 <tbody className="bg-slate-800 divide-y divide-slate-700">
-                  {costs.map((cost) => (
-                    <tr key={cost.id}>
-                      <td className="px-4 py-3 text-sm text-white">{cost.serviceName}</td>
-                      <td className="px-4 py-3 text-sm text-white">{cost.serviceProvider || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-white">${cost.monthlyCost}</td>
-                      <td className="px-4 py-3 text-sm text-white">{cost.userCount || 'N/A'}</td>
+                  {expenses.map((expense) => (
+                    <tr key={expense.id}>
+                      <td className="px-4 py-3 text-sm text-white">{expense.name}</td>
+                      <td className="px-4 py-3 text-sm text-white">{expense.type || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-white">{expense.provider || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-white">${expense.monthlyCost}</td>
+                      <td className="px-4 py-3 text-sm text-white">{expense.userCount || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-white">
-                        {cost.renewalDate ? new Date(cost.renewalDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
+                        {expense.renewalDate ? new Date(expense.renewalDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-300">
                         <div className="flex space-x-2">
                           <button 
                             className="text-slate-400 hover:text-white"
-                            onClick={() => handleEditCost(cost)}
+                            onClick={() => handleEditExpense(expense)}
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button 
                             className="text-slate-400 hover:text-destructive"
-                            onClick={() => handleDeleteCost(cost.id)}
+                            onClick={() => handleDeleteExpense(expense.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -351,17 +353,17 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
           )}
         </div>
         
-        {/* Cost Insights */}
+        {/* Expense Insights */}
         <div className="mb-6 p-4 bg-slate-800 border border-slate-700 rounded-lg">
           <h3 className="text-md font-medium text-white mb-3">Cost Insights</h3>
           <div className="space-y-3">
-            {costs.length === 0 ? (
+            {expenses.length === 0 ? (
               <div className="p-3 bg-slate-900/20 border border-slate-700/30 rounded-md">
                 <div className="flex items-start">
                   <BarChart className="text-slate-400 text-lg mr-3 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-medium text-slate-400">No Cost Analysis</h4>
-                    <p className="text-xs text-slate-300">Add service costs to see cost-saving insights and recommendations.</p>
+                    <h4 className="text-sm font-medium text-slate-400">No Expense Analysis</h4>
+                    <p className="text-xs text-slate-300">Add expenses to see cost-saving insights and recommendations.</p>
                   </div>
                 </div>
               </div>
@@ -373,9 +375,9 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                     <div>
                       <h4 className="text-sm font-medium text-emerald-400">Cost Saving Opportunity</h4>
                       <p className="text-xs text-slate-300">
-                        {costs.some(c => c.serviceName.toLowerCase().includes('microsoft')) ? 
+                        {expenses.some(e => e.name.toLowerCase().includes('microsoft')) ? 
                           "Microsoft 365 licenses could be optimized by moving to E3 plan for potential savings of $120/month." :
-                          "Consider consolidating multiple services to reduce overhead costs and improve efficiency."}
+                          "Consider consolidating multiple subscriptions to reduce overhead costs and improve efficiency."}
                       </p>
                     </div>
                   </div>
@@ -388,7 +390,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                       <div>
                         <h4 className="text-sm font-medium text-amber-400">License Utilization</h4>
                         <p className="text-xs text-slate-300">
-                          {costs.some(c => c.serviceName.toLowerCase().includes('microsoft')) ?
+                          {expenses.some(e => e.name.toLowerCase().includes('microsoft')) ?
                             "5 unused Microsoft 365 licenses detected. Consider reducing license count to optimize costs." :
                             "Consider auditing licenses to ensure all are being actively used. Unused licenses could be costing you money."}
                         </p>
@@ -403,7 +405,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                     <div>
                       <h4 className="text-sm font-medium text-blue-400">Industry Benchmark</h4>
                       <p className="text-xs text-slate-300">
-                        {monthlyCostsTotal > 1000 ?
+                        {monthlyExpensesTotal > 1000 ?
                           "Your IT spend is approximately 12% higher than industry average for a business of this size and sector." :
                           "Your IT spend appears to be aligned with industry averages for a business of this size and sector."}
                       </p>
@@ -415,18 +417,16 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
           </div>
         </div>
         
-        {/* Add/Edit Cost Form */}
-        {showCostForm && (
+        {/* Add/Edit Expense Form */}
+        {showExpenseForm && (
           <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-md font-medium text-white">
-                {editingCostId ? "Edit IT Service Cost" : "Add IT Service Cost"}
-              </h3>
-              <button
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-md font-medium text-white">{editingExpenseId ? 'Edit Expense' : 'Add New Expense'}</h3>
+              <button 
                 className="text-slate-400 hover:text-white"
-                onClick={closeCostForm}
+                onClick={closeExpenseForm}
               >
-                <X />
+                <X className="h-4 w-4" />
               </button>
             </div>
             
@@ -435,15 +435,12 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="serviceName"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Service Name</FormLabel>
+                        <FormLabel>Name</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field}
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
+                          <Input placeholder="Microsoft 365, AWS, etc." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -452,15 +449,12 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                   
                   <FormField
                     control={form.control}
-                    name="serviceProvider"
+                    name="provider"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Service Provider</FormLabel>
+                        <FormLabel>Provider</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field}
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
+                          <Input placeholder="Microsoft, Amazon, etc." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -471,18 +465,44 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {expenseTypes.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
                     name="monthlyCost"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Monthly Cost ($)</FormLabel>
                         <FormControl>
                           <Input 
-                            type="number"
-                            min="0"
-                            step="0.01"
+                            placeholder="0.00" 
+                            type="number" 
                             {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                            className="bg-slate-700 border-slate-600 text-white"
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />
@@ -495,22 +515,23 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                     name="userCount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>User/License Count</FormLabel>
+                        <FormLabel>User Count</FormLabel>
                         <FormControl>
                           <Input 
-                            type="number"
-                            min="0"
+                            placeholder="Number of users" 
+                            type="number" 
                             {...field}
                             value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                            className="bg-slate-700 border-slate-600 text-white"
+                            onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="renewalDate"
@@ -519,9 +540,8 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                         <FormLabel>Renewal Date</FormLabel>
                         <FormControl>
                           <Input 
-                            type="month"
+                            type="date" 
                             {...field}
-                            className="bg-slate-700 border-slate-600 text-white"
                           />
                         </FormControl>
                         <FormMessage />
@@ -532,15 +552,15 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                 
                 <FormField
                   control={form.control}
-                  name="contractNotes"
+                  name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contract Notes</FormLabel>
+                      <FormLabel>Notes</FormLabel>
                       <FormControl>
                         <Textarea 
+                          placeholder="Enter any additional notes about this expense..." 
+                          className="h-20"
                           {...field}
-                          rows={2}
-                          className="bg-slate-700 border-slate-600 text-white"
                         />
                       </FormControl>
                       <FormMessage />
@@ -548,27 +568,25 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                   )}
                 />
                 
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end space-x-2">
                   <Button
                     type="button"
                     variant="outline"
-                    className="border-slate-600 hover:border-slate-500"
-                    onClick={closeCostForm}
+                    onClick={closeExpenseForm}
                   >
                     Cancel
                   </Button>
                   <Button 
                     type="submit"
-                    className="bg-primary-600 hover:bg-primary-700"
-                    disabled={addCostMutation.isPending || updateCostMutation.isPending}
+                    disabled={form.formState.isSubmitting}
                   >
-                    {(addCostMutation.isPending || updateCostMutation.isPending) ? (
+                    {form.formState.isSubmitting ? (
                       <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                        <span>Saving...</span>
+                        <span className="mr-2">Saving...</span>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
                       </>
                     ) : (
-                      <span>Save Cost</span>
+                      editingExpenseId ? 'Update Expense' : 'Add Expense'
                     )}
                   </Button>
                 </div>
@@ -576,28 +594,28 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
             </Form>
           </div>
         )}
-      </div>
-      <div className="px-6 py-4 bg-slate-900/50 border-t border-slate-700 flex justify-between items-center">
-        <Button
-          type="button"
-          variant="outline"
-          className="border-slate-600 hover:border-slate-500"
-          onClick={onBack}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Previous
-        </Button>
-        <Button 
-          type="button" 
-          className="bg-primary-600 hover:bg-primary-700"
-          onClick={onNext}
-        >
-          Continue
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
+        
+        <div className="flex justify-between mt-8">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="flex items-center"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+          
+          <Button
+            type="button"
+            onClick={onNext}
+            className="flex items-center"
+          >
+            Continue <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default ServiceCostStep;
+export default ExpensesStep;
