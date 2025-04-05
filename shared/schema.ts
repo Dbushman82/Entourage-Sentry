@@ -240,6 +240,7 @@ export const expenses = pgTable("expenses", {
   companyId: integer("company_id").notNull(),
   name: text("name").notNull(),
   provider: text("provider"),
+  perUserCost: integer("per_user_cost"),  // New field for per-user cost
   monthlyCost: integer("monthly_cost").notNull(),
   userCount: integer("user_count"),
   renewalDate: text("renewal_date"),
@@ -252,6 +253,7 @@ export const insertExpenseSchema = createInsertSchema(expenses).pick({
   companyId: true,
   name: true,
   provider: true,
+  perUserCost: true,
   monthlyCost: true,
   userCount: true,
   renewalDate: true,

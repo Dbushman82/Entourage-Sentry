@@ -40,8 +40,9 @@ const expenseFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   type: z.string().optional(),
   provider: z.string().optional(),
+  perUserCost: z.number().min(0, { message: "Per unit cost must be at least 0" }),
   monthlyCost: z.number().min(0, { message: "Monthly cost must be at least 0" }),
-  userCount: z.number().optional(),
+  count: z.number().optional(),
   renewalDate: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -61,7 +62,8 @@ interface Expense {
   type?: string;
   provider?: string;
   monthlyCost: number;
-  userCount?: number;
+  userCount?: number; // Legacy field - will be used until backend is updated
+  count?: number;     // New field name
   renewalDate?: string;
   notes?: string;
   createdAt: string;
@@ -89,7 +91,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   // Calculate expense summary
   const monthlyExpensesTotal = expenses.reduce((sum, expense) => sum + expense.monthlyCost, 0);
   const annualExpensesTotal = monthlyExpensesTotal * 12;
-  const totalUsers = expenses.reduce((sum, expense) => sum + (expense.userCount || 0), 0);
+  const totalUsers = expenses.reduce((sum, expense) => sum + (expense.count || expense.userCount || 0), 0);
   const costPerUser = totalUsers > 0 ? Math.round(monthlyExpensesTotal / totalUsers) : 0;
   
   // Get the expenses for this company
@@ -107,10 +109,13 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   // Add expense mutation
   const addExpenseMutation = useMutation({
     mutationFn: async (expense: any) => {
-      const res = await apiRequest('POST', '/api/expenses', {
+      // Map count to userCount for backward compatibility
+      const mappedExpense = {
         ...expense,
         companyId,
-      });
+        userCount: expense.count // Ensure we send userCount to API
+      };
+      const res = await apiRequest('POST', '/api/expenses', mappedExpense);
       return res.json();
     },
     onSuccess: (data) => {
@@ -135,7 +140,12 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   // Update expense mutation
   const updateExpenseMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const res = await apiRequest('PUT', `/api/expenses/${id}`, data);
+      // Map count to userCount for backward compatibility
+      const mappedData = {
+        ...data,
+        userCount: data.count // Ensure we send userCount to API
+      };
+      const res = await apiRequest('PUT', `/api/expenses/${id}`, mappedData);
       return res.json();
     },
     onSuccess: (data) => {
@@ -186,8 +196,9 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
       name: "",
       type: "",
       provider: "",
+      perUserCost: 0,
       monthlyCost: 0,
-      userCount: undefined,
+      count: undefined,
       renewalDate: "",
       notes: "",
     },
@@ -198,8 +209,9 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
       name: "",
       type: "",
       provider: "",
+      perUserCost: 0,
       monthlyCost: 0,
-      userCount: undefined,
+      count: undefined,
       renewalDate: "",
       notes: "",
     });
@@ -213,12 +225,20 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   
   const handleEditExpense = (expense: Expense) => {
     setEditingExpenseId(expense.id);
+    // Get the count value (count if available, otherwise userCount)
+    const countValue = expense.count || expense.userCount || 0;
+    // Calculate per user cost from monthlyCost and count
+    const perUserCost = countValue > 0 
+      ? Math.round(expense.monthlyCost / countValue) 
+      : 0;
+    
     form.reset({
       name: expense.name,
       type: expense.type || "",
       provider: expense.provider || "",
+      perUserCost: perUserCost,
       monthlyCost: expense.monthlyCost,
-      userCount: expense.userCount,
+      count: countValue,
       renewalDate: expense.renewalDate || "",
       notes: expense.notes || "",
     });
@@ -235,6 +255,11 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   };
   
   const onSubmit = (values: ExpenseFormValues) => {
+    // Ensure monthlyCost is correctly calculated from perUserCost * count
+    if (values.count && values.perUserCost) {
+      values.monthlyCost = values.perUserCost * values.count;
+    }
+    
     if (editingExpenseId) {
       updateExpenseMutation.mutate({ id: editingExpenseId, data: values });
     } else {
@@ -266,7 +291,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
               <span className="text-xl text-white font-semibold">${annualExpensesTotal}</span>
             </div>
             <div className="p-3 bg-slate-900/50 rounded-md">
-              <h4 className="text-xs font-medium text-slate-400 mb-1">Cost Per User</h4>
+              <h4 className="text-xs font-medium text-slate-400 mb-1">Average Cost Per Unit</h4>
               <span className="text-xl text-white font-semibold">${costPerUser}</span>
             </div>
           </div>
@@ -312,20 +337,30 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Name</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Type</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Provider</th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Monthly Cost</th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Users</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Per Unit Cost</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Count</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Total Cost</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Renewal</th>
                     <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-slate-800 divide-y divide-slate-700">
-                  {expenses.map((expense) => (
+                  {expenses.map((expense) => {
+                    // Calculate per unit cost for display
+                    // Get the count value (count if available, otherwise userCount)
+                    const countValue = expense.count || expense.userCount || 0;
+                    const perUserCost = countValue > 0 
+                      ? Math.round(expense.monthlyCost / countValue) 
+                      : 0;
+                      
+                    return (
                     <tr key={expense.id}>
                       <td className="px-4 py-3 text-sm text-white">{expense.name}</td>
                       <td className="px-4 py-3 text-sm text-white">{expense.type || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-white">{expense.provider || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-white">${perUserCost}</td>
+                      <td className="px-4 py-3 text-sm text-white">{expense.count || expense.userCount || 'N/A'}</td> {/* Use count if available, otherwise fall back to userCount */}
                       <td className="px-4 py-3 text-sm text-white">${expense.monthlyCost}</td>
-                      <td className="px-4 py-3 text-sm text-white">{expense.userCount || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-white">
                         {expense.renewalDate ? new Date(expense.renewalDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
                       </td>
@@ -346,7 +381,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
@@ -493,16 +528,26 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                   
                   <FormField
                     control={form.control}
-                    name="monthlyCost"
+                    name="count"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Monthly Cost ($)</FormLabel>
+                        <FormLabel>Count</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="0.00" 
+                            placeholder="Number of users" 
                             type="number" 
                             {...field}
-                            onChange={e => field.onChange(parseFloat(e.target.value))}
+                            value={field.value || ''}
+                            onChange={e => {
+                              const count = e.target.value ? parseInt(e.target.value) : undefined;
+                              field.onChange(count);
+                              
+                              // Update monthly cost when count changes
+                              const perUserCost = form.getValues('perUserCost') || 0;
+                              if (count && perUserCost) {
+                                form.setValue('monthlyCost', perUserCost * count);
+                              }
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -512,17 +557,46 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                   
                   <FormField
                     control={form.control}
-                    name="userCount"
+                    name="perUserCost"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>User Count</FormLabel>
+                        <FormLabel>Per Unit Cost ($)</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Number of users" 
+                            placeholder="0.00" 
                             type="number" 
                             {...field}
-                            value={field.value || ''}
-                            onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                            onChange={e => {
+                              const cost = parseFloat(e.target.value);
+                              field.onChange(cost);
+                              
+                              // Update monthly cost when per unit cost changes
+                              const count = form.getValues('count') || 0;
+                              if (count && cost) {
+                                form.setValue('monthlyCost', cost * count);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="monthlyCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Monthly Cost ($)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="0.00" 
+                            type="number" 
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />
