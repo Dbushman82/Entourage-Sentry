@@ -23,6 +23,7 @@ import {
   DollarSign,
   BarChart,
   AlertCircle,
+  Loader2,
   TableProperties as SelectIcon
 } from "lucide-react";
 import {
@@ -312,6 +313,225 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
             </Button>
           </div>
           
+          {/* Add/Edit Expense Form */}
+          {showExpenseForm && (
+            <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-md font-medium text-white">{editingExpenseId ? 'Edit Expense' : 'New Expense'}</h3>
+                <button 
+                  className="text-slate-400 hover:text-white"
+                  onClick={closeExpenseForm}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem className="mb-1">
+                            <FormLabel className="text-xs">Name</FormLabel>
+                            <FormControl>
+                              <Input className="h-8 text-sm" placeholder="Microsoft 365, AWS, etc." {...field} />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="provider"
+                        render={({ field }) => (
+                          <FormItem className="mb-1">
+                            <FormLabel className="text-xs">Provider</FormLabel>
+                            <FormControl>
+                              <Input className="h-8 text-sm" placeholder="Microsoft, Amazon, etc." {...field} />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div>
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem className="mb-1">
+                            <FormLabel className="text-xs">Type</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {expenseTypes.map((type) => (
+                                  <SelectItem key={type} value={type} className="text-sm">
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="renewalDate"
+                        render={({ field }) => (
+                          <FormItem className="mb-1">
+                            <FormLabel className="text-xs">Renewal Date</FormLabel>
+                            <FormControl>
+                              <Input 
+                                className="h-8 text-sm"
+                                type="date" 
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="count"
+                      render={({ field }) => (
+                        <FormItem className="mb-1">
+                          <FormLabel className="text-xs">Count</FormLabel>
+                          <FormControl>
+                            <Input 
+                              className="h-8 text-sm"
+                              placeholder="0" 
+                              type="number" 
+                              {...field}
+                              value={field.value || ''}
+                              onChange={e => {
+                                const count = e.target.value ? parseInt(e.target.value) : undefined;
+                                field.onChange(count);
+                                
+                                // Update monthly cost when count changes
+                                const perUserCost = form.getValues('perUserCost') || 0;
+                                if (count && perUserCost) {
+                                  form.setValue('monthlyCost', perUserCost * count);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="perUserCost"
+                      render={({ field }) => (
+                        <FormItem className="mb-1">
+                          <FormLabel className="text-xs">Per Unit Cost ($)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              className="h-8 text-sm"
+                              placeholder="0.00" 
+                              type="number" 
+                              {...field}
+                              onChange={e => {
+                                const cost = parseFloat(e.target.value);
+                                field.onChange(cost);
+                                
+                                // Update monthly cost when per unit cost changes
+                                const count = form.getValues('count') || 0;
+                                if (count && cost) {
+                                  form.setValue('monthlyCost', cost * count);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="monthlyCost"
+                      render={({ field }) => (
+                        <FormItem className="mb-1">
+                          <FormLabel className="text-xs">Total Monthly Cost ($)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              className="h-8 text-sm"
+                              placeholder="0.00" 
+                              type="number" 
+                              {...field}
+                              onChange={e => field.onChange(parseFloat(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem className="mb-1">
+                        <FormLabel className="text-xs">Notes</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter any additional notes about this expense..." 
+                            className="h-16 text-sm"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 text-xs"
+                      onClick={closeExpenseForm}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      className="h-8 text-xs"
+                      disabled={addExpenseMutation.isPending || updateExpenseMutation.isPending}
+                    >
+                      {(addExpenseMutation.isPending || updateExpenseMutation.isPending) && (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      )}
+                      {editingExpenseId ? 'Update' : 'Add'} Expense
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          )}
+          
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent text-primary-500 motion-reduce:animate-[spin_1.5s_linear_infinite]">
@@ -362,7 +582,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                       <td className="px-4 py-3 text-sm text-white">{expense.type || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-white">{expense.provider || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-white">${perUserCost}</td>
-                      <td className="px-4 py-3 text-sm text-white">{expense.count || expense.userCount || 'N/A'}</td> {/* Use count if available, otherwise fall back to userCount */}
+                      <td className="px-4 py-3 text-sm text-white">{expense.count || expense.userCount || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-white">${expense.monthlyCost}</td>
                       <td className="px-4 py-3 text-sm text-white">
                         {expense.renewalDate ? new Date(expense.renewalDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
@@ -455,222 +675,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
           </div>
         </div>
         
-        {/* Add/Edit Expense Form */}
-        {showExpenseForm && (
-          <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-md font-medium text-white">{editingExpenseId ? 'Edit Expense' : 'New Expense'}</h3>
-              <button 
-                className="text-slate-400 hover:text-white"
-                onClick={closeExpenseForm}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Microsoft 365, AWS, etc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="provider"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Provider</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Microsoft, Amazon, etc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {expenseTypes.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="count"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Count</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Number of users" 
-                            type="number" 
-                            {...field}
-                            value={field.value || ''}
-                            onChange={e => {
-                              const count = e.target.value ? parseInt(e.target.value) : undefined;
-                              field.onChange(count);
-                              
-                              // Update monthly cost when count changes
-                              const perUserCost = form.getValues('perUserCost') || 0;
-                              if (count && perUserCost) {
-                                form.setValue('monthlyCost', perUserCost * count);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="perUserCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Per Unit Cost ($)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="0.00" 
-                            type="number" 
-                            {...field}
-                            onChange={e => {
-                              const cost = parseFloat(e.target.value);
-                              field.onChange(cost);
-                              
-                              // Update monthly cost when per unit cost changes
-                              const count = form.getValues('count') || 0;
-                              if (count && cost) {
-                                form.setValue('monthlyCost', cost * count);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="monthlyCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Total Monthly Cost ($)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="0.00" 
-                            type="number" 
-                            {...field}
-                            onChange={e => field.onChange(parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="renewalDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Renewal Date</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter any additional notes about this expense..." 
-                          className="h-20"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={closeExpenseForm}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit"
-                    disabled={form.formState.isSubmitting}
-                  >
-                    {form.formState.isSubmitting ? (
-                      <>
-                        <span className="mr-2">Saving...</span>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                      </>
-                    ) : (
-                      editingExpenseId ? 'Update Expense' : 'Add Expense'
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </div>
-        )}
+
         
         <div className="flex justify-between mt-8">
           <Button
