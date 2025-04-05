@@ -419,34 +419,27 @@ const Assessment = () => {
               )}
               
               {currentStep === 4 && assessment && (
-                <TechStackStep 
+                <ExpensesStep 
                   onNext={() => handleGoToStep(5)} 
                   onBack={() => handleGoToStep(3)}
                   companyId={assessment.companyId}
-                  autoDetectedServices={domainData?.techStack?.map((tech: string) => ({
-                    name: tech,
-                    type: tech.toLowerCase().includes('wordpress') ? 'cms' : 
-                           tech.toLowerCase().includes('woocommerce') ? 'ecommerce' : 'productivity',
-                    deployment: 'cloud',
-                    autoDetected: true
-                  }))}
                 />
               )}
               
               {currentStep === 5 && assessment && (
-                <SecurityAssessmentStep 
+                <NetworkAssessmentStep 
                   onNext={() => handleGoToStep(6)} 
                   onBack={() => handleGoToStep(4)}
                   companyId={assessment.companyId}
-                  domain={companyData?.website || ""}
                 />
               )}
               
               {currentStep === 6 && assessment && (
-                <ExpensesStep 
+                <SecurityAssessmentStep 
                   onNext={() => handleGoToStep(7)} 
                   onBack={() => handleGoToStep(5)}
                   companyId={assessment.companyId}
+                  domain={companyData?.website || ""}
                 />
               )}
               

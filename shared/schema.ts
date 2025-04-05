@@ -240,9 +240,10 @@ export const expenses = pgTable("expenses", {
   companyId: integer("company_id").notNull(),
   name: text("name").notNull(),
   provider: text("provider"),
-  perUserCost: integer("per_user_cost"),  // New field for per-user cost
+  perUserCost: integer("per_user_cost"),  // Per-user cost field
   monthlyCost: integer("monthly_cost").notNull(),
-  userCount: integer("user_count"),
+  userCount: integer("user_count"),        // Legacy field - keeping for backward compatibility
+  count: integer("count"),                 // New field to replace userCount
   renewalDate: text("renewal_date"),
   type: text("type"), // For categorization (e.g., Software, Hardware, Service)
   notes: text("notes"),
@@ -256,6 +257,7 @@ export const insertExpenseSchema = createInsertSchema(expenses).pick({
   perUserCost: true,
   monthlyCost: true,
   userCount: true,
+  count: true,
   renewalDate: true,
   type: true,
   notes: true,

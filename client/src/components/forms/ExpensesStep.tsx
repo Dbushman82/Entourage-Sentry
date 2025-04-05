@@ -272,7 +272,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
       <div className="p-6 border-b border-slate-700 flex items-center justify-between">
         <h2 className="text-xl font-semibold">IT Expenses Tracking</h2>
         <div className="flex space-x-2">
-          <span className="px-2 py-1 bg-primary-900/50 text-primary-400 text-xs rounded-md">Step 6 of 7</span>
+          <span className="px-2 py-1 bg-primary-900/50 text-primary-400 text-xs rounded-md">Step 4 of 7</span>
         </div>
       </div>
       <div className="p-6">
