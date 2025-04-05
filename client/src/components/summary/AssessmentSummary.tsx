@@ -178,7 +178,8 @@ const AssessmentSummary = () => {
     securityAssessment, 
     painPoint, 
     services,
-    costs
+    costs,
+    expenses
   } = details;
 
   return (
@@ -737,6 +738,56 @@ const AssessmentSummary = () => {
                     <td className="px-6 py-3"></td>
                     <td className="px-6 py-3">
                       ${costs.reduce((total, cost) => total + (cost.monthlyCost || 0), 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-3"></td>
+                    <td className="px-6 py-3"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Expenses */}
+      {expenses && expenses.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-primary" />
+              <CardTitle>Expenses</CardTitle>
+            </div>
+            <CardDescription>Monthly expenses and services</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs uppercase bg-gray-100 dark:bg-gray-800">
+                  <tr>
+                    <th scope="col" className="px-6 py-3">Name</th>
+                    <th scope="col" className="px-6 py-3">Type</th>
+                    <th scope="col" className="px-6 py-3">Monthly Cost</th>
+                    <th scope="col" className="px-6 py-3">Provider</th>
+                    <th scope="col" className="px-6 py-3">Renewal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {expenses.map((expense, index) => (
+                    <tr key={index} className="border-b dark:border-gray-700">
+                      <td className="px-6 py-4 font-medium">{expense.name}</td>
+                      <td className="px-6 py-4">{expense.type || "N/A"}</td>
+                      <td className="px-6 py-4">${expense.monthlyCost}</td>
+                      <td className="px-6 py-4">{expense.provider || "N/A"}</td>
+                      <td className="px-6 py-4">{expense.renewalDate || "N/A"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="font-semibold">
+                    <td className="px-6 py-3">Total Monthly Expenses</td>
+                    <td className="px-6 py-3"></td>
+                    <td className="px-6 py-3">
+                      ${expenses.reduce((total, expense) => total + (expense.monthlyCost || 0), 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-3"></td>
                     <td className="px-6 py-3"></td>

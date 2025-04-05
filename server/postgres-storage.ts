@@ -7,7 +7,7 @@ import {
   InsertNetworkAssessment, Cost, InsertCost, PainPoint, InsertPainPoint,
   Assessment, InsertAssessment, SecurityAssessment, InsertSecurityAssessment,
   AssessmentRequest, InsertAssessmentRequest, CustomQuestion, InsertCustomQuestion,
-  CustomQuestionResponse, InsertCustomQuestionResponse
+  CustomQuestionResponse, InsertCustomQuestionResponse, Expense, InsertExpense
 } from '../shared/schema';
 import { IStorage } from './storage';
 import { 
@@ -275,6 +275,49 @@ export class PostgresStorage implements IStorage {
     return result.length > 0;
   }
 
+  // Expense methods (unified service and cost tracking)
+  async createExpense(expense: InsertExpense): Promise<Expense> {
+    const result = await db.insert(schema.expenses).values({
+      ...expense,
+      createdAt: new Date(),
+      provider: expense.provider || null,
+      userCount: expense.userCount || null,
+      renewalDate: expense.renewalDate || null,
+      type: expense.type || null,
+      notes: expense.notes || null
+    }).returning();
+    return result[0];
+  }
+
+  async getExpensesByCompanyId(companyId: number): Promise<Expense[]> {
+    return await db.select().from(schema.expenses).where(eq(schema.expenses.companyId, companyId));
+  }
+
+  async getExpense(id: number): Promise<Expense | undefined> {
+    const expenses = await db.select().from(schema.expenses).where(eq(schema.expenses.id, id));
+    return expenses[0];
+  }
+
+  async updateExpense(id: number, expense: Partial<InsertExpense>): Promise<Expense | undefined> {
+    const result = await db.update(schema.expenses)
+      .set({
+        ...expense,
+        provider: expense.provider !== undefined ? expense.provider : null,
+        userCount: expense.userCount !== undefined ? expense.userCount : null,
+        renewalDate: expense.renewalDate !== undefined ? expense.renewalDate : null,
+        type: expense.type !== undefined ? expense.type : null,
+        notes: expense.notes !== undefined ? expense.notes : null
+      })
+      .where(eq(schema.expenses.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteExpense(id: number): Promise<boolean> {
+    const result = await db.delete(schema.expenses).where(eq(schema.expenses.id, id)).returning();
+    return result.length > 0;
+  }
+
   // Pain point methods
   async createPainPoint(painPoint: InsertPainPoint): Promise<PainPoint> {
     const result = await db.insert(schema.painPoints).values({
@@ -411,6 +454,7 @@ export class PostgresStorage implements IStorage {
 
     const services = await this.getServicesByCompanyId(assessment.companyId);
     const costs = await this.getCostsByCompanyId(assessment.companyId);
+    const expenses = await this.getExpensesByCompanyId(assessment.companyId);
 
     return {
       assessment,
@@ -420,7 +464,8 @@ export class PostgresStorage implements IStorage {
       networkAssessment,
       painPoint,
       services,
-      costs
+      costs,
+      expenses
     };
   }
 

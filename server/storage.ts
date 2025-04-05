@@ -6,6 +6,7 @@ import {
   services, type Service, type InsertService,
   networkAssessments, type NetworkAssessment, type InsertNetworkAssessment,
   costs, type Cost, type InsertCost,
+  expenses, type Expense, type InsertExpense,
   painPoints, type PainPoint, type InsertPainPoint,
   assessments, type Assessment, type InsertAssessment,
   securityAssessments, type SecurityAssessment, type InsertSecurityAssessment,
@@ -72,6 +73,13 @@ export interface IStorage {
   getCost(id: number): Promise<Cost | undefined>;
   updateCost(id: number, cost: Partial<InsertCost>): Promise<Cost | undefined>;
   deleteCost(id: number): Promise<boolean>;
+  
+  // Expense methods (unified service and cost tracking)
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  getExpensesByCompanyId(companyId: number): Promise<Expense[]>;
+  getExpense(id: number): Promise<Expense | undefined>;
+  updateExpense(id: number, expense: Partial<InsertExpense>): Promise<Expense | undefined>;
+  deleteExpense(id: number): Promise<boolean>;
 
   // Pain point methods
   createPainPoint(painPoint: InsertPainPoint): Promise<PainPoint>;
@@ -147,6 +155,9 @@ export class MemStorage implements IStorage {
   
   private costIdCounter: number = 1;
   private costs: Map<number, Cost> = new Map();
+  
+  private expenseIdCounter: number = 1;
+  private expenses: Map<number, Expense> = new Map();
   
   private painPointIdCounter: number = 1;
   private painPoints: Map<number, PainPoint> = new Map();
@@ -357,6 +368,42 @@ export class MemStorage implements IStorage {
   async deleteCost(id: number): Promise<boolean> {
     return this.costs.delete(id);
   }
+  
+  // Expense methods (unified service and cost tracking)
+  async createExpense(expense: InsertExpense): Promise<Expense> {
+    const id = this.expenseIdCounter++;
+    const now = new Date();
+    const newExpense: Expense = { 
+      ...expense, 
+      id, 
+      createdAt: now 
+    };
+    this.expenses.set(id, newExpense);
+    return newExpense;
+  }
+
+  async getExpensesByCompanyId(companyId: number): Promise<Expense[]> {
+    return Array.from(this.expenses.values()).filter(
+      (expense) => expense.companyId === companyId
+    );
+  }
+
+  async getExpense(id: number): Promise<Expense | undefined> {
+    return this.expenses.get(id);
+  }
+
+  async updateExpense(id: number, expense: Partial<InsertExpense>): Promise<Expense | undefined> {
+    const existingExpense = this.expenses.get(id);
+    if (!existingExpense) return undefined;
+    
+    const updatedExpense = { ...existingExpense, ...expense };
+    this.expenses.set(id, updatedExpense);
+    return updatedExpense;
+  }
+
+  async deleteExpense(id: number): Promise<boolean> {
+    return this.expenses.delete(id);
+  }
 
   // Pain point methods
   async createPainPoint(painPoint: InsertPainPoint): Promise<PainPoint> {
@@ -433,6 +480,7 @@ export class MemStorage implements IStorage {
     const painPoint = assessment.painPointId ? await this.getPainPoint(assessment.painPointId) : null;
     const services = company ? await this.getServicesByCompanyId(company.id) : [];
     const costs = company ? await this.getCostsByCompanyId(company.id) : [];
+    const expenses = company ? await this.getExpensesByCompanyId(company.id) : [];
     const customQuestions = await this.getCustomQuestionsByAssessmentId(assessment.id);
     
     // Get all responses for each question
@@ -455,6 +503,7 @@ export class MemStorage implements IStorage {
       painPoint,
       services,
       costs,
+      expenses,
       customQuestions: customQuestionsWithResponses
     };
   }

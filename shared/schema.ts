@@ -234,7 +234,35 @@ export const insertNetworkAssessmentSchema = createInsertSchema(networkAssessmen
 export type InsertNetworkAssessment = z.infer<typeof insertNetworkAssessmentSchema>;
 export type NetworkAssessment = typeof networkAssessments.$inferSelect;
 
-// Service costs schema
+// Expenses schema (merged from Services and Costs)
+export const expenses = pgTable("expenses", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  name: text("name").notNull(),
+  provider: text("provider"),
+  monthlyCost: integer("monthly_cost").notNull(),
+  userCount: integer("user_count"),
+  renewalDate: text("renewal_date"),
+  type: text("type"), // For categorization (e.g., Software, Hardware, Service)
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertExpenseSchema = createInsertSchema(expenses).pick({
+  companyId: true,
+  name: true,
+  provider: true,
+  monthlyCost: true,
+  userCount: true,
+  renewalDate: true,
+  type: true,
+  notes: true,
+});
+
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type Expense = typeof expenses.$inferSelect;
+
+// Keeping the old costs schema for backward compatibility
 export const costs = pgTable("costs", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
