@@ -76,8 +76,12 @@ const expenseTypes = [
   "Service",
   "Subscription",
   "Support",
-  "Licensing",
-  "Telecom",
+  "Equipment",
+  "Infrastructure",
+  "Marketing",
+  "Insurance",
+  "Consulting",
+  "Utilities",
   "Other"
 ];
 
@@ -270,13 +274,12 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   return (
     <div>
       <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-        <h2 className="text-xl font-semibold">IT Expenses Tracking</h2>
+        <h2 className="text-xl font-semibold">Expense Tracking</h2>
         <div className="flex space-x-2">
           <span className="px-2 py-1 bg-primary-900/50 text-primary-400 text-xs rounded-md">Step 4 of 7</span>
         </div>
       </div>
       <div className="p-6">
-        <p className="text-slate-400 mb-6">Track your IT-related expenses and identify cost-saving opportunities.</p>
         
         {/* Expense Summary */}
         <div className="mb-6 p-4 bg-slate-800 border border-slate-700 rounded-lg">
@@ -300,7 +303,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
         {/* Expenses Table */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-md font-medium text-white">IT Expenses</h3>
+            <h3 className="text-md font-medium text-white">Expenses</h3>
             <Button 
               className="px-3 py-1 bg-primary-600 hover:bg-primary-700 h-auto text-sm"
               onClick={handleAddExpense}
@@ -321,7 +324,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                 <DollarSign className="h-6 w-6 text-slate-400" />
               </div>
               <h3 className="text-lg font-medium text-white mb-2">No expenses added yet</h3>
-              <p className="text-slate-400 mb-4">Start tracking IT-related expenses by adding your first expense item.</p>
+              <p className="text-slate-400 mb-4">Start tracking expenses by adding your first expense item.</p>
               <Button 
                 className="bg-primary-600 hover:bg-primary-700"
                 onClick={handleAddExpense}
@@ -441,8 +444,8 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                       <h4 className="text-sm font-medium text-blue-400">Industry Benchmark</h4>
                       <p className="text-xs text-slate-300">
                         {monthlyExpensesTotal > 1000 ?
-                          "Your IT spend is approximately 12% higher than industry average for a business of this size and sector." :
-                          "Your IT spend appears to be aligned with industry averages for a business of this size and sector."}
+                          "Your spending is approximately 12% higher than industry average for a business of this size and sector." :
+                          "Your spending appears to be aligned with industry averages for a business of this size and sector."}
                       </p>
                     </div>
                   </div>
@@ -456,7 +459,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
         {showExpenseForm && (
           <div className="p-4 bg-slate-800 border border-slate-700 rounded-lg mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-md font-medium text-white">{editingExpenseId ? 'Edit Expense' : 'Add New Expense'}</h3>
+              <h3 className="text-md font-medium text-white">{editingExpenseId ? 'Edit Expense' : 'New Expense'}</h3>
               <button 
                 className="text-slate-400 hover:text-white"
                 onClick={closeExpenseForm}
