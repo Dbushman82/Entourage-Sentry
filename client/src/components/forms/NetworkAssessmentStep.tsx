@@ -369,10 +369,13 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
 
   // Function to handle editing an existing device
   const handleEditDevice = (index: number) => {
-    const currentDevices = form.getValues().devices || [];
+    // Use form.watch instead of getValues for more reliable updates
+    const currentDevices = form.watch('devices') || [];
     const deviceToEdit = currentDevices[index];
     if (deviceToEdit) {
-      deviceForm.reset(deviceToEdit);
+      // Make a deep copy to avoid reference issues
+      const deviceCopy = JSON.parse(JSON.stringify(deviceToEdit));
+      deviceForm.reset(deviceCopy);
       setEditingDeviceIndex(index);
       setDeviceFormOpen(true);
     }
@@ -387,19 +390,21 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     
     deviceForm.handleSubmit((data) => {
       try {
-        const currentDevices = form.getValues().devices || [];
+        // Use form.watch for more reliable state
+        const currentDevices = form.watch('devices') || [];
         let updatedDevices;
         
         if (editingDeviceIndex !== null) {
           // Update existing device
           updatedDevices = [...currentDevices];
-          updatedDevices[editingDeviceIndex] = data;
+          // Create a clean copy to avoid any reference issues
+          updatedDevices[editingDeviceIndex] = {...data};
         } else {
           // Add new device
-          updatedDevices = [...currentDevices, data];
+          updatedDevices = [...currentDevices, {...data}];
         }
         
-        // Update the form value
+        // Update the form value with explicit options
         form.setValue('devices', updatedDevices, { 
           shouldDirty: true,
           shouldTouch: true,
@@ -410,10 +415,13 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         setDeviceFormOpen(false);
         setEditingDeviceIndex(null);
         
-        toast({
-          title: editingDeviceIndex !== null ? "Device updated" : "Device added",
-          description: `${data.name} (${data.deviceType}) has been ${editingDeviceIndex !== null ? 'updated' : 'added'}.`,
-        });
+        // Make sure to delay a bit to ensure React has time to update the state
+        setTimeout(() => {
+          toast({
+            title: editingDeviceIndex !== null ? "Device updated" : "Device added",
+            description: `${data.name} (${data.deviceType}) has been ${editingDeviceIndex !== null ? 'updated' : 'added'}.`,
+          });
+        }, 100);
       } catch (error) {
         toast({
           title: "Error",
@@ -428,7 +436,8 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
   // Function to handle deleting a device
   const handleDeleteDevice = (index: number) => {
     try {
-      const currentDevices = form.getValues().devices || [];
+      // Use form.watch for more reliable state
+      const currentDevices = form.watch('devices') || [];
       const updatedDevices = currentDevices.filter((_, i) => i !== index);
       
       // Update the form value with proper options
@@ -438,10 +447,13 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         shouldValidate: true
       });
       
-      toast({
-        title: "Device removed",
-        description: "The network device has been removed.",
-      });
+      // Add a small delay to ensure React has time to update the state
+      setTimeout(() => {
+        toast({
+          title: "Device removed",
+          description: "The network device has been removed.",
+        });
+      }, 100);
     } catch (error) {
       toast({
         title: "Error",
