@@ -192,6 +192,33 @@ export const insertServiceSchema = createInsertSchema(services).pick({
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Service = typeof services.$inferSelect;
 
+// Network device types enum
+export const deviceTypeEnum = pgEnum('device_type', [
+  'Firewall', 'Router', 'Switch', 'Server', 'Workstation', 'Printer', 'Access Point', 'Other'
+]);
+
+// Network device schema
+export const networkDevices = pgTable("network_devices", {
+  id: serial("id").primaryKey(),
+  networkAssessmentId: integer("network_assessment_id").notNull(),
+  name: text("name").notNull(),
+  deviceType: deviceTypeEnum("device_type").notNull(),
+  ipAddress: text("ip_address"),
+  role: text("role"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNetworkDeviceSchema = createInsertSchema(networkDevices).pick({
+  networkAssessmentId: true,
+  name: true,
+  deviceType: true,
+  ipAddress: true,
+  role: true,
+});
+
+export type InsertNetworkDevice = z.infer<typeof insertNetworkDeviceSchema>;
+export type NetworkDevice = typeof networkDevices.$inferSelect;
+
 // Network assessment schema
 export const networkAssessments = pgTable("network_assessments", {
   id: serial("id").primaryKey(),
@@ -210,6 +237,7 @@ export const networkAssessments = pgTable("network_assessments", {
   deviceCounts: jsonb("device_counts"), // {workstations, servers, other}
   notes: text("notes"),
   scanData: jsonb("scan_data"), // For when the downloadable tool is used
+  devices: jsonb("devices"), // Array of network devices for manual entry
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -229,6 +257,7 @@ export const insertNetworkAssessmentSchema = createInsertSchema(networkAssessmen
   deviceCounts: true,
   notes: true,
   scanData: true,
+  devices: true,
 });
 
 export type InsertNetworkAssessment = z.infer<typeof insertNetworkAssessmentSchema>;
