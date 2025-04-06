@@ -12,6 +12,7 @@
  */
 export async function detectNetworkInfo(): Promise<{
   ipAddress: string;
+  lanIpAddress: string;
   isp: string;
   connectionType?: string;
   hostname?: string;
@@ -53,8 +54,12 @@ export async function detectNetworkInfo(): Promise<{
     // Try to detect connection type using Navigator API
     const connectionType = detectConnectionType();
     
+    // Get local (LAN) IP address using WebRTC
+    const lanIpAddress = await getLanIpAddress();
+    
     return {
       ipAddress: ipInfo.ip,
+      lanIpAddress,
       isp: ipInfo.org,
       connectionType,
       hostname: ipInfo.hostname,
@@ -63,6 +68,7 @@ export async function detectNetworkInfo(): Promise<{
     console.error('Error detecting network info:', error);
     return {
       ipAddress: 'Unable to detect',
+      lanIpAddress: 'Not available',
       isp: 'Unknown',
       connectionType: 'Unknown',
       hostname: 'Unknown',
@@ -146,6 +152,79 @@ function detectConnectionType(): string {
   }
   
   return 'Unknown';
+}
+
+/**
+ * Gets local (LAN) IP address using WebRTC
+ * 
+ * @returns Promise resolving to LAN IP address or null if not available
+ */
+export async function getLanIpAddress(): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      // Create dummy RTCPeerConnection to trigger ICE candidate gathering
+      const pc = new RTCPeerConnection({
+        iceServers: [{urls: "stun:stun.l.google.com:19302"}]
+      });
+      
+      // Set a timeout in case WebRTC is not supported or fails
+      const timeoutId = setTimeout(() => {
+        if (pc.connectionState !== 'closed') {
+          pc.close();
+        }
+        resolve('Not available');
+      }, 5000);
+      
+      // Listen for candidate events
+      pc.onicecandidate = (event) => {
+        if (!event.candidate) return;
+        
+        // Parse the candidate string to find IPv4 local addresses
+        const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
+        const ipAddress = ipRegex.exec(event.candidate.candidate);
+        
+        // Check if it's a local IP (non-public)
+        if (ipAddress && isLocalIpAddress(ipAddress[1])) {
+          clearTimeout(timeoutId);
+          if (pc.connectionState !== 'closed') {
+            pc.close();
+          }
+          resolve(ipAddress[1]);
+        }
+      };
+      
+      // Create a data channel to trigger candidate gathering
+      pc.createDataChannel('lanip');
+      
+      // Create offer to trigger ICE gathering
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .catch(() => {
+          clearTimeout(timeoutId);
+          if (pc.connectionState !== 'closed') {
+            pc.close();
+          }
+          resolve('Not available');
+        });
+    } catch (error) {
+      console.error('Error getting LAN IP:', error);
+      resolve('Not available');
+    }
+  });
+}
+
+/**
+ * Checks if an IP address is a local/private IP
+ * 
+ * @param ip IP address to check
+ * @returns Boolean indicating if it's a local IP
+ */
+function isLocalIpAddress(ip: string): boolean {
+  // Check common private IP ranges
+  return ip.startsWith('10.') || 
+         ip.startsWith('192.168.') || 
+         ip.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./) !== null ||
+         ip.startsWith('169.254.'); // Link-local addresses
 }
 
 /**

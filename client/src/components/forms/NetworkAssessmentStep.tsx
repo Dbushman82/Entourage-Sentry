@@ -230,6 +230,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
       
       setScanResults({
         ipAddress: networkInfo.ipAddress,
+        lanIpAddress: networkInfo.lanIpAddress,
         isp: networkInfo.isp,
         connectionType: networkInfo.connectionType || 'Unknown',
         hostname: networkInfo.hostname || 'Unknown',
@@ -491,6 +492,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     const browserData = scanResults ? {
       method: 'browser',
       ipAddress: scanResults.ipAddress,
+      lanIpAddress: scanResults.lanIpAddress,
       isp: scanResults.isp,
       connectionType: scanResults.connectionType,
       hostname: scanResults.hostname,
@@ -591,8 +593,12 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                     <h5 className="text-sm font-medium text-slate-300 mb-3">Network Information</h5>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <p className="text-slate-400">IP Address:</p>
+                        <p className="text-slate-400">Public IP Address:</p>
                         <p className="text-white font-mono">{scanResults.ipAddress}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Local IP Address (LAN):</p>
+                        <p className="text-white font-mono">{scanResults.lanIpAddress}</p>
                       </div>
                       <div>
                         <p className="text-slate-400">ISP Provider:</p>
