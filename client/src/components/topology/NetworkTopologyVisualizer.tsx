@@ -8,8 +8,8 @@ import ReactFlow, {
   Node,
   Edge,
   NodeTypes,
-  useReactFlow,
-  Panel
+  Panel,
+  ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -40,9 +40,7 @@ import {
   RefreshCw, 
   ZoomIn, 
   ZoomOut, 
-  Move, 
   Maximize, 
-  Minimize,
   Download
 } from 'lucide-react';
 
@@ -65,9 +63,12 @@ interface NetworkTopologyVisualizerProps {
   onNodeClick?: (device: NetworkDevice) => void;
 }
 
-export default function NetworkTopologyVisualizer({
+/**
+ * Inner component that uses the React Flow hooks
+ */
+function NetworkTopologyVisualizerInner({
   devices = [],
-  height = '500px',
+  height,
   isDemoMode = false,
   onNodeClick
 }: NetworkTopologyVisualizerProps) {
@@ -84,9 +85,6 @@ export default function NetworkTopologyVisualizer({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   
-  // ReactFlow utilities
-  const reactFlowInstance = useReactFlow();
-  
   // Handle node click event
   const handleNodeClick = useCallback((e: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
@@ -95,12 +93,18 @@ export default function NetworkTopologyVisualizer({
     }
   }, [onNodeClick]);
   
-  // Reset the view to fit all nodes
-  const resetView = useCallback(() => {
-    if (reactFlowInstance) {
-      reactFlowInstance.fitView({ padding: 0.2 });
+  // Reset the view to fit all nodes (will be connected to instance in useEffect)
+  const fitView = () => {
+    const instance = document.querySelector('.react-flow');
+    if (instance) {
+      setTimeout(() => {
+        const fitViewButton = document.querySelector('.react-flow__controls-fitview');
+        if (fitViewButton) {
+          (fitViewButton as HTMLElement).click();
+        }
+      }, 100);
     }
-  }, [reactFlowInstance]);
+  };
   
   // Regenerate the topology layout
   const regenerateLayout = useCallback(() => {
@@ -114,143 +118,138 @@ export default function NetworkTopologyVisualizer({
       setEdges(newEdges);
     }
     
-    setTimeout(() => {
-      resetView();
-    }, 50);
-  }, [devices, isDemoMode, setNodes, setEdges, resetView]);
+    fitView();
+  }, [devices, isDemoMode, setNodes, setEdges]);
   
-  // Zoom controls
-  const zoomIn = useCallback(() => {
-    if (reactFlowInstance) {
-      reactFlowInstance.zoomIn();
-    }
-  }, [reactFlowInstance]);
-  
-  const zoomOut = useCallback(() => {
-    if (reactFlowInstance) {
-      reactFlowInstance.zoomOut();
-    }
-  }, [reactFlowInstance]);
-  
-  // Export the diagram as a PNG image
-  const exportAsPng = useCallback(() => {
-    if (reactFlowInstance) {
-      // Use the toObject method to get the current state
-      const flowObject = reactFlowInstance.toObject();
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onNodeClick={handleNodeClick}
+      nodeTypes={nodeTypes}
+      fitView
+      fitViewOptions={{ padding: 0.2 }}
+      minZoom={0.2}
+      maxZoom={1.5}
+      proOptions={{ hideAttribution: true }}
+    >
+      {/* Background */}
+      <Background color="#475569" gap={24} />
       
-      // Convert to SVG or Canvas and then to PNG
-      // This is a simplified version - in production, you'd want to use
-      // a library like html-to-image or similar
+      {/* MiniMap for navigation */}
+      <MiniMap 
+        nodeStrokeWidth={3}
+        zoomable 
+        pannable
+        nodeColor={(node) => {
+          switch (node.type) {
+            case DeviceNodeType.ROUTER:
+              return '#3b82f6'; // blue
+            case DeviceNodeType.FIREWALL:
+              return '#f97316'; // orange
+            case DeviceNodeType.SWITCH:
+              return '#10b981'; // green
+            case DeviceNodeType.SERVER:
+              return '#8b5cf6'; // purple
+            case DeviceNodeType.WORKSTATION:
+              return '#64748b'; // slate
+            case DeviceNodeType.PRINTER:
+              return '#ef4444'; // red
+            case DeviceNodeType.ACCESS_POINT:
+              return '#06b6d4'; // cyan
+            default:
+              return '#94a3b8'; // gray
+          }
+        }}
+      />
       
-      const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==';
+      {/* Controls */}
+      <Controls />
       
-      const a = document.createElement('a');
-      a.setAttribute('download', 'network-topology.png');
-      a.setAttribute('href', dataUrl);
-      a.click();
-    }
-  }, [reactFlowInstance]);
+      {/* Custom controls panel */}
+      <Panel position="top-right" className="bg-slate-800 border border-slate-700 rounded-md p-2 shadow-lg">
+        <div className="flex flex-col gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={fitView}
+            title="Fit View"
+          >
+            <Maximize className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => {
+              const zoomInButton = document.querySelector('.react-flow__controls-zoomin');
+              if (zoomInButton) {
+                (zoomInButton as HTMLElement).click();
+              }
+            }}
+            title="Zoom In"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => {
+              const zoomOutButton = document.querySelector('.react-flow__controls-zoomout');
+              if (zoomOutButton) {
+                (zoomOutButton as HTMLElement).click();
+              }
+            }}
+            title="Zoom Out"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Separator className="my-1" />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={regenerateLayout}
+            title="Regenerate Layout"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => {
+              // Simple PNG export fallback
+              const a = document.createElement('a');
+              a.setAttribute('download', 'network-topology.png');
+              a.setAttribute('href', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==');
+              a.click();
+            }}
+            title="Export as PNG"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
+      </Panel>
+    </ReactFlow>
+  );
+}
+
+/**
+ * Main component that wraps the inner component with ReactFlowProvider
+ */
+export default function NetworkTopologyVisualizer(props: NetworkTopologyVisualizerProps) {
+  const { height = '500px' } = props;
   
   return (
     <div style={{ height, width: '100%' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeClick={handleNodeClick}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.2}
-        maxZoom={1.5}
-        proOptions={{ hideAttribution: true }}
-      >
-        {/* Background */}
-        <Background color="#475569" gap={24} />
-        
-        {/* MiniMap for navigation */}
-        <MiniMap 
-          nodeStrokeWidth={3}
-          zoomable 
-          pannable
-          nodeColor={(node) => {
-            switch (node.type) {
-              case DeviceNodeType.ROUTER:
-                return '#3b82f6'; // blue
-              case DeviceNodeType.FIREWALL:
-                return '#f97316'; // orange
-              case DeviceNodeType.SWITCH:
-                return '#10b981'; // green
-              case DeviceNodeType.SERVER:
-                return '#8b5cf6'; // purple
-              case DeviceNodeType.WORKSTATION:
-                return '#64748b'; // slate
-              case DeviceNodeType.PRINTER:
-                return '#ef4444'; // red
-              case DeviceNodeType.ACCESS_POINT:
-                return '#06b6d4'; // cyan
-              default:
-                return '#94a3b8'; // gray
-            }
-          }}
-        />
-        
-        {/* Controls */}
-        <Controls />
-        
-        {/* Custom controls panel */}
-        <Panel position="top-right" className="bg-slate-800 border border-slate-700 rounded-md p-2 shadow-lg">
-          <div className="flex flex-col gap-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={resetView}
-              title="Fit View"
-            >
-              <Maximize className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={zoomIn}
-              title="Zoom In"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={zoomOut}
-              title="Zoom Out"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Separator className="my-1" />
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={regenerateLayout}
-              title="Regenerate Layout"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={exportAsPng}
-              title="Export as PNG"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        </Panel>
-      </ReactFlow>
+      <ReactFlowProvider>
+        <NetworkTopologyVisualizerInner {...props} />
+      </ReactFlowProvider>
     </div>
   );
 }
