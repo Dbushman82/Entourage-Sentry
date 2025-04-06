@@ -63,6 +63,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { getDeviceInformation, detectNetworkInfo } from "@/lib/networkUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
 
 // Network device schema
 const networkDeviceSchema = z.object({
@@ -1047,111 +1054,112 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                     </Button>
                   </div>
 
-                  {deviceFormOpen ? (
-                    <Card className="bg-slate-700 border-slate-600 mb-4">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">
-                          {editingDeviceIndex !== null ? 'Edit Device' : 'Add New Device'}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <FormField
-                                control={deviceForm.control}
-                                name="name"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Device Name</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        {...field} 
-                                        placeholder="e.g., Main Router, File Server"
-                                        className="bg-slate-600 border-slate-500 text-white h-8 text-sm"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={deviceForm.control}
-                                name="deviceType"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Device Type</FormLabel>
-                                    <Select 
-                                      onValueChange={field.onChange} 
-                                      value={field.value}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger className="bg-slate-600 border-slate-500 text-white h-8 text-sm">
-                                          <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent className="bg-slate-700 border-slate-600 text-white">
-                                        <SelectItem value="Firewall">Firewall</SelectItem>
-                                        <SelectItem value="Router">Router</SelectItem>
-                                        <SelectItem value="Switch">Switch</SelectItem>
-                                        <SelectItem value="Server">Server</SelectItem>
-                                        <SelectItem value="Workstation">Workstation</SelectItem>
-                                        <SelectItem value="Printer">Printer</SelectItem>
-                                        <SelectItem value="Access Point">Access Point</SelectItem>
-                                        <SelectItem value="Other">Other</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <FormField
-                                control={deviceForm.control}
-                                name="ipAddress"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">IP Address</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        {...field} 
-                                        placeholder="e.g., 192.168.1.1"
-                                        className="bg-slate-600 border-slate-500 text-white h-8 text-sm"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              
-                              <FormField
-                                control={deviceForm.control}
-                                name="role"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Role/Function</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        {...field} 
-                                        placeholder="e.g., Gateway, File Storage"
-                                        className="bg-slate-600 border-slate-500 text-white h-8 text-sm"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+                  {/* Device Dialog Form */}
+                  <Dialog open={deviceFormOpen} onOpenChange={setDeviceFormOpen}>
+                    <DialogContent className="bg-slate-800 border-slate-700 text-white">
+                      <DialogHeader>
+                        <DialogTitle className="text-white">
+                          {editingDeviceIndex !== null ? 'Edit Network Device' : 'Add New Network Device'}
+                        </DialogTitle>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4 py-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <FormField
+                            control={deviceForm.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs">Device Name</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder="e.g., Main Router, File Server"
+                                    className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={deviceForm.control}
+                            name="deviceType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs">Device Type</FormLabel>
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  value={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-sm">
+                                      <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                                    <SelectItem value="Firewall">Firewall</SelectItem>
+                                    <SelectItem value="Router">Router</SelectItem>
+                                    <SelectItem value="Switch">Switch</SelectItem>
+                                    <SelectItem value="Server">Server</SelectItem>
+                                    <SelectItem value="Workstation">Workstation</SelectItem>
+                                    <SelectItem value="Printer">Printer</SelectItem>
+                                    <SelectItem value="Access Point">Access Point</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-end space-x-2 pt-0">
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <FormField
+                            control={deviceForm.control}
+                            name="ipAddress"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs">IP Address</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder="e.g., 192.168.1.1"
+                                    className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={deviceForm.control}
+                            name="role"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs">Role/Function</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder="e.g., Gateway, File Storage"
+                                    className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                      
+                      <DialogFooter className="sm:justify-end flex gap-2">
                         <Button 
                           type="button" 
-                          variant="ghost" 
+                          variant="ghost"
                           size="sm"
-                          className="h-8"
+                          className="border-slate-600 text-white"
                           onClick={() => setDeviceFormOpen(false)}
                         >
                           Cancel
@@ -1159,14 +1167,14 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                         <Button 
                           type="button" 
                           size="sm"
-                          className="h-8 bg-primary-600 hover:bg-primary-700"
+                          className="bg-primary-600 hover:bg-primary-700"
                           onClick={handleSaveDevice}
                         >
-                          Save Device
+                          {editingDeviceIndex !== null ? 'Update Device' : 'Add Device'}
                         </Button>
-                      </CardFooter>
-                    </Card>
-                  ) : null}
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
                   {/* Devices Table */}
                   {form.getValues().devices?.length ? (
