@@ -370,7 +370,9 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
         <Box className="h-12 w-12 text-slate-400 mb-4" />
         <h2 className="text-xl font-semibold mb-2">No Custom Questions</h2>
         <p className="text-slate-400 mb-4">There are no custom questions for this assessment.</p>
-        <Button onClick={onNext}>Continue</Button>
+        <Button onClick={onNext} className="bg-primary-600 hover:bg-primary-700">
+          Continue <FileText className="h-4 w-4 ml-2" />
+        </Button>
       </div>
     );
   }
@@ -411,6 +413,7 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
             type="submit"
             form="custom-questions-form"
             disabled={isSubmitting}
+            className="bg-primary-600 hover:bg-primary-700"
           >
             {isSubmitting ? (
               <>

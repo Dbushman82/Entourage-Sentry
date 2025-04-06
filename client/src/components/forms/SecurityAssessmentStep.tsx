@@ -309,7 +309,7 @@ const SecurityAssessmentStep = ({
                   
                   <Button 
                     type="submit" 
-                    className="flex items-center gap-2"
+                    className="bg-primary-600 hover:bg-primary-700 flex items-center gap-2"
                   >
                     Continue <ArrowRight className="h-4 w-4" />
                   </Button>

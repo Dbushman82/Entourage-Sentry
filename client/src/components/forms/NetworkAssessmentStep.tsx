@@ -282,7 +282,21 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
   // Function to continue to next step from browser scan
   const handleContinueFromBrowserScan = () => {
     if (scanResults) {
-      setCurrentStep(STEPS.CHOOSE_METHOD);
+      // Submit browser scan data directly and proceed
+      const data = {
+        method: 'browser',
+        companyId,
+        ipAddress: scanResults.ipAddress,
+        isp: scanResults.isp,
+        browserName: scanResults.browser.name,
+        browserVersion: scanResults.browser.version,
+        operatingSystem: scanResults.operatingSystem,
+        deviceType: scanResults.deviceType,
+        connectionType: scanResults.connectionType || 'unknown',
+        internetSpeed: scanResults.internetSpeed || 'unknown',
+      };
+      
+      networkAssessmentMutation.mutate(data);
     } else {
       toast({
         title: "Scan Required",
@@ -902,8 +916,20 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
           onClick={onBack}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Previous
+          Back
         </Button>
+        
+        {currentStep === STEPS.BROWSER_SCAN && (
+          <Button 
+            type="button"
+            className="bg-primary-600 hover:bg-primary-700"
+            onClick={handleContinueFromBrowserScan}
+            disabled={!scanResults}
+          >
+            <span>Continue</span>
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        )}
         
         {currentStep === STEPS.CHOOSE_METHOD && (
           <div className="text-sm text-slate-400 flex items-center">

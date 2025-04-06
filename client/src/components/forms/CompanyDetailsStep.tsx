@@ -502,7 +502,7 @@ const CompanyDetailsStep: React.FC<CompanyDetailsStepProps> = ({
               <Button 
                 type="button"
                 disabled={isSubmitting}
-                className="flex items-center gap-2"
+                className="bg-primary-600 hover:bg-primary-700 flex items-center gap-2"
                 onClick={handleContinue}
               >
                 {isSubmitting ? (

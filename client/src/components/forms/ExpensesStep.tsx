@@ -792,7 +792,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
           <Button
             type="button"
             onClick={onNext}
-            className="flex items-center"
+            className="bg-primary-600 hover:bg-primary-700 flex items-center"
           >
             Continue <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
