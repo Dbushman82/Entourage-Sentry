@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -72,7 +72,7 @@ function NetworkTopologyVisualizerInner({
   isDemoMode = false,
   onNodeClick
 }: NetworkTopologyVisualizerProps) {
-  // Get topology data
+  // Generate topology data whenever devices change
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
     if (isDemoMode || !devices.length) {
       return generateDemoTopology();
@@ -84,6 +84,16 @@ function NetworkTopologyVisualizerInner({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  
+  // Update the nodes and edges when devices change
+  useEffect(() => {
+    if (devices.length > 0) {
+      console.log("Devices updated in visualizer:", devices);
+      const newTopology = generateTopologyFromDevices(devices);
+      setNodes(newTopology.nodes);
+      setEdges(newTopology.edges);
+    }
+  }, [devices, setNodes, setEdges]);
   
   // Handle node click event
   const handleNodeClick = useCallback((e: React.MouseEvent, node: Node) => {
