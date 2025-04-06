@@ -1006,17 +1006,23 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                     </div>
                   </div>
                   
+                </div>
+                
+                {/* Additional Notes Section */}
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-white mb-4">Additional Information</h4>
+                  
                   <FormField
                     control={form.control}
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Notes</FormLabel>
+                        <FormLabel className="text-xs">Notes</FormLabel>
                         <FormControl>
                           <Textarea 
                             {...field} 
                             placeholder="Any additional details about the network infrastructure..."
-                            className="bg-slate-700 border-slate-600 text-white h-32"
+                            className="bg-slate-700 border-slate-600 text-white h-20 text-sm"
                           />
                         </FormControl>
                         <FormMessage />
@@ -1026,7 +1032,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                 </div>
                 
                 {/* Network Devices Management */}
-                <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="bg-slate-800/50 rounded-lg p-4 mt-6">
                   <div className="flex justify-between items-center mb-4">
                     <h4 className="text-sm font-medium text-white">Network Devices</h4>
                     <Button 
@@ -1049,8 +1055,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <Form {...deviceForm}>
-                          <form className="space-y-3">
+                        <div className="space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FormField
                                 control={deviceForm.control}
@@ -1139,8 +1144,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                                 )}
                               />
                             </div>
-                          </form>
-                        </Form>
+                        </div>
                       </CardContent>
                       <CardFooter className="flex justify-end space-x-2 pt-0">
                         <Button 
