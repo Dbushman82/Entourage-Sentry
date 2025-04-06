@@ -227,7 +227,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         toast({
           title: "WebRTC not supported",
           description: "Your browser does not support WebRTC API which is used to detect local network information. Some features may be limited.",
-          variant: "warning",
+          variant: "destructive",
         });
       }
       
@@ -262,7 +262,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         toast({
           title: "Local IP not detected",
           description: "Unable to detect your local network IP address. This may be due to browser security settings or network configuration.",
-          variant: "warning",
+          variant: "destructive",
         });
       }
       
@@ -1326,22 +1326,21 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         <Button
           type="button"
           variant="outline"
-          className="border-slate-600 hover:border-slate-500"
+          className="flex items-center gap-2"
           onClick={onBack}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
         
         {currentStep === STEPS.BROWSER_SCAN && (
           <Button 
             type="button"
-            className="bg-primary-600 hover:bg-primary-700"
+            className="bg-primary-600 hover:bg-primary-700 flex items-center gap-2"
             onClick={handleContinueFromBrowserScan}
             disabled={!scanResults}
           >
-            <span>Continue</span>
-            <ArrowRight className="ml-2 h-4 w-4" />
+            Continue <ArrowRight className="h-4 w-4" />
           </Button>
         )}
         
@@ -1354,7 +1353,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         {(currentStep === STEPS.NETWORK_SCANNER || currentStep === STEPS.MANUAL_ENTRY) && (
           <Button 
             type="button" 
-            className="bg-primary-600 hover:bg-primary-700"
+            className="bg-primary-600 hover:bg-primary-700 flex items-center gap-2"
             onClick={() => {
               const data = prepareFinalData();
               if (data) {
@@ -1370,8 +1369,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
               </>
             ) : (
               <>
-                <span>Continue</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Continue <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>
