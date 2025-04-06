@@ -45,6 +45,7 @@ const expenseFormSchema = z.object({
   monthlyCost: z.number().min(0, { message: "Monthly cost must be at least 0" }),
   count: z.number().optional(),
   renewalDate: z.string().optional(),
+  period: z.enum(["month", "year"]).default("month"),
   notes: z.string().optional(),
 });
 
@@ -201,6 +202,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
       monthlyCost: 0,
       count: undefined,
       renewalDate: "",
+      period: "month",
       notes: "",
     },
   });
@@ -214,6 +216,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
       monthlyCost: 0,
       count: undefined,
       renewalDate: "",
+      period: "month",
       notes: "",
     });
   };
@@ -241,6 +244,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
       monthlyCost: expense.monthlyCost,
       count: countValue,
       renewalDate: expense.renewalDate || "",
+      period: "month", // Default to monthly when editing
       notes: expense.notes || "",
     });
     setShowExpenseForm(true);
@@ -258,7 +262,12 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
   const onSubmit = (values: ExpenseFormValues) => {
     // Ensure monthlyCost is correctly calculated from perUserCost * count
     if (values.count && values.perUserCost) {
-      values.monthlyCost = values.perUserCost * values.count;
+      // If period is year, convert yearly cost to monthly cost
+      if (values.period === "year") {
+        values.monthlyCost = (values.perUserCost * values.count) / 12;
+      } else {
+        values.monthlyCost = values.perUserCost * values.count;
+      }
     }
     
     if (editingExpenseId) {
@@ -426,8 +435,15 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                                   
                                   // Update monthly cost when count changes
                                   const perUserCost = form.getValues('perUserCost') || 0;
+                                  const period = form.getValues('period');
+                                  
                                   if (count && perUserCost) {
-                                    form.setValue('monthlyCost', perUserCost * count);
+                                    // If period is year, convert to monthly cost
+                                    const monthlyCost = period === "year" 
+                                      ? (perUserCost * count) / 12 
+                                      : perUserCost * count;
+                                    
+                                    form.setValue('monthlyCost', monthlyCost);
                                   }
                                 }}
                               />
@@ -457,8 +473,15 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                                   
                                   // Update monthly cost when per unit cost changes
                                   const count = form.getValues('count') || 0;
+                                  const period = form.getValues('period');
+                                  
                                   if (count && cost) {
-                                    form.setValue('monthlyCost', cost * count);
+                                    // If period is year, convert to monthly cost
+                                    const monthlyCost = period === "year" 
+                                      ? (cost * count) / 12 
+                                      : cost * count;
+                                      
+                                    form.setValue('monthlyCost', monthlyCost);
                                   }
                                 }}
                               />
@@ -470,16 +493,45 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                     </div>
                     
                     <div>
-                      <FormLabel className="text-xs mb-1 block">Per</FormLabel>
-                      <Select defaultValue="month">
-                        <SelectTrigger className="h-8 text-sm bg-slate-900">
-                          <SelectValue placeholder="Period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="month" className="text-sm">Month</SelectItem>
-                          <SelectItem value="year" className="text-sm">Year</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormField
+                        control={form.control}
+                        name="period"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs mb-1 block">Per</FormLabel>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                
+                                // Update total cost based on period
+                                const perUserCost = form.getValues('perUserCost') || 0;
+                                const count = form.getValues('count') || 0;
+                                
+                                if (count && perUserCost) {
+                                  // If yearly, we divide by 12 to get monthly cost
+                                  const monthlyCost = value === "year" 
+                                    ? (perUserCost * count) / 12 
+                                    : perUserCost * count;
+                                  
+                                  form.setValue('monthlyCost', monthlyCost);
+                                }
+                              }}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-8 text-sm bg-slate-900">
+                                  <SelectValue placeholder="Period" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="month" className="text-sm">Month</SelectItem>
+                                <SelectItem value="year" className="text-sm">Year</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                     
                     <div>
