@@ -428,13 +428,7 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                     </div>
                   </div>
                   
-                  <Button 
-                    onClick={handleContinueFromBrowserScan}
-                    className="w-full bg-primary-600 hover:bg-primary-700"
-                  >
-                    <span>Continue to Next Step</span>
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  {/* Individual Continue button removed - using the standard footer button instead */}
                 </div>
               ) : (
                 <div className="text-center">
