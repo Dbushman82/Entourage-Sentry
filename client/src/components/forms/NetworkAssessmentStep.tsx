@@ -283,15 +283,17 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
   const handleContinueFromBrowserScan = () => {
     if (scanResults) {
       // Submit browser scan data directly and proceed
+      // Use safe property access to avoid undefined errors
       const data = {
         method: 'browser',
         companyId,
-        ipAddress: scanResults.ipAddress,
-        isp: scanResults.isp,
-        browserName: scanResults.browser.name,
-        browserVersion: scanResults.browser.version,
-        operatingSystem: scanResults.operatingSystem,
-        deviceType: scanResults.deviceType,
+        ipAddress: scanResults.ipAddress || '',
+        isp: scanResults.isp || '',
+        // Check for browser info structure and provide fallbacks
+        browserName: scanResults.userAgent || 'Unknown Browser',
+        browserVersion: '',
+        operatingSystem: scanResults.operatingSystem || 'Unknown OS',
+        deviceType: scanResults.deviceType || 'desktop',
         connectionType: scanResults.connectionType || 'unknown',
         internetSpeed: scanResults.internetSpeed || 'unknown',
       };
