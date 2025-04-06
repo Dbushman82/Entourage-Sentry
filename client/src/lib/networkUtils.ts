@@ -17,55 +17,93 @@ export async function detectNetworkInfo(): Promise<{
   connectionType?: string;
   hostname?: string;
 }> {
+  console.log("Starting network detection process");
+  
   try {
     // Get public IP address from an external service
-    // In a real implementation, you'd use your own backend endpoint that proxies to these services
-    const ipRes = await fetch('https://api.ipify.org?format=json', { method: 'GET' });
-    const ipData = await ipRes.json();
-    
-    // Attempt to get more info from a secondary service
+    console.log("Fetching public IP address...");
+    let publicIp = "Unable to detect";
     let ipInfo = {
-      ip: ipData.ip,
-      org: 'Unknown ISP',
-      hostname: 'Unknown',
-      city: '',
-      region: '',
-      country: ''
+      ip: "Unable to detect",
+      org: "Unknown ISP",
+      hostname: "Unknown",
+      city: "",
+      region: "",
+      country: ""
     };
     
     try {
-      const infoRes = await fetch(`https://ipapi.co/${ipData.ip}/json/`, { method: 'GET' });
-      const infoData = await infoRes.json();
+      const ipRes = await fetch('https://api.ipify.org?format=json', { 
+        method: 'GET',
+        cache: 'no-cache'
+      });
       
-      if (infoData && !infoData.error) {
+      if (ipRes.ok) {
+        const ipData = await ipRes.json();
+        publicIp = ipData.ip;
+        console.log("Public IP detected:", publicIp);
+        
+        // Initial IP info with just the public IP
         ipInfo = {
-          ip: ipData.ip,
-          org: infoData.org || 'Unknown ISP',
-          hostname: infoData.hostname || 'Unknown',
-          city: infoData.city || '',
-          region: infoData.region || '',
-          country: infoData.country_name || ''
+          ...ipInfo,
+          ip: publicIp
         };
+        
+        // Try to get more detailed information
+        console.log("Fetching additional IP info...");
+        const infoRes = await fetch(`https://ipapi.co/${publicIp}/json/`, { 
+          method: 'GET',
+          cache: 'no-cache'
+        });
+        
+        if (infoRes.ok) {
+          const infoData = await infoRes.json();
+          
+          if (infoData && !infoData.error) {
+            ipInfo = {
+              ip: publicIp,
+              org: infoData.org || "Unknown ISP",
+              hostname: infoData.hostname || "Unknown",
+              city: infoData.city || "",
+              region: infoData.region || "",
+              country: infoData.country_name || ""
+            };
+            console.log("IP details retrieved:", ipInfo);
+          } else if (infoData.error) {
+            console.warn("IP details service returned error:", infoData.error);
+          }
+        } else {
+          console.warn("Failed to fetch IP details:", infoRes.status, infoRes.statusText);
+        }
+      } else {
+        console.warn("Failed to fetch public IP:", ipRes.status, ipRes.statusText);
       }
-    } catch (error) {
-      console.error('Error getting detailed IP info:', error);
+    } catch (ipError) {
+      console.error("Error fetching public IP information:", ipError);
     }
     
     // Try to detect connection type using Navigator API
+    console.log("Detecting connection type...");
     const connectionType = detectConnectionType();
+    console.log("Connection type detected:", connectionType);
     
     // Get local (LAN) IP address using WebRTC
+    console.log("Starting LAN IP detection via WebRTC...");
     const lanIpAddress = await getLanIpAddress();
+    console.log("LAN IP detection complete:", lanIpAddress);
     
-    return {
+    const result = {
       ipAddress: ipInfo.ip,
       lanIpAddress,
       isp: ipInfo.org,
       connectionType,
       hostname: ipInfo.hostname,
     };
+    
+    console.log("Network detection complete:", result);
+    return result;
   } catch (error) {
-    console.error('Error detecting network info:', error);
+    console.error('Error in network detection process:', error);
     return {
       ipAddress: 'Unable to detect',
       lanIpAddress: 'Not available',
@@ -162,35 +200,69 @@ function detectConnectionType(): string {
 export async function getLanIpAddress(): Promise<string> {
   return new Promise((resolve) => {
     try {
+      console.log("Starting WebRTC LAN IP detection");
+      
+      // Feature detection for RTCPeerConnection
+      if (typeof RTCPeerConnection === 'undefined') {
+        console.error('RTCPeerConnection not supported by browser');
+        resolve('Not available');
+        return;
+      }
+      
       // Create dummy RTCPeerConnection to trigger ICE candidate gathering
       const pc = new RTCPeerConnection({
-        iceServers: [{urls: "stun:stun.l.google.com:19302"}]
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" }
+        ]
       });
+      
+      let candidateFound = false;
       
       // Set a timeout in case WebRTC is not supported or fails
       const timeoutId = setTimeout(() => {
-        if (pc.connectionState !== 'closed') {
+        console.log("WebRTC LAN IP detection timed out");
+        if (pc && pc.connectionState !== 'closed') {
           pc.close();
         }
-        resolve('Not available');
+        if (!candidateFound) {
+          resolve('Not available');
+        }
       }, 5000);
       
       // Listen for candidate events
       pc.onicecandidate = (event) => {
         if (!event.candidate) return;
         
+        console.log("ICE candidate received:", event.candidate.candidate);
+        
         // Parse the candidate string to find IPv4 local addresses
         const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
         const ipAddress = ipRegex.exec(event.candidate.candidate);
         
-        // Check if it's a local IP (non-public)
-        if (ipAddress && isLocalIpAddress(ipAddress[1])) {
-          clearTimeout(timeoutId);
-          if (pc.connectionState !== 'closed') {
-            pc.close();
+        if (ipAddress) {
+          console.log("IP found in candidate:", ipAddress[1]);
+          
+          // Check if it's a local IP (non-public)
+          if (isLocalIpAddress(ipAddress[1])) {
+            console.log("Local IP address found:", ipAddress[1]);
+            candidateFound = true;
+            clearTimeout(timeoutId);
+            if (pc && pc.connectionState !== 'closed') {
+              pc.close();
+            }
+            resolve(ipAddress[1]);
           }
-          resolve(ipAddress[1]);
         }
+      };
+      
+      // Add event listeners to log state changes
+      pc.onicegatheringstatechange = () => {
+        console.log("Ice gathering state:", pc.iceGatheringState);
+      };
+      
+      pc.oniceconnectionstatechange = () => {
+        console.log("Ice connection state:", pc.iceConnectionState);
       };
       
       // Create a data channel to trigger candidate gathering
@@ -198,10 +270,17 @@ export async function getLanIpAddress(): Promise<string> {
       
       // Create offer to trigger ICE gathering
       pc.createOffer()
-        .then(offer => pc.setLocalDescription(offer))
-        .catch(() => {
+        .then(offer => {
+          console.log("Offer created, setting local description");
+          return pc.setLocalDescription(offer);
+        })
+        .then(() => {
+          console.log("Local description set, waiting for candidates");
+        })
+        .catch((err) => {
+          console.error("Error in WebRTC setup:", err);
           clearTimeout(timeoutId);
-          if (pc.connectionState !== 'closed') {
+          if (pc && pc.connectionState !== 'closed') {
             pc.close();
           }
           resolve('Not available');

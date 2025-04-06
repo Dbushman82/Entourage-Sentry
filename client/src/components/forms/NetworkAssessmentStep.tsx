@@ -221,12 +221,31 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     setScanResults(null);
     
     try {
+      // Check if WebRTC is supported by the browser
+      if (typeof window.RTCPeerConnection === 'undefined') {
+        console.warn("WebRTC not supported by this browser");
+        toast({
+          title: "WebRTC not supported",
+          description: "Your browser does not support WebRTC API which is used to detect local network information. Some features may be limited.",
+          variant: "warning",
+        });
+      }
+      
       // Get network information using browser capabilities
+      console.log("Starting network scan...");
       const networkInfo = await detectNetworkInfo();
       const deviceInfo = await getDeviceInformation();
       
       // Wait for at least 1 second to simulate some processing time
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log("Setting scan results:", {
+        ipAddress: networkInfo.ipAddress,
+        lanIpAddress: networkInfo.lanIpAddress,
+        isp: networkInfo.isp,
+        connectionType: networkInfo.connectionType,
+        hostname: networkInfo.hostname,
+      });
       
       setScanResults({
         ipAddress: networkInfo.ipAddress,
@@ -238,8 +257,18 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
         operatingSystem: deviceInfo.operatingSystem,
       });
       
+      if (networkInfo.lanIpAddress === 'Not available') {
+        console.warn("LAN IP detection was not successful");
+        toast({
+          title: "Local IP not detected",
+          description: "Unable to detect your local network IP address. This may be due to browser security settings or network configuration.",
+          variant: "warning",
+        });
+      }
+      
       setBrowserScanComplete(true);
     } catch (error) {
+      console.error("Browser scan error:", error);
       toast({
         title: "Scan failed",
         description: (error as Error).message || "Failed to complete network scan.",
