@@ -50,7 +50,7 @@ import ContactInfoStep from "@/components/forms/ContactInfoStep";
 import CompanyInfoStep from "@/components/forms/CompanyInfoStep";
 import CompanyDetailsStep from "@/components/forms/CompanyDetailsStep";
 import TechStackStep from "@/components/forms/TechStackStep";
-import NetworkAssessmentStep from "@/components/forms/NetworkAssessmentStep";
+import NetworkAssessmentStep from "@/components/forms/NetworkAssessmentStepNew";
 import ExpensesStep from "@/components/forms/ExpensesStep";
 import SecurityAssessmentStep from "@/components/forms/SecurityAssessmentStep";
 import PainPointsStep from "@/components/forms/PainPointsStep";

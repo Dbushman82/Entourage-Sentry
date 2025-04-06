@@ -1,52 +1,28 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   ArrowRight,
-  Info,
-  AlertTriangle,
   Check,
-  UploadCloud,
+  Info,
   Radar,
+  UploadCloud,
   Plus,
   Trash,
   Edit,
@@ -80,8 +56,6 @@ const networkDeviceSchema = z.object({
 });
 
 type NetworkDevice = z.infer<typeof networkDeviceSchema>;
-
-
 
 const manualNetworkSchema = z.object({
   method: z.enum(['browser', 'downloadable', 'manual']),
@@ -277,13 +251,6 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     // Instead of using base64, let's use a fetch request to download a pre-created file
     // This approach will direct the user to an external site where they can download 
     // the scanner from the official source
-    
-    // In a real-world implementation, these would be valid download URLs
-    const windowsScanner = 'https://github.com/entourageit/network-scanner/releases/latest/download/EntourageSentryScanner-windows-x64.zip';
-    const macScanner = 'https://github.com/entourageit/network-scanner/releases/latest/download/EntourageSentryScanner-macos.zip';
-    
-    // Use the appropriate URL for the platform
-    const downloadUrl = platform === 'windows' ? windowsScanner : macScanner;
     
     // Instead of trying to download a ZIP file, let's direct them to a text file with instructions
     window.open(`/api/scanner/${platform}`, '_blank');
@@ -539,6 +506,59 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
     return null;
   };
 
+  // Devices list with proper watches
+  const DevicesList = () => {
+    const devices = form.watch('devices') || [];
+    
+    if (devices.length === 0) {
+      return (
+        <div className="text-center py-6 text-slate-500 text-sm">
+          <Router className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p>No devices added yet. Click "Add Device" to start building your network inventory.</p>
+        </div>
+      );
+    }
+    
+    return (
+      <Table className="border border-slate-700 rounded-md">
+        <TableHeader className="bg-slate-700">
+          <TableRow>
+            <TableHead className="text-xs text-slate-300">Device</TableHead>
+            <TableHead className="text-xs text-slate-300">Type</TableHead>
+            <TableHead className="text-xs text-slate-300 hidden md:table-cell">IP Address</TableHead>
+            <TableHead className="text-xs text-slate-300 hidden md:table-cell">Role</TableHead>
+            <TableHead className="text-xs text-slate-300 w-[80px]">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {devices.map((device, index) => (
+            <TableRow key={index} className="border-slate-700">
+              <TableCell className="py-2 text-sm">{device.name}</TableCell>
+              <TableCell className="py-2">
+                <Badge variant="outline" className="flex items-center space-x-1 border-slate-600">
+                  {getDeviceIcon(device.deviceType)}
+                  <span className="text-xs">{device.deviceType}</span>
+                </Badge>
+              </TableCell>
+              <TableCell className="py-2 text-xs hidden md:table-cell">{device.ipAddress || '—'}</TableCell>
+              <TableCell className="py-2 text-xs hidden md:table-cell">{device.role || '—'}</TableCell>
+              <TableCell className="py-2">
+                <div className="flex space-x-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditDevice(index)}>
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteDevice(index)}>
+                    <Trash className="h-3 w-3" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+
   return (
     <div>
       <div className="p-6 border-b border-slate-700 flex items-center justify-between">
@@ -610,8 +630,6 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Individual Continue button removed - using the standard footer button instead */}
                 </div>
               ) : (
                 <div className="text-center">
@@ -754,521 +772,417 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                 className="px-4 py-2 bg-slate-600 hover:bg-slate-700 flex items-center"
               >
                 <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
+                  <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.09,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
                 </svg>
                 <span>Download for macOS</span>
               </Button>
             </div>
             
-            {form.getValues().downloadInitiated && (
-              <div className="mt-8 border border-slate-600 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-white mb-4">Upload Scan Results</h4>
-                <p className="text-xs text-slate-400 mb-4">
-                  After running the scanner tool, upload the results file (JSON or XML) generated by the scanner:
-                </p>
-                
-                {!uploadedFile ? (
-                  <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center">
-                    <UploadCloud className="h-8 w-8 mx-auto mb-2 text-slate-500" />
-                    <p className="text-sm text-slate-400 mb-4">Drag and drop your scan results file, or click to browse</p>
-                    <input 
-                      type="file" 
-                      id="scan-results" 
-                      onChange={handleFileUpload}
+            <div className="mt-6 border-t border-slate-700 pt-6">
+              <h4 className="text-md font-medium text-white mb-4">Upload Scan Results</h4>
+              <div className="bg-slate-800 rounded-lg p-6">
+                <p className="text-sm text-slate-400 mb-4">After running the scanner, upload the generated scan results file:</p>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-all duration-200">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      {isUploading ? (
+                        <div className="flex flex-col items-center">
+                          <div className="h-8 w-8 animate-spin rounded-full border-2 border-solid border-current border-r-transparent text-primary-400"></div>
+                          <p className="mt-2 text-sm text-slate-400">Processing...</p>
+                        </div>
+                      ) : uploadedFile ? (
+                        <div className="flex flex-col items-center">
+                          <Check className="text-green-400 h-10 w-10" />
+                          <p className="mt-1 text-sm text-slate-400">{uploadedFile.name}</p>
+                          <p className="text-xs text-primary-400">{Math.round(uploadedFile.size / 1024)} KB • {uploadedFile.type}</p>
+                        </div>
+                      ) : (
+                        <>
+                          <UploadCloud className="h-10 w-10 text-primary-400 mb-1" />
+                          <p className="mb-1 text-sm text-slate-400"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                          <p className="text-xs text-slate-500">JSON or XML file (Max 10MB)</p>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      id="dropzone-file"
+                      type="file"
                       className="hidden"
                       accept=".json,.xml"
+                      onChange={handleFileUpload}
+                      disabled={isUploading}
                     />
-                    <label htmlFor="scan-results">
-                      <Button 
-                        variant="outline"
-                        className="border-slate-600 hover:border-slate-500"
-                        disabled={isUploading}
-                      >
-                        {isUploading ? (
-                          <>
-                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-                            <span>Uploading...</span>
-                          </>
-                        ) : (
-                          <span>Select File</span>
-                        )}
-                      </Button>
-                    </label>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="bg-slate-800 p-3 rounded-lg flex items-center justify-between mb-4">
-                      <div className="flex items-center">
-                        <div className="p-2 bg-slate-700 rounded-md mr-3">
-                          <svg className="h-6 w-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-white truncate max-w-xs">{uploadedFile.name}</p>
-                          <p className="text-xs text-slate-400">{(uploadedFile.size / 1024).toFixed(2)} KB</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setUploadedFile(null)}
-                        className="text-slate-400 hover:text-white"
-                      >
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                      </Button>
-                    </div>
-                    
-                    <div className="bg-green-950 bg-opacity-20 border border-green-800 rounded-lg p-3">
-                      <div className="flex items-center">
-                        <Check className="text-green-400 mr-2" />
-                        <p className="text-sm font-medium text-green-400">Scan Results Processed</p>
-                      </div>
-                      <div className="mt-2 grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <p className="text-slate-400">Devices Discovered:</p>
-                          <p className="text-white font-medium">42</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400">Security Score:</p>
-                          <p className="text-white font-medium">78/100</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400">Vulnerabilities:</p>
-                          <p className="text-white font-medium">7</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400">Scan Date:</p>
-                          <p className="text-white font-medium">{new Date().toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  </label>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         )}
         
         {/* Step 3B: Manual Entry */}
         {currentStep === STEPS.MANUAL_ENTRY && (
           <div className="space-y-6">
-            <div className="p-4 bg-primary-900/20 border border-primary-700/30 rounded-lg flex items-center">
-              <AlertTriangle className="text-primary-400 text-xl mr-3" />
+            <div className="p-4 bg-primary-900/20 border border-primary-700/30 rounded-lg flex items-center mb-6">
+              <Info className="text-primary-400 text-xl mr-3" />
               <div>
-                <h4 className="text-sm font-medium text-primary-400">Manual Entry</h4>
-                <p className="text-xs text-slate-400">Provide network details manually. For more accurate results, consider using our Network Scanner tool.</p>
+                <h4 className="text-sm font-medium text-primary-400">Manual Network Assessment</h4>
+                <p className="text-xs text-slate-400">Please complete the network information form below. This helps us understand the client's existing infrastructure.</p>
               </div>
             </div>
             
             <Form {...form}>
               <form className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="isp"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Internet Service Provider (ISP)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="e.g., Comcast, AT&T, Verizon"
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="connectionType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Connection Type</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                              <SelectValue placeholder="Select connection type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                            <SelectItem value="unknown">Select connection type</SelectItem>
-                            <SelectItem value="fiber">Fiber</SelectItem>
-                            <SelectItem value="cable">Cable</SelectItem>
-                            <SelectItem value="dsl">DSL</SelectItem>
-                            <SelectItem value="satellite">Satellite</SelectItem>
-                            <SelectItem value="cellular">Cellular/4G/5G</SelectItem>
-                            <SelectItem value="dialup">Dial-up</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <Card className="bg-slate-800 border-slate-700">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-md text-white">Internet Connection</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="isp"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Internet Service Provider</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="e.g., Comcast, AT&T, Spectrum" 
+                                className="bg-slate-700 border-slate-600 text-white"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="connectionType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm">Connection Type</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange}
+                              value={field.value || ''}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                                  <SelectValue placeholder="Select connection type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                                <SelectItem value="Fiber">Fiber</SelectItem>
+                                <SelectItem value="Cable">Cable</SelectItem>
+                                <SelectItem value="DSL">DSL</SelectItem>
+                                <SelectItem value="Fixed Wireless">Fixed Wireless</SelectItem>
+                                <SelectItem value="Satellite">Satellite</SelectItem>
+                                <SelectItem value="Cellular">Cellular/5G</SelectItem>
+                                <SelectItem value="T1/T3">T1/T3 Line</SelectItem>
+                                <SelectItem value="MPLS">MPLS Network</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <FormField
+                        control={form.control}
+                        name="bandwidth"
+                        render={({ field }) => (
+                          <FormItem className="col-span-1">
+                            <FormLabel className="text-sm">Bandwidth</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                                className="bg-slate-700 border-slate-600 text-white"
+                                placeholder="e.g., 100"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="bandwidthUnit"
+                        render={({ field }) => (
+                          <FormItem className="col-span-1">
+                            <FormLabel className="text-sm">Unit</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange}
+                              value={field.value || 'mbps'}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                                  <SelectValue placeholder="Select unit" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                                <SelectItem value="kbps">Kbps</SelectItem>
+                                <SelectItem value="mbps">Mbps</SelectItem>
+                                <SelectItem value="gbps">Gbps</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="routerModel"
+                        render={({ field }) => (
+                          <FormItem className="col-span-2">
+                            <FormLabel className="text-sm">Router/Firewall Model</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="e.g., Cisco Meraki MX68, SonicWall TZ350" 
+                                className="bg-slate-700 border-slate-600 text-white"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="bandwidth"
-                    render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>Bandwidth</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number"
-                            {...field}
-                            value={field.value || ''}
-                            onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="bandwidthUnit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value || "mbps"}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                              <SelectValue placeholder="Unit" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                            <SelectItem value="kbps">Kbps</SelectItem>
-                            <SelectItem value="mbps">Mbps</SelectItem>
-                            <SelectItem value="gbps">Gbps</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="routerModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Router/Firewall Model (if known)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="e.g., Cisco Meraki MX67, Ubiquiti UDM Pro"
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div>
-                    <FormLabel className="block text-sm font-medium text-slate-300 mb-1">Approximate Device Count</FormLabel>
+                <Card className="bg-slate-800 border-slate-700">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-md text-white">Device Count Estimates</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="deviceCounts.workstations"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs text-slate-400">Workstations/Laptops</FormLabel>
+                            <FormLabel className="text-sm">Workstations / Laptops</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 type="number"
-                                min={0}
                                 {...field}
-                                value={field.value || 0}
-                                onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                                 className="bg-slate-700 border-slate-600 text-white"
+                                placeholder="0"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
                       <FormField
                         control={form.control}
                         name="deviceCounts.servers"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs text-slate-400">Servers</FormLabel>
+                            <FormLabel className="text-sm">Servers</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 type="number"
-                                min={0}
                                 {...field}
-                                value={field.value || 0}
-                                onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                                 className="bg-slate-700 border-slate-600 text-white"
+                                placeholder="0"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
                       <FormField
                         control={form.control}
                         name="deviceCounts.other"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs text-slate-400">Other Devices</FormLabel>
+                            <FormLabel className="text-sm">Other Devices</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 type="number"
-                                min={0}
                                 {...field}
-                                value={field.value || 0}
-                                onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                                 className="bg-slate-700 border-slate-600 text-white"
+                                placeholder="0"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                  </div>
-                  
-                </div>
+                  </CardContent>
+                </Card>
                 
-                {/* Additional Notes Section */}
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-white mb-4">Additional Information</h4>
-                  
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Notes</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            {...field} 
-                            placeholder="Any additional details about the network infrastructure..."
-                            className="bg-slate-700 border-slate-600 text-white h-20 text-sm"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                {/* Network Devices Management */}
-                <div className="bg-slate-800/50 rounded-lg p-4 mt-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-sm font-medium text-white">Network Devices</h4>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      className="h-7 px-2 border-slate-600 bg-slate-700"
-                      onClick={handleAddDevice}
-                    >
-                      <Plus className="mr-1 h-3 w-3" />
-                      <span className="text-xs">Add Device</span>
-                    </Button>
-                  </div>
+                <Card className="bg-slate-800 border-slate-700">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-md text-white">Network Devices</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem className="mb-4">
+                          <FormLabel className="text-sm">Additional Notes</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Any additional information about the network setup, special configurations, or concerns..."
+                              className="bg-slate-700 border-slate-600 text-white min-h-[100px]"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex justify-end mb-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center"
+                        onClick={handleAddDevice}
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        <span className="text-xs">Add Device</span>
+                      </Button>
+                    </div>
 
-                  {/* Device Dialog Form */}
-                  <Dialog open={deviceFormOpen} onOpenChange={setDeviceFormOpen}>
-                    <DialogContent className="bg-slate-800 border-slate-700 text-white">
-                      <DialogHeader>
-                        <DialogTitle className="text-white">
-                          {editingDeviceIndex !== null ? 'Edit Network Device' : 'Add New Network Device'}
-                        </DialogTitle>
-                      </DialogHeader>
-                      
-                      <div className="space-y-4 py-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <FormField
-                            control={deviceForm.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs">Device Name</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    {...field} 
-                                    placeholder="e.g., Main Router, File Server"
-                                    className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={deviceForm.control}
-                            name="deviceType"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs">Device Type</FormLabel>
-                                <Select 
-                                  onValueChange={field.onChange} 
-                                  value={field.value}
-                                >
+                    {/* Device Dialog Form */}
+                    <Dialog open={deviceFormOpen} onOpenChange={setDeviceFormOpen}>
+                      <DialogContent className="bg-slate-800 border-slate-700 text-white">
+                        <DialogHeader>
+                          <DialogTitle className="text-white">
+                            {editingDeviceIndex !== null ? 'Edit Network Device' : 'Add New Network Device'}
+                          </DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4 py-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <FormField
+                              control={deviceForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Device Name</FormLabel>
                                   <FormControl>
-                                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-sm">
-                                      <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
+                                    <Input 
+                                      {...field} 
+                                      placeholder="e.g., Main Router, File Server"
+                                      className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                                    />
                                   </FormControl>
-                                  <SelectContent className="bg-slate-700 border-slate-600 text-white">
-                                    <SelectItem value="Firewall">Firewall</SelectItem>
-                                    <SelectItem value="Router">Router</SelectItem>
-                                    <SelectItem value="Switch">Switch</SelectItem>
-                                    <SelectItem value="Server">Server</SelectItem>
-                                    <SelectItem value="Workstation">Workstation</SelectItem>
-                                    <SelectItem value="Printer">Printer</SelectItem>
-                                    <SelectItem value="Access Point">Access Point</SelectItem>
-                                    <SelectItem value="Other">Other</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={deviceForm.control}
+                              name="deviceType"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Device Type</FormLabel>
+                                  <Select 
+                                    onValueChange={field.onChange} 
+                                    value={field.value}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 text-sm">
+                                        <SelectValue placeholder="Select type" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                                      <SelectItem value="Firewall">Firewall</SelectItem>
+                                      <SelectItem value="Router">Router</SelectItem>
+                                      <SelectItem value="Switch">Switch</SelectItem>
+                                      <SelectItem value="Server">Server</SelectItem>
+                                      <SelectItem value="Workstation">Workstation</SelectItem>
+                                      <SelectItem value="Printer">Printer</SelectItem>
+                                      <SelectItem value="Access Point">Access Point</SelectItem>
+                                      <SelectItem value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <FormField
+                              control={deviceForm.control}
+                              name="ipAddress"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">IP Address</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      {...field} 
+                                      placeholder="e.g., 192.168.1.1"
+                                      className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={deviceForm.control}
+                              name="role"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Role/Function</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      {...field} 
+                                      placeholder="e.g., Gateway, File Storage"
+                                      className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <FormField
-                            control={deviceForm.control}
-                            name="ipAddress"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs">IP Address</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    {...field} 
-                                    placeholder="e.g., 192.168.1.1"
-                                    className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={deviceForm.control}
-                            name="role"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs">Role/Function</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    {...field} 
-                                    placeholder="e.g., Gateway, File Storage"
-                                    className="bg-slate-700 border-slate-600 text-white h-8 text-sm"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                      
-                      <DialogFooter className="sm:justify-end flex gap-2">
-                        <Button 
-                          type="button" 
-                          variant="ghost"
-                          size="sm"
-                          className="border-slate-600 text-white"
-                          onClick={() => setDeviceFormOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          type="button" 
-                          size="sm"
-                          className="bg-primary-600 hover:bg-primary-700"
-                          onClick={handleSaveDevice}
-                        >
-                          {editingDeviceIndex !== null ? 'Update Device' : 'Add Device'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-
-                  {/* Devices Table */}
-                  {(() => {
-                    const devices = form.watch('devices') || [];
+                        <DialogFooter className="sm:justify-end flex gap-2">
+                          <Button 
+                            type="button" 
+                            variant="ghost"
+                            size="sm"
+                            className="border-slate-600 text-white"
+                            onClick={() => setDeviceFormOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            type="button" 
+                            size="sm"
+                            className="bg-primary-600 hover:bg-primary-700"
+                            onClick={handleSaveDevice}
+                          >
+                            {editingDeviceIndex !== null ? 'Update Device' : 'Add Device'}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                     
-                    if (devices.length === 0) {
-                      return (
-                        <div className="text-center py-6 text-slate-500 text-sm">
-                          <Router className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p>No devices added yet. Click "Add Device" to start building your network inventory.</p>
-                        </div>
-                      );
-                    }
-                    
-                    return (
-                      <Table className="border border-slate-700 rounded-md">
-                        <TableHeader className="bg-slate-700">
-                          <TableRow>
-                            <TableHead className="text-xs text-slate-300">Device</TableHead>
-                            <TableHead className="text-xs text-slate-300">Type</TableHead>
-                            <TableHead className="text-xs text-slate-300 hidden md:table-cell">IP Address</TableHead>
-                            <TableHead className="text-xs text-slate-300 hidden md:table-cell">Role</TableHead>
-                            <TableHead className="text-xs text-slate-300 w-[80px]">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {devices.map((device, index) => (
-                            <TableRow key={index} className="border-slate-700">
-                              <TableCell className="py-2 text-sm">{device.name}</TableCell>
-                              <TableCell className="py-2">
-                                <Badge variant="outline" className="flex items-center space-x-1 border-slate-600">
-                                  {getDeviceIcon(device.deviceType)}
-                                  <span className="text-xs">{device.deviceType}</span>
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="py-2 text-xs hidden md:table-cell">{device.ipAddress || '—'}</TableCell>
-                              <TableCell className="py-2 text-xs hidden md:table-cell">{device.role || '—'}</TableCell>
-                              <TableCell className="py-2">
-                                <div className="flex space-x-1">
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditDevice(index)}>
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteDevice(index)}>
-                                    <Trash className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    );
-                  })()}
-                </div>
+                    {/* Device List */}
+                    <DevicesList />
+                  </CardContent>
+                </Card>
               </form>
             </Form>
           </div>
