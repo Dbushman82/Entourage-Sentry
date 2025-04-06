@@ -338,7 +338,7 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                           <FormItem>
                             <FormLabel className="text-xs mb-1 block">Name</FormLabel>
                             <FormControl>
-                              <Input className="h-8 text-sm bg-slate-900" placeholder="Spotify" {...field} />
+                              <Input className="h-8 text-sm bg-slate-900" placeholder="Microsoft 365" {...field} />
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
@@ -425,10 +425,17 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                             <FormControl>
                               <Input 
                                 className="h-8 text-sm bg-slate-900"
-                                placeholder="0" 
+                                placeholder="Enter count" 
                                 type="number" 
                                 {...field}
                                 value={field.value || ''}
+                                onClick={(e) => {
+                                  // Clear the field value if it's 0 when clicked
+                                  if (field.value === 0) {
+                                    field.onChange(undefined);
+                                    e.currentTarget.value = '';
+                                  }
+                                }}
                                 onChange={e => {
                                   const count = e.target.value ? parseInt(e.target.value) : undefined;
                                   field.onChange(count);
@@ -460,31 +467,42 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                         name="perUserCost"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs mb-1 block">Cost ($)</FormLabel>
+                            <FormLabel className="text-xs mb-1 block">Cost</FormLabel>
                             <FormControl>
-                              <Input 
-                                className="h-8 text-sm bg-slate-900"
-                                placeholder="0.00" 
-                                type="number" 
-                                {...field}
-                                onChange={e => {
-                                  const cost = parseFloat(e.target.value);
-                                  field.onChange(cost);
-                                  
-                                  // Update monthly cost when per unit cost changes
-                                  const count = form.getValues('count') || 0;
-                                  const period = form.getValues('period');
-                                  
-                                  if (count && cost) {
-                                    // If period is year, convert to monthly cost
-                                    const monthlyCost = period === "year" 
-                                      ? (cost * count) / 12 
-                                      : cost * count;
-                                      
-                                    form.setValue('monthlyCost', monthlyCost);
-                                  }
-                                }}
-                              />
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                                <Input 
+                                  className="h-8 text-sm bg-slate-900 pl-6"
+                                  placeholder="0.00" 
+                                  type="number" 
+                                  {...field}
+                                  value={field.value || ''}
+                                  onClick={(e) => {
+                                    // Clear the field value if it's 0 when clicked
+                                    if (field.value === 0) {
+                                      field.onChange(undefined);
+                                      e.currentTarget.value = '';
+                                    }
+                                  }}
+                                  onChange={e => {
+                                    const cost = e.target.value ? parseFloat(e.target.value) : 0;
+                                    field.onChange(cost);
+                                    
+                                    // Update monthly cost when per unit cost changes
+                                    const count = form.getValues('count') || 0;
+                                    const period = form.getValues('period');
+                                    
+                                    if (count && cost) {
+                                      // If period is year, convert to monthly cost
+                                      const monthlyCost = period === "year" 
+                                        ? (cost * count) / 12 
+                                        : cost * count;
+                                        
+                                      form.setValue('monthlyCost', monthlyCost);
+                                    }
+                                  }}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
@@ -542,13 +560,27 @@ const ExpensesStep = ({ onNext, onBack, companyId }: ExpensesStepProps) => {
                           <FormItem>
                             <FormLabel className="text-xs mb-1 block">Total</FormLabel>
                             <FormControl>
-                              <Input 
-                                className="h-8 text-sm bg-slate-900"
-                                placeholder="0.00" 
-                                type="number" 
-                                {...field}
-                                onChange={e => field.onChange(parseFloat(e.target.value))}
-                              />
+                              <div className="relative">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                                <Input 
+                                  className="h-8 text-sm bg-slate-900 pl-6"
+                                  placeholder="0.00" 
+                                  type="number" 
+                                  {...field}
+                                  value={field.value || ''}
+                                  onClick={(e) => {
+                                    // Clear the field value if it's 0 when clicked
+                                    if (field.value === 0) {
+                                      field.onChange(undefined);
+                                      e.currentTarget.value = '';
+                                    }
+                                  }}
+                                  onChange={e => {
+                                    const value = e.target.value ? parseFloat(e.target.value) : 0;
+                                    field.onChange(value);
+                                  }}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage className="text-xs" />
                           </FormItem>
