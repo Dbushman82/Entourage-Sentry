@@ -55,8 +55,11 @@ import {
   Wifi,
   Monitor,
   Shield,
-  Router
+  Router,
+  Network,
+  Share2
 } from "lucide-react";
+import NetworkTopologyVisualizer from "@/components/topology/NetworkTopologyVisualizer";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -1123,6 +1126,42 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
                       </FormItem>
                     )}
                   />
+                </div>
+                
+                {/* Network Topology Visualizer */}
+                <div className="bg-slate-800/50 rounded-lg p-4 mt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center">
+                      <Share2 className="h-4 w-4 text-primary-400 mr-2" />
+                      <h4 className="text-sm font-medium text-white">Network Topology Visualization</h4>
+                    </div>
+                  </div>
+                  
+                  {/* Render the topology visualization only if there are devices */}
+                  {form.watch('devices')?.length ? (
+                    <div className="mt-2 border border-slate-700 rounded-lg overflow-hidden">
+                      <NetworkTopologyVisualizer 
+                        devices={form.watch('devices')} 
+                        height="400px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 text-center border border-dashed border-slate-700 rounded-lg">
+                      <Network className="h-10 w-10 text-slate-500 mb-3" />
+                      <h4 className="text-slate-400 text-sm mb-1">No network devices added yet</h4>
+                      <p className="text-slate-500 text-xs mb-3">Add devices to visualize your network topology</p>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleAddDevice}
+                        className="border-slate-700"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Your First Device
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Network Devices Management */}
