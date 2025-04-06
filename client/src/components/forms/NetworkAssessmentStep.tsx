@@ -282,23 +282,9 @@ const NetworkAssessmentStep = ({ onNext, onBack, companyId, defaultValues = {} }
   // Function to continue to next step from browser scan
   const handleContinueFromBrowserScan = () => {
     if (scanResults) {
-      // Submit browser scan data directly and proceed
-      // Use safe property access to avoid undefined errors
-      const data = {
-        method: 'browser',
-        companyId,
-        ipAddress: scanResults.ipAddress || '',
-        isp: scanResults.isp || '',
-        // Check for browser info structure and provide fallbacks
-        browserName: scanResults.userAgent || 'Unknown Browser',
-        browserVersion: '',
-        operatingSystem: scanResults.operatingSystem || 'Unknown OS',
-        deviceType: scanResults.deviceType || 'desktop',
-        connectionType: scanResults.connectionType || 'unknown',
-        internetSpeed: scanResults.internetSpeed || 'unknown',
-      };
-      
-      networkAssessmentMutation.mutate(data);
+      // Instead of submitting data directly, just proceed to the choose method step
+      setBrowserScanComplete(true);
+      setCurrentStep(STEPS.CHOOSE_METHOD);
     } else {
       toast({
         title: "Scan Required",
