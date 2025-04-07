@@ -252,6 +252,23 @@ const Assessment = () => {
     // Close the NDA notice
     setShowNDANotice(false);
     
+    // Record NDA acceptance in the database with timestamp
+    const recordNdaAcceptance = async (assessmentId?: number) => {
+      try {
+        const response = await apiRequest('POST', '/api/assessments/nda-acceptance', {
+          assessmentId: assessmentId || assessment?.id,
+          acceptedAt: new Date().toISOString(),
+          ipAddress: window.location.hostname // Basic client info
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to log NDA acceptance');
+        }
+      } catch (error) {
+        console.error('Error logging NDA acceptance:', error);
+      }
+    };
+    
     // Proceed with assessment creation using the pending contact data if available
     if (pendingContactData) {
       createAssessmentMutation.mutate({
@@ -265,17 +282,31 @@ const Assessment = () => {
         company: {
           name: "",
           website: pendingContactData.companyWebsite,
+        },
+        ndaAccepted: true // Flag in the assessment record
+      }, {
+        onSuccess: (data) => {
+          // Log NDA acceptance after assessment is created
+          recordNdaAcceptance(data.assessment.id);
+          
+          // Move to step 2
+          setCurrentStep(2);
+          
+          // Clear the pending data
+          setPendingContactData(null);
         }
       });
-      
-      // Move to step 2
-      setCurrentStep(2);
-      
-      // Clear the pending data
-      setPendingContactData(null);
     }
     // If assessment already exists (but no contact info), proceed to step 1
     else if (assessment) {
+      // Update the assessment to indicate NDA was accepted
+      updateAssessmentMutation.mutate({
+        ndaAccepted: true
+      });
+      
+      // Log NDA acceptance
+      recordNdaAcceptance();
+      
       // Stay on step 1 to collect contact information
       setCurrentStep(1);
     }

@@ -1,25 +1,25 @@
-import { Binoculars } from "lucide-react";
-import { Link } from "wouter";
-
 const Footer = () => {
+  const currentYear = new Date().getFullYear();
+  
   return (
-    <footer className="bg-slate-800 border-t border-slate-700 py-4">
+    <footer className="bg-slate-800 border-t border-slate-700 py-6">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center space-x-2 mb-4 md:mb-0">
-            <Binoculars className="text-primary-500 h-5 w-5" />
-            <span className="text-lg font-semibold">Entourage Sentry</span>
+          <div className="mb-4 md:mb-0">
+            <p className="text-sm text-slate-400">
+              &copy; {currentYear} Entourage IT. All rights reserved.
+            </p>
           </div>
-          <div className="flex items-center space-x-6">
-            <Link href="#" className="text-sm text-slate-400 hover:text-white">
+          <div className="flex space-x-6">
+            <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
               Privacy Policy
-            </Link>
-            <Link href="#" className="text-sm text-slate-400 hover:text-white">
+            </a>
+            <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
               Terms of Service
-            </Link>
-            <Link href="#" className="text-sm text-slate-400 hover:text-white">
-              Contact Support
-            </Link>
+            </a>
+            <a href="#" className="text-sm text-slate-400 hover:text-white transition-colors">
+              Support
+            </a>
           </div>
         </div>
       </div>

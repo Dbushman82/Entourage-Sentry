@@ -310,6 +310,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(err, res);
     }
   });
+  
+  // Record NDA acceptance for an assessment
+  app.post('/api/assessments/nda-acceptance', async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        assessmentId: z.number(),
+        acceptedAt: z.string().datetime(),
+        ipAddress: z.string().optional()
+      });
+      
+      const data = schema.parse(req.body);
+      
+      // First, update the assessment record to flag NDA acceptance
+      const assessment = await storage.getAssessment(data.assessmentId);
+      if (!assessment) {
+        return res.status(404).json({ message: "Assessment not found" });
+      }
+      
+      // Update the assessment with NDA acceptance info
+      await storage.updateAssessment(data.assessmentId, {
+        ndaAccepted: true,
+        ndaAcceptedAt: new Date(data.acceptedAt)
+      });
+      
+      // Log additional details to a dedicated NDA logs table if needed
+      // This could be implemented in postgres-storage.ts as a new method
+      
+      res.status(200).json({ message: "NDA acceptance recorded successfully" });
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
 
   // Duplicate an assessment
   app.post('/api/assessments/:id/duplicate', async (req: Request, res: Response) => {

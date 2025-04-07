@@ -88,10 +88,10 @@ const Header = () => {
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <div className="flex cursor-pointer items-center">
+                    <Link href="/settings" className="flex cursor-pointer items-center">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
-                    </div>
+                    </Link>
                   </DropdownMenuItem>
                   {user.role === 'admin' && (
                     <DropdownMenuItem asChild>

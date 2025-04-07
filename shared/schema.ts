@@ -365,6 +365,8 @@ export const assessments = pgTable("assessments", {
   completedAt: timestamp("completed_at"),
   linkExpiration: timestamp("link_expiration"), // When the assessment link expires
   linkToken: text("link_token"), // Token for secure access without authentication
+  ndaAccepted: boolean("nda_accepted").default(false), // Whether NDA has been accepted
+  ndaAcceptedAt: timestamp("nda_accepted_at"), // When NDA was accepted
 });
 
 export const insertAssessmentSchema = createInsertSchema(assessments).pick({
@@ -379,6 +381,8 @@ export const insertAssessmentSchema = createInsertSchema(assessments).pick({
   currentStep: true,
   linkExpiration: true,
   linkToken: true,
+  ndaAccepted: true,
+  ndaAcceptedAt: true,
 });
 
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
