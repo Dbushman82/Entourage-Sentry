@@ -141,6 +141,18 @@ const Assessment = () => {
     }
   }, [assessmentData, assessmentDetails, setAssessment, setCurrentStep, setContactData, setCompanyData, setCompanyProfileData, setDomainData, setReferenceCode]);
   
+  // Show NDA notice immediately when a new assessment is loaded from token
+  useEffect(() => {
+    if (assessmentId && assessmentData && assessmentDetails) {
+      // Check if assessmentDetails has a contact property that's null/undefined
+      const details = assessmentDetails as AssessmentDetails;
+      if (!details.contact) {
+        // This is a brand new assessment that hasn't been started yet
+        setShowNDANotice(true);
+      }
+    }
+  }, [assessmentId, assessmentData, assessmentDetails]);
+  
   // Create a new assessment
   const createAssessmentMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -221,7 +233,7 @@ const Assessment = () => {
     // Close the NDA notice
     setShowNDANotice(false);
     
-    // Proceed with assessment creation using the pending contact data
+    // Proceed with assessment creation using the pending contact data if available
     if (pendingContactData) {
       createAssessmentMutation.mutate({
         contact: {
@@ -242,6 +254,11 @@ const Assessment = () => {
       
       // Clear the pending data
       setPendingContactData(null);
+    }
+    // If assessment already exists (but no contact info), proceed to step 1
+    else if (assessment) {
+      // Stay on step 1 to collect contact information
+      setCurrentStep(1);
     }
   };
   
