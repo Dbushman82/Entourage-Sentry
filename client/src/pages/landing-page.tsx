@@ -117,17 +117,17 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl font-bold mb-4">
-              Comprehensive Client Assessment Platform
+              Optimize Your Business Technology
             </h1>
             <p className="text-xl mb-8">
-              Streamline your technology assessments with our powerful, data-enriched platform designed for Managed Service Providers.
+              Get a complete assessment of your IT infrastructure to identify opportunities for cost savings, enhanced security, and performance improvements.
             </p>
             <Button 
               size="lg" 
               variant="secondary"
               onClick={() => document.getElementById('request-form')?.scrollIntoView({behavior: 'smooth'})}
             >
-              Request an Assessment
+              Request Your Free Assessment
             </Button>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function LandingPage() {
       {/* Features Section */}
       <section className="py-16 bg-slate-800">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">Key Platform Features</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">How You'll Benefit</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center text-center p-4 bg-slate-700 rounded-lg shadow-md">
               <div className="bg-primary/20 p-4 rounded-full mb-4">
@@ -152,15 +152,16 @@ export default function LandingPage() {
                   strokeLinejoin="round"
                   className="text-primary h-8 w-8"
                 >
-                  <path d="M20 7h-9"></path>
-                  <path d="M14 17H5"></path>
-                  <circle cx="17" cy="17" r="3"></circle>
-                  <circle cx="7" cy="7" r="3"></circle>
+                  <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"></path>
+                  <path d="M12 2v2"></path>
+                  <path d="M12 20v2"></path>
+                  <path d="M20 12h2"></path>
+                  <path d="M2 12h2"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">Data Enrichment</h3>
+              <h3 className="text-xl font-semibold mb-2 text-white">Cost Optimization</h3>
               <p className="text-slate-300">
-                Automatically enrich company data with industry, size, and relevant business details to streamline assessments.
+                Discover ways to reduce IT expenses by identifying inefficient systems and duplicate services that may be draining your budget.
               </p>
             </div>
             <div className="flex flex-col items-center text-center p-4 bg-slate-700 rounded-lg shadow-md">
@@ -178,14 +179,13 @@ export default function LandingPage() {
                   className="text-primary h-8 w-8"
                 >
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                  <path d="M12 8v8"></path>
+                  <path d="M8 12h8"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">Security Assessment</h3>
+              <h3 className="text-xl font-semibold mb-2 text-white">Security Enhancement</h3>
               <p className="text-slate-300">
-                Identify security vulnerabilities, exposed services, and missing security headers to protect your clients.
+                Protect your business from cyber threats by identifying security vulnerabilities before they can be exploited by attackers.
               </p>
             </div>
             <div className="flex flex-col items-center text-center p-4 bg-slate-700 rounded-lg shadow-md">
@@ -202,15 +202,12 @@ export default function LandingPage() {
                   strokeLinejoin="round"
                   className="text-primary h-8 w-8"
                 >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">Client Collaboration</h3>
+              <h3 className="text-xl font-semibold mb-2 text-white">Performance Improvement</h3>
               <p className="text-slate-300">
-                Share secure, time-limited assessment links with clients for easy collaboration and data collection.
+                Identify bottlenecks in your network and systems that are slowing down your business operations and employee productivity.
               </p>
             </div>
           </div>
@@ -220,35 +217,35 @@ export default function LandingPage() {
       {/* Benefits Section */}
       <section className="py-16 bg-slate-700">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12 text-white">Benefits for MSPs</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-white">Our Assessment Process</h2>
           <div className="max-w-4xl mx-auto">
             <div className="space-y-6">
               <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1 text-white">Streamlined Discovery Process</h3>
-                  <p className="text-slate-200">Reduce manual data entry and speed up the client onboarding journey.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">Simple Information Gathering</h3>
+                  <p className="text-slate-200">Complete a straightforward assessment that collects essential details about your business technology environment.</p>
                 </div>
               </div>
               <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1 text-white">Enhanced Security Insights</h3>
-                  <p className="text-slate-200">Identify and prioritize security vulnerabilities to protect client businesses.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">Expert Analysis</h3>
+                  <p className="text-slate-200">Our technology specialists review your information to identify opportunities for improvement and potential risks.</p>
                 </div>
               </div>
               <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1 text-white">Comprehensive Service Tracking</h3>
-                  <p className="text-slate-200">Document all client services, contracts, and costs to identify optimization opportunities.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">Personalized Recommendations</h3>
+                  <p className="text-slate-200">Receive a customized report with actionable insights tailored to your specific business needs and budget.</p>
                 </div>
               </div>
               <div className="flex items-start p-4 bg-slate-600 rounded-lg shadow">
                 <CheckCircle className="h-6 w-6 text-primary mr-4 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-1 text-white">Professional Reporting</h3>
-                  <p className="text-slate-200">Generate branded assessment reports to showcase your expertise and findings.</p>
+                  <h3 className="text-xl font-semibold mb-1 text-white">No-Pressure Consultation</h3>
+                  <p className="text-slate-200">Discuss your results with our team who can answer questions and help you plan your next steps—with no obligation.</p>
                 </div>
               </div>
             </div>

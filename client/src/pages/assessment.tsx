@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAssessment } from "@/context/AssessmentContext";
+import NDANotice from "@/components/forms/NDANotice";
 
 // Define assessment data interface
 interface AssessmentData {
@@ -73,6 +74,8 @@ const Assessment = () => {
   } = useAssessment();
   
   const [isCompleted, setIsCompleted] = useState(false);
+  const [showNDANotice, setShowNDANotice] = useState(false);
+  const [pendingContactData, setPendingContactData] = useState<any>(null);
   
   // If we have an assessment ID, load that assessment
   const assessmentId = params.id;
@@ -188,25 +191,14 @@ const Assessment = () => {
     setContactData(data);
     
     if (!assessment) {
-      // Create a new assessment
-      createAssessmentMutation.mutate({
-        contact: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone,
-          companyWebsite: data.companyWebsite,
-        },
-        company: {
-          name: "",
-          website: data.companyWebsite,
-        }
-      });
-    }
-    
-    setCurrentStep(2);
-    
-    if (assessment) {
+      // Store the contact data to be used after NDA confirmation
+      setPendingContactData(data);
+      // Show the NDA notice
+      setShowNDANotice(true);
+    } else {
+      // Continue directly to step 2 for existing assessments
+      setCurrentStep(2);
+      
       // Update contact info in the database if needed
       apiRequest('PUT', `/api/contacts/${assessment.contactId}`, {
         firstName: data.firstName,
@@ -221,6 +213,35 @@ const Assessment = () => {
       updateAssessmentMutation.mutate({
         currentStep: 2
       });
+    }
+  };
+  
+  // Handle NDA confirmation
+  const handleNDAConfirm = () => {
+    // Close the NDA notice
+    setShowNDANotice(false);
+    
+    // Proceed with assessment creation using the pending contact data
+    if (pendingContactData) {
+      createAssessmentMutation.mutate({
+        contact: {
+          firstName: pendingContactData.firstName,
+          lastName: pendingContactData.lastName,
+          email: pendingContactData.email,
+          phone: pendingContactData.phone,
+          companyWebsite: pendingContactData.companyWebsite,
+        },
+        company: {
+          name: "",
+          website: pendingContactData.companyWebsite,
+        }
+      });
+      
+      // Move to step 2
+      setCurrentStep(2);
+      
+      // Clear the pending data
+      setPendingContactData(null);
     }
   };
   
@@ -456,6 +477,12 @@ const Assessment = () => {
       </main>
       
       <Footer />
+      
+      {/* NDA Notice Dialog */}
+      <NDANotice 
+        isOpen={showNDANotice} 
+        onConfirm={handleNDAConfirm} 
+      />
     </div>
   );
 };
