@@ -141,8 +141,8 @@ const SettingsPage = () => {
       type: data.type,
       options: needsOptions ? optionsArray : [],
       required: data.required,
-      global: data.global,
-      assessmentId: data.global ? null : null, // Would be set to a specific assessment ID if not global
+      global: true, // Always set to true in settings page as all questions here are global
+      assessmentId: 0, // Use 0 to trigger global flag in backend
       order: globalQuestions ? (globalQuestions as CustomQuestion[]).length + 1 : 0,
       industries: data.industries,
       allowMultiple: data.allowMultiple,

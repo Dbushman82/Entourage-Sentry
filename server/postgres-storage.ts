@@ -778,7 +778,22 @@ export class PostgresStorage implements IStorage {
   }
   
   async deleteCustomQuestion(id: number): Promise<boolean> {
-    const result = await db.delete(schema.customQuestions).where(eq(schema.customQuestions.id, id)).returning();
+    // First, check if there are any responses tied to this question
+    const responses = await db.select()
+      .from(schema.customQuestionResponses)
+      .where(eq(schema.customQuestionResponses.questionId, id));
+    
+    // If responses exist, delete them first
+    if (responses.length > 0) {
+      await db.delete(schema.customQuestionResponses)
+        .where(eq(schema.customQuestionResponses.questionId, id));
+    }
+    
+    // Now delete the question
+    const result = await db.delete(schema.customQuestions)
+      .where(eq(schema.customQuestions.id, id))
+      .returning();
+      
     return result.length > 0;
   }
   
