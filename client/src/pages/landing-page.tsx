@@ -1,88 +1,8 @@
-import { useState } from "react";
 import { Link } from "wouter";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { CheckCircle } from "lucide-react";
 
-// Form schema for assessment requests
-const assessmentRequestSchema = z.object({
-  firstName: z.string().min(2, "First name is required"),
-  lastName: z.string().min(2, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().optional(),
-  companyName: z.string().min(2, "Company name is required"),
-  companyWebsite: z.string().min(3, "Company website is required"),
-  message: z.string().optional(),
-});
-
-type AssessmentRequestFormValues = z.infer<typeof assessmentRequestSchema>;
-
 export default function LandingPage() {
-  const { toast } = useToast();
-  const [requestSubmitted, setRequestSubmitted] = useState(false);
-
-  // Create form
-  const form = useForm<AssessmentRequestFormValues>({
-    resolver: zodResolver(assessmentRequestSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      companyName: "",
-      companyWebsite: "",
-      message: "",
-    },
-  });
-
-  // Submit assessment request
-  const assessmentRequestMutation = useMutation({
-    mutationFn: async (data: AssessmentRequestFormValues) => {
-      const response = await apiRequest("POST", "/api/assessment-requests", data);
-      return response.json();
-    },
-    onSuccess: () => {
-      setRequestSubmitted(true);
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error submitting request",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (values: AssessmentRequestFormValues) => {
-    assessmentRequestMutation.mutate(values);
-  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -125,7 +45,7 @@ export default function LandingPage() {
             <Button 
               size="lg" 
               variant="secondary"
-              onClick={() => document.getElementById('request-form')?.scrollIntoView({behavior: 'smooth'})}
+              onClick={() => window.location.href = 'mailto:support@entourageit.com?subject=Technology Assessment Request'}
             >
               Request Your Free Assessment
             </Button>
@@ -253,179 +173,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Request Form Section */}
-      <section id="request-form" className="py-16 bg-slate-900">
+      {/* CTA Section */}
+      <section id="request-cta" className="py-16 bg-slate-900">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12 text-white">Request an Assessment</h2>
-            
-            {requestSubmitted ? (
-              <Card className="border-green-600 bg-green-900/20 text-white">
-                <CardHeader>
-                  <div className="flex items-center justify-center mb-4">
-                    <CheckCircle className="h-16 w-16 text-green-400" />
-                  </div>
-                  <CardTitle className="text-center text-2xl">Request Submitted Successfully!</CardTitle>
-                  <CardDescription className="text-center text-lg text-slate-300">
-                    Thank you for your interest in Entourage Sentry.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center text-slate-300 mb-4">
-                    Our team will review your request within 24 hours and contact you to discuss the next steps.
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setRequestSubmitted(false)}
-                  >
-                    Submit Another Request
-                  </Button>
-                </CardFooter>
-              </Card>
-            ) : (
-              <Card className="bg-slate-800 border-slate-700 text-white">
-                <CardHeader>
-                  <CardTitle>Assessment Request Form</CardTitle>
-                  <CardDescription className="text-slate-300">
-                    Fill out the form below to request a comprehensive technology assessment for your business.
-                    All requests are reviewed within 24 hours.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-slate-200">First Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="John" {...field} className="bg-slate-700 border-slate-600" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-slate-200">Last Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Doe" {...field} className="bg-slate-700 border-slate-600" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-slate-200">Email</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="email"
-                                  placeholder="john.doe@example.com"
-                                  {...field}
-                                  className="bg-slate-700 border-slate-600"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-slate-200">Phone (Optional)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="(555) 123-4567" {...field} className="bg-slate-700 border-slate-600" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <Separator className="bg-slate-600" />
-
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="companyName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-slate-200">Company Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Acme Inc." {...field} className="bg-slate-700 border-slate-600" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="companyWebsite"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-slate-200">Company Website</FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://example.com" {...field} className="bg-slate-700 border-slate-600" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="message"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-slate-200">Additional Information (Optional)</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Tell us about your specific needs or concerns"
-                                className="resize-none bg-slate-700 border-slate-600"
-                                rows={4}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-slate-400">
-                              Share any specific areas you'd like the assessment to focus on.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        disabled={assessmentRequestMutation.isPending}
-                      >
-                        {assessmentRequestMutation.isPending
-                          ? "Submitting..."
-                          : "Submit Request"}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            )}
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl font-bold text-center mb-6 text-white">Ready to Optimize Your Technology?</h2>
+            <p className="text-slate-300 mb-8 text-lg">
+              Get in touch with our team to schedule your personalized technology assessment and discover opportunities for improvement.
+            </p>
+            <Button 
+              size="lg" 
+              className="bg-primary-600 hover:bg-primary-700"
+              onClick={() => window.location.href = 'mailto:support@entourageit.com?subject=Technology Assessment Request'}
+            >
+              Contact Us Today
+            </Button>
           </div>
         </div>
       </section>
@@ -451,9 +213,8 @@ export default function LandingPage() {
                 <span className="text-lg font-bold">Entourage Sentry</span>
               </div>
               <p className="text-slate-300 max-w-md">
-                A comprehensive client assessment platform for Managed Service
-                Providers, leveraging advanced data enrichment and network
-                reconnaissance technologies.
+                A comprehensive technology assessment platform helping businesses
+                optimize their IT infrastructure, security, and performance.
               </p>
             </div>
             <div className="flex flex-col md:items-end">
@@ -461,7 +222,7 @@ export default function LandingPage() {
               <p className="text-slate-300">Email: support@entourageit.com</p>
               <div className="mt-4">
                 <Link href="/auth" className="text-slate-300 hover:text-white">
-                  Partner Login
+                  Login
                 </Link>
               </div>
             </div>
