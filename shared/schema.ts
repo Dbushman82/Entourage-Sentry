@@ -510,7 +510,8 @@ export type CustomQuestion = typeof customQuestions.$inferSelect;
 export const customQuestionResponses = pgTable('custom_question_responses', {
   id: serial('id').primaryKey(),
   questionId: integer('question_id').references(() => customQuestions.id).notNull(),
-  assessmentId: integer('assessment_id').references(() => assessments.id).notNull(),
+  // Note: assessment_id column doesn't exist in the actual database yet
+  // assessmentId: integer('assessment_id').references(() => assessments.id).notNull(),
   response: text('response').array(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -519,7 +520,6 @@ export const insertCustomQuestionResponseSchema = createInsertSchema(customQuest
   response: z.array(z.string()),
 }).pick({
   questionId: true,
-  assessmentId: true,
   response: true,
 });
 

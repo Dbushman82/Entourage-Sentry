@@ -547,7 +547,7 @@ export class PostgresStorage implements IStorage {
       await db.insert(schema.systemSettings).values({
         key,
         value,
-        createdAt: new Date()
+        updatedAt: new Date()
       });
     }
   }
@@ -799,8 +799,10 @@ export class PostgresStorage implements IStorage {
   
   // Custom question response methods
   async createCustomQuestionResponse(response: InsertCustomQuestionResponse): Promise<CustomQuestionResponse> {
+    // Only include fields that exist in the database
     const result = await db.insert(schema.customQuestionResponses).values({
-      ...response,
+      questionId: response.questionId,
+      response: response.response,
       createdAt: new Date()
     }).returning();
     return result[0];
@@ -820,8 +822,11 @@ export class PostgresStorage implements IStorage {
   async updateCustomQuestionResponse(id: number, response: Partial<InsertCustomQuestionResponse>): Promise<CustomQuestionResponse | undefined> {
     const updateData: Record<string, any> = {};
     
+    // Only include fields that exist in the database
     if (response.questionId !== undefined) updateData.questionId = response.questionId;
     if (response.response !== undefined) updateData.response = response.response;
+    // Remove assessmentId reference since it doesn't exist in the database
+    // if (response.assessmentId !== undefined) updateData.assessmentId = response.assessmentId;
     
     const result = await db.update(schema.customQuestionResponses)
       .set(updateData)
