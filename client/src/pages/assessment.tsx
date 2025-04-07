@@ -81,8 +81,17 @@ const Assessment = () => {
   const assessmentId = params.id;
   const { data: assessmentData, isLoading: isLoadingAssessment } = useQuery({
     queryKey: [`/api/assessments/${assessmentId}`],
-    enabled: !!assessmentId,
+    enabled: !!assessmentId
   });
+  
+  // Handle assessment data load success
+  useEffect(() => {
+    if (assessmentData && !contactData?.firstName) {
+      // Show NDA immediately when first accessing the assessment URL
+      // Only if no contact info exists for this assessment yet
+      setShowNDANotice(true);
+    }
+  }, [assessmentData, contactData]);
   
   // If we have assessment data, also get the details
   const { data: assessmentDetails, isLoading: isLoadingDetails } = useQuery({
@@ -102,6 +111,16 @@ const Assessment = () => {
       
       if (typedAssessmentData.status === 'completed') {
         setIsCompleted(true);
+      }
+      
+      // Check if we need to show NDA notice - only for brand new assessments
+      const hasNoContact = !typedAssessmentDetails.contact || 
+                          (typedAssessmentDetails.contact && 
+                           !typedAssessmentDetails.contact.firstName);
+      
+      if (hasNoContact) {
+        // If we're on a fresh assessment with no contact info, show NDA first
+        setShowNDANotice(true);
       }
       
       if (typedAssessmentDetails.contact) {
@@ -141,17 +160,17 @@ const Assessment = () => {
     }
   }, [assessmentData, assessmentDetails, setAssessment, setCurrentStep, setContactData, setCompanyData, setCompanyProfileData, setDomainData, setReferenceCode]);
   
-  // Show NDA notice immediately when a new assessment is loaded from token
+  // Auto-show NDA notice for assessments without contact info
   useEffect(() => {
-    if (assessmentId && assessmentData && assessmentDetails) {
-      // Check if assessmentDetails has a contact property that's null/undefined
-      const details = assessmentDetails as AssessmentDetails;
-      if (!details.contact) {
-        // This is a brand new assessment that hasn't been started yet
+    // Check if we have an assessmentId but no contact info yet
+    if (assessmentId && assessmentData) {
+      // Display NDA notice immediately if current step is 1 (Contact)
+      // and no contact exists yet for this assessment
+      if (currentStep === 1 && (!contactData || !contactData.firstName)) {
         setShowNDANotice(true);
       }
     }
-  }, [assessmentId, assessmentData, assessmentDetails]);
+  }, [assessmentId, assessmentData, currentStep, contactData]);
   
   // Create a new assessment
   const createAssessmentMutation = useMutation({
