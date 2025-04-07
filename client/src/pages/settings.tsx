@@ -77,6 +77,8 @@ const SettingsPage = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("questions");
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  const [isEditingQuestion, setIsEditingQuestion] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<CustomQuestion | null>(null);
   
   const form = useForm<NewQuestionForm>({
     defaultValues: {
@@ -140,24 +142,82 @@ const SettingsPage = () => {
     }
   });
   
+  const updateQuestionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: any }) => {
+      const res = await apiRequest('PUT', `/api/questions/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/questions/global'] });
+      toast({
+        title: "Success",
+        description: "Question has been updated successfully.",
+      });
+      
+      form.reset();
+      setIsEditingQuestion(false);
+      setEditingQuestion(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "There was an error updating the question.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle editing a question
+  const handleEditQuestion = (question: CustomQuestion) => {
+    setEditingQuestion(question);
+    
+    // Convert options array to comma-separated string for the form
+    const optionsString = question.options?.join(', ') || '';
+    
+    // Reset form and set values for editing
+    form.reset({
+      question: question.question,
+      description: question.description || '',
+      type: question.type,
+      options: optionsString,
+      required: question.required,
+      global: question.global,
+      industries: question.industries || [],
+      allowMultiple: question.allowMultiple
+    });
+    
+    setIsEditingQuestion(true);
+  };
+  
   const onSubmit = (data: NewQuestionForm) => {
     // Convert options string to array if needed
     const needsOptions = ["select", "multiselect", "checkbox", "radio"].includes(data.type);
     const optionsArray = needsOptions ? data.options.split(',').map(opt => opt.trim()) : [];
     
-    createQuestionMutation.mutate({
+    const formattedData = {
       question: data.question,
       description: data.description || null,
       type: data.type,
       options: needsOptions ? optionsArray : [],
       required: data.required,
-      global: true, // Always set to true in settings page as all questions here are global
+      global: data.global,
       assessmentId: 0, // Use 0 to trigger global flag in backend
       order: globalQuestions ? (globalQuestions as CustomQuestion[]).length + 1 : 0,
       industries: data.industries,
       allowMultiple: data.allowMultiple,
       createdBy: user?.id
-    });
+    };
+    
+    if (isEditingQuestion && editingQuestion) {
+      // Update existing question
+      updateQuestionMutation.mutate({
+        id: editingQuestion.id,
+        data: formattedData
+      });
+    } else {
+      // Create new question
+      createQuestionMutation.mutate(formattedData);
+    }
   };
   
   const [questionToDelete, setQuestionToDelete] = useState<number | null>(null);
@@ -265,6 +325,7 @@ const SettingsPage = () => {
               <CardContent className="space-y-4">
                 <div className="mb-4 flex justify-between items-center">
                   <h3 className="text-lg font-medium">Question List</h3>
+                  {/* Add Question Dialog */}
                   <Dialog open={isAddingQuestion} onOpenChange={setIsAddingQuestion}>
                     <DialogTrigger asChild>
                       <Button>
@@ -481,6 +542,222 @@ const SettingsPage = () => {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  
+                  {/* Edit Question Dialog */}
+                  <Dialog open={isEditingQuestion} onOpenChange={setIsEditingQuestion}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Question</DialogTitle>
+                        <DialogDescription>
+                          Make changes to the existing question.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="question">Question Text*</Label>
+                          <Input 
+                            id="question" 
+                            placeholder="Enter your question here" 
+                            {...form.register("question", { required: true })}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Description (Optional)</Label>
+                          <Textarea 
+                            id="description" 
+                            placeholder="Enter additional context for the question" 
+                            {...form.register("description")}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="type">Question Type*</Label>
+                          <Select 
+                            onValueChange={(value) => form.setValue("type", value as QuestionType)} 
+                            defaultValue={form.getValues("type")}
+                            value={form.watch("type")}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select question type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text">Short Text</SelectItem>
+                              <SelectItem value="textarea">Long Text</SelectItem>
+                              <SelectItem value="select">Single Choice (Dropdown)</SelectItem>
+                              <SelectItem value="multiselect">Multiple Choice (Multi-select)</SelectItem>
+                              <SelectItem value="checkbox">Checkboxes</SelectItem>
+                              <SelectItem value="radio">Radio Buttons</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
+                          <div className="space-y-2">
+                            <Label htmlFor="options">Options (comma-separated)*</Label>
+                            <Textarea 
+                              id="options" 
+                              placeholder="Option 1, Option 2, Option 3" 
+                              {...form.register("options", { 
+                                required: ["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) 
+                              })}
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Switch 
+                                id="required" 
+                                checked={form.watch("required")}
+                                onCheckedChange={(checked) => form.setValue("required", checked)}
+                              />
+                              <Label htmlFor="required">Required Question</Label>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              <Switch 
+                                id="global" 
+                                checked={form.watch("global")}
+                                onCheckedChange={(checked) => form.setValue("global", checked)}
+                              />
+                              <Label htmlFor="global">Global Question</Label>
+                            </div>
+                          </div>
+                          
+                          {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
+                            <div className="flex items-center space-x-2">
+                              <Switch 
+                                id="allowMultiple" 
+                                checked={form.watch("allowMultiple")}
+                                onCheckedChange={(checked) => form.setValue("allowMultiple", checked)}
+                              />
+                              <Label htmlFor="allowMultiple">Allow Multiple Answers</Label>
+                            </div>
+                          )}
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="industries">Industry Association (Optional)</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-retail" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("retail", checked)}
+                                  checked={form.watch("industries").includes("retail")}
+                                />
+                                <Label htmlFor="edit-retail">Retail & E-commerce</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-healthcare" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("healthcare", checked)}
+                                  checked={form.watch("industries").includes("healthcare")}
+                                />
+                                <Label htmlFor="edit-healthcare">Healthcare & Medical</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-finance" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("finance", checked)}
+                                  checked={form.watch("industries").includes("finance")}
+                                />
+                                <Label htmlFor="edit-finance">Financial Services</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-manufacturing" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("manufacturing", checked)}
+                                  checked={form.watch("industries").includes("manufacturing")}
+                                />
+                                <Label htmlFor="edit-manufacturing">Manufacturing</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-technology" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("technology", checked)}
+                                  checked={form.watch("industries").includes("technology")}
+                                />
+                                <Label htmlFor="edit-technology">Technology</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-education" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("education", checked)}
+                                  checked={form.watch("industries").includes("education")}
+                                />
+                                <Label htmlFor="edit-education">Education</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-professional" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("professional", checked)}
+                                  checked={form.watch("industries").includes("professional")}
+                                />
+                                <Label htmlFor="edit-professional">Professional Services</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-hospitality" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("hospitality", checked)}
+                                  checked={form.watch("industries").includes("hospitality")}
+                                />
+                                <Label htmlFor="edit-hospitality">Hospitality & Tourism</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-construction" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("construction", checked)}
+                                  checked={form.watch("industries").includes("construction")}
+                                />
+                                <Label htmlFor="edit-construction">Construction & Real Estate</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="edit-nonprofit" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("nonprofit", checked)}
+                                  checked={form.watch("industries").includes("nonprofit")}
+                                />
+                                <Label htmlFor="edit-nonprofit">Non-profit & Government</Label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <DialogFooter>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setIsEditingQuestion(false);
+                              setEditingQuestion(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            type="submit" 
+                            disabled={updateQuestionMutation.isPending}
+                          >
+                            {updateQuestionMutation.isPending && (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            )}
+                            Update Question
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
                 
                 <Separator />
@@ -501,6 +778,13 @@ const SettingsPage = () => {
                             )}
                           </div>
                           <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEditQuestion(question)}
+                            >
+                              Edit
+                            </Button>
                             <Button 
                               size="sm" 
                               variant="destructive"
