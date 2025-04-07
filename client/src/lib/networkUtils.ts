@@ -212,8 +212,7 @@ export async function getLanIpAddress(): Promise<string> {
       // Create dummy RTCPeerConnection to trigger ICE candidate gathering
       const pc = new RTCPeerConnection({
         iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" }
+          { urls: "stun:stun.l.google.com:19302" }
         ]
       });
       
@@ -228,7 +227,7 @@ export async function getLanIpAddress(): Promise<string> {
         if (!candidateFound) {
           resolve('Not available');
         }
-      }, 5000);
+      }, 10000); // Increased timeout
       
       // Listen for candidate events
       pc.onicecandidate = (event) => {
@@ -240,7 +239,7 @@ export async function getLanIpAddress(): Promise<string> {
         const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
         const ipAddress = ipRegex.exec(event.candidate.candidate);
         
-        if (ipAddress) {
+        if (ipAddress && event.candidate.candidate.indexOf('typ host') !== -1) {
           console.log("IP found in candidate:", ipAddress[1]);
           
           // Check if it's a local IP (non-public)
