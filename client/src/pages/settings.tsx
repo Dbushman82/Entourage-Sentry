@@ -30,6 +30,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 
 type QuestionType = "text" | "textarea" | "select" | "multiselect" | "checkbox" | "radio";
@@ -44,6 +45,8 @@ interface CustomQuestion {
   options: string[];
   required: boolean;
   order: number;
+  industries: string[];
+  allowMultiple: boolean;
   createdAt: string;
   createdBy: number;
 }
@@ -55,6 +58,8 @@ interface NewQuestionForm {
   options: string;
   required: boolean;
   global: boolean;
+  industries: string[];
+  allowMultiple: boolean;
 }
 
 const SettingsPage = () => {
@@ -70,7 +75,9 @@ const SettingsPage = () => {
       type: "text",
       options: "",
       required: false,
-      global: true
+      global: true,
+      industries: [],
+      allowMultiple: false
     }
   });
   
@@ -137,6 +144,8 @@ const SettingsPage = () => {
       global: data.global,
       assessmentId: data.global ? null : null, // Would be set to a specific assessment ID if not global
       order: globalQuestions ? (globalQuestions as CustomQuestion[]).length + 1 : 0,
+      industries: data.industries,
+      allowMultiple: data.allowMultiple,
       createdBy: user?.id
     });
   };
@@ -145,6 +154,18 @@ const SettingsPage = () => {
     if (confirm("Are you sure you want to delete this question?")) {
       deleteQuestionMutation.mutate(id);
     }
+  };
+  
+  // Utility function to handle industry checkbox changes
+  const handleIndustryChange = (industry: string, checked: boolean) => {
+    const industries = [...form.watch("industries")];
+    if (checked) {
+      if (!industries.includes(industry)) industries.push(industry);
+    } else {
+      const index = industries.indexOf(industry);
+      if (index > -1) industries.splice(index, 1);
+    }
+    form.setValue("industries", industries);
   };
   
   if (!user) {
@@ -291,23 +312,131 @@ const SettingsPage = () => {
                           </div>
                         )}
                         
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Switch 
-                              id="required" 
-                              checked={form.watch("required")}
-                              onCheckedChange={(checked) => form.setValue("required", checked)}
-                            />
-                            <Label htmlFor="required">Required Question</Label>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Switch 
+                                id="required" 
+                                checked={form.watch("required")}
+                                onCheckedChange={(checked) => form.setValue("required", checked)}
+                              />
+                              <Label htmlFor="required">Required Question</Label>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              <Switch 
+                                id="global" 
+                                checked={form.watch("global")}
+                                onCheckedChange={(checked) => form.setValue("global", checked)}
+                              />
+                              <Label htmlFor="global">Global Question</Label>
+                            </div>
                           </div>
                           
-                          <div className="flex items-center space-x-2">
-                            <Switch 
-                              id="global" 
-                              checked={form.watch("global")}
-                              onCheckedChange={(checked) => form.setValue("global", checked)}
-                            />
-                            <Label htmlFor="global">Global Question</Label>
+                          {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
+                            <div className="flex items-center space-x-2">
+                              <Switch 
+                                id="allowMultiple" 
+                                checked={form.watch("allowMultiple")}
+                                onCheckedChange={(checked) => form.setValue("allowMultiple", checked)}
+                              />
+                              <Label htmlFor="allowMultiple">Allow Multiple Answers</Label>
+                            </div>
+                          )}
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="industries">Industry Association (Optional)</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="retail" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("retail", checked)}
+                                  checked={form.watch("industries").includes("retail")}
+                                />
+                                <Label htmlFor="retail">Retail & E-commerce</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="healthcare" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("healthcare", checked)}
+                                  checked={form.watch("industries").includes("healthcare")}
+                                />
+                                <Label htmlFor="healthcare">Healthcare & Medical</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="finance" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("finance", checked)}
+                                  checked={form.watch("industries").includes("finance")}
+                                />
+                                <Label htmlFor="finance">Financial Services</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="manufacturing" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("manufacturing", checked)}
+                                  checked={form.watch("industries").includes("manufacturing")}
+                                />
+                                <Label htmlFor="manufacturing">Manufacturing</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="technology" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("technology", checked)}
+                                  checked={form.watch("industries").includes("technology")}
+                                />
+                                <Label htmlFor="technology">Technology</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="education" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("education", checked)}
+                                  checked={form.watch("industries").includes("education")}
+                                />
+                                <Label htmlFor="education">Education</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="professional" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("professional", checked)}
+                                  checked={form.watch("industries").includes("professional")}
+                                />
+                                <Label htmlFor="professional">Professional Services</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="hospitality" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("hospitality", checked)}
+                                  checked={form.watch("industries").includes("hospitality")}
+                                />
+                                <Label htmlFor="hospitality">Hospitality & Tourism</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="construction" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("construction", checked)}
+                                  checked={form.watch("industries").includes("construction")}
+                                />
+                                <Label htmlFor="construction">Construction & Real Estate</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="nonprofit" 
+                                  onCheckedChange={(checked: boolean) => handleIndustryChange("nonprofit", checked)}
+                                  checked={form.watch("industries").includes("nonprofit")}
+                                />
+                                <Label htmlFor="nonprofit">Non-profit & Government</Label>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         

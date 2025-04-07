@@ -478,6 +478,8 @@ export const customQuestions = pgTable('custom_questions', {
   options: text('options').array(), // For select, multiselect, checkbox, and radio types
   required: boolean('required').notNull().default(false),
   order: integer('order').notNull().default(0),
+  industries: text('industries').array().default([]), // For industry-specific questions
+  allowMultiple: boolean('allow_multiple').default(false), // Allow multiple answers
   createdAt: timestamp('created_at').notNull().defaultNow(),
   createdBy: integer('created_by').references(() => users.id).notNull(),
 });
@@ -486,6 +488,8 @@ export const insertCustomQuestionSchema = createInsertSchema(customQuestions, {
   options: z.array(z.string()),
   required: z.boolean(),
   global: z.boolean(),
+  industries: z.array(z.string()),
+  allowMultiple: z.boolean(),
 }).pick({
   assessmentId: true,
   global: true,
@@ -495,6 +499,8 @@ export const insertCustomQuestionSchema = createInsertSchema(customQuestions, {
   options: true,
   required: true,
   order: true,
+  industries: true,
+  allowMultiple: true,
   createdBy: true,
 });
 
@@ -504,6 +510,7 @@ export type CustomQuestion = typeof customQuestions.$inferSelect;
 export const customQuestionResponses = pgTable('custom_question_responses', {
   id: serial('id').primaryKey(),
   questionId: integer('question_id').references(() => customQuestions.id).notNull(),
+  assessmentId: integer('assessment_id').references(() => assessments.id).notNull(),
   response: text('response').array(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -512,6 +519,7 @@ export const insertCustomQuestionResponseSchema = createInsertSchema(customQuest
   response: z.array(z.string()),
 }).pick({
   questionId: true,
+  assessmentId: true,
   response: true,
 });
 
