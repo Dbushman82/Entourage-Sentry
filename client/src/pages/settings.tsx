@@ -22,6 +22,16 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { 
   Select, 
   SelectContent, 
@@ -150,9 +160,19 @@ const SettingsPage = () => {
     });
   };
   
+  const [questionToDelete, setQuestionToDelete] = useState<number | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
   const handleDeleteQuestion = (id: number) => {
-    if (confirm("Are you sure you want to delete this question?")) {
-      deleteQuestionMutation.mutate(id);
+    setQuestionToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDelete = () => {
+    if (questionToDelete !== null) {
+      deleteQuestionMutation.mutate(questionToDelete);
+      setQuestionToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
   
@@ -537,6 +557,23 @@ const SettingsPage = () => {
       </main>
       
       <Footer />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this question and any associated responses.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
