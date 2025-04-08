@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plus, Trash2, Settings as SettingsIcon } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Trash2, Settings as SettingsIcon } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { 
   Dialog, 
   DialogContent, 
@@ -323,10 +324,21 @@ const SettingsPage = () => {
                 <CardTitle>Global Custom Questions</CardTitle>
                 <CardDescription>
                   Manage questions that will appear in all assessments. These questions collect additional information
-                  from clients during the assessment process.
+                  from clients during the assessment process. Only questions marked as global will appear in this list.
+                  Non-global questions can be added to specific assessments.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="rounded-md border p-4 mb-4 bg-blue-50 border-blue-200">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <div className="font-medium text-blue-600">Important Note</div>
+                  </div>
+                  <div className="mt-2 text-sm text-blue-700">
+                    When editing a question, if you turn off the "Global Question" toggle, the question will disappear from this list, 
+                    as it becomes assessment-specific. You can still access it when editing individual assessments.
+                  </div>
+                </div>
                 <div className="mb-4 flex justify-between items-center">
                   <h3 className="text-lg font-medium">Question List</h3>
                   {/* Add Question Dialog */}
