@@ -158,6 +158,13 @@ const AssessmentCustomize = () => {
     },
   });
 
+  // Set selected industry based on assessment data when it loads
+  useEffect(() => {
+    if (assessment && assessment.industryId) {
+      setSelectedIndustry(String(assessment.industryId));
+    }
+  }, [assessment]);
+
   // Reset form when opening
   useEffect(() => {
     if (isFormOpen) {
@@ -171,6 +178,43 @@ const AssessmentCustomize = () => {
       });
     }
   }, [isFormOpen, form]);
+  
+  // Save industry selection mutation
+  const saveIndustryMutation = useMutation({
+    mutationFn: async (industryId: number) => {
+      const res = await apiRequest('PUT', `/api/assessments/${assessmentId}`, { 
+        industryId 
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Industry Saved",
+        description: "This assessment has been updated with the selected industry",
+        variant: "default",
+      });
+      
+      // Update assessment data in the cache
+      queryClient.setQueryData([`/api/assessments/${assessmentId}`], data);
+      
+      // Reload the assessment questions to reflect the selected industry
+      queryClient.invalidateQueries({ queryKey: [`/api/assessments/${assessmentId}/questions`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error Saving Industry",
+        description: error.message || "An error occurred while updating the assessment industry",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle saving the industry selection
+  const saveIndustrySelection = () => {
+    if (selectedIndustry) {
+      saveIndustryMutation.mutate(parseInt(selectedIndustry));
+    }
+  };
 
   // Create question mutation
   const createQuestionMutation = useMutation({
@@ -360,23 +404,48 @@ const AssessmentCustomize = () => {
             <TabsContent value="assessment-questions">
               {/* Industry Selection Dropdown */}
               <div className="mb-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Label htmlFor="industry-select" className="text-white font-medium">Select Industry to View Questions</Label>
-                  <Select 
-                    value={selectedIndustry || "all"} 
-                    onValueChange={value => setSelectedIndustry(value === "all" ? null : value)}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="industry-select" className="text-white font-medium">Select Industry for this Assessment</Label>
+                    <Select 
+                      value={selectedIndustry || "all"} 
+                      onValueChange={value => setSelectedIndustry(value === "all" ? null : value)}
+                    >
+                      <SelectTrigger className="w-[250px]">
+                        <SelectValue placeholder="All Industries" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Industries</SelectItem>
+                        {industries && industries.map((industry: any) => (
+                          <SelectItem key={industry.id} value={String(industry.id)}>{industry.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => saveIndustrySelection()} 
+                    disabled={!selectedIndustry || saveIndustryMutation.isPending}
+                    size="sm"
                   >
-                    <SelectTrigger className="w-[250px]">
-                      <SelectValue placeholder="All Industries" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Industries</SelectItem>
-                      {industries && industries.map((industry: any) => (
-                        <SelectItem key={industry.id} value={String(industry.id)}>{industry.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {saveIndustryMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Save Industry Selection
+                      </>
+                    )}
+                  </Button>
                 </div>
+                {assessment?.industryId && (
+                  <p className="text-sm text-primary-400">
+                    <span className="font-medium">Current Industry:</span> {industries?.find((i: any) => i.id === assessment.industryId)?.name || 'None'}
+                  </p>
+                )}
               </div>
 
               <Card className="bg-slate-800 border-slate-700 mb-6">
