@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -134,19 +134,9 @@ const SettingsPage = () => {
   
   // Query all questions by default
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
-    queryKey: ['/api/questions', questionFilter],
+    queryKey: ['/api/questions'],
     queryFn: async () => {
-      let endpoint = '/api/questions';
-      
-      // Apply filtering based on the selected filter
-      if (questionFilter === 'global') {
-        endpoint = '/api/questions/global';
-      } else if (questionFilter.startsWith('industry-')) {
-        const industryId = questionFilter.split('-')[1];
-        endpoint = `/api/questions/industry/${industryId}`;
-      }
-      
-      const res = await fetch(endpoint);
+      const res = await fetch('/api/questions');
       if (!res.ok) {
         throw new Error('Failed to fetch questions');
       }
@@ -154,6 +144,27 @@ const SettingsPage = () => {
     },
     enabled: !!user,
   });
+  
+  // Filter questions based on the selected filter
+  const filteredQuestions = useMemo(() => {
+    if (!allQuestions) return [];
+    
+    const questions = allQuestions as CustomQuestion[];
+    
+    if (questionFilter === 'all') {
+      return questions;
+    } else if (questionFilter === 'global') {
+      return questions.filter(q => q.global === true);
+    } else if (questionFilter.startsWith('industry-')) {
+      const industryId = parseInt(questionFilter.split('-')[1]);
+      return questions.filter(q => 
+        q.industries && Array.isArray(q.industries) && 
+        q.industries.some(i => parseInt(i) === industryId)
+      );
+    }
+    
+    return questions;
+  }, [allQuestions, questionFilter]);
   
   const { data: industries, isLoading: isLoadingIndustries } = useQuery<Industry[]>({
     queryKey: ['/api/industries'],
@@ -460,7 +471,7 @@ const SettingsPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid grid-cols-4 max-w-md">
             <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="questions">Global Questions</TabsTrigger>
+            <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="industries">Industries</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
@@ -499,11 +510,11 @@ const SettingsPage = () => {
           <TabsContent value="questions" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Global Custom Questions</CardTitle>
+                <CardTitle>Question Management</CardTitle>
                 <CardDescription>
-                  Manage questions that will appear in all assessments. These questions collect additional information
-                  from clients during the assessment process. Only questions marked as global will appear in this list.
-                  Non-global questions can be added to specific assessments.
+                  Manage questions for assessments including global questions (appear in all assessments) and 
+                  industry-specific questions. These questions collect additional information
+                  from clients during the assessment process. Filter the questions by type using the dropdown below.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -513,8 +524,9 @@ const SettingsPage = () => {
                     <div className="font-medium text-blue-600">Important Note</div>
                   </div>
                   <div className="mt-2 text-sm text-blue-700">
-                    When editing a question, if you turn off the "Global Question" toggle, the question will disappear from this list, 
-                    as it becomes assessment-specific. You can still access it when editing individual assessments.
+                    Questions can be filtered by type (Global or Industry-specific). When editing a question, toggling the "Global Question" 
+                    switch or setting industry associations will determine where the question appears. Industry-specific questions will only 
+                    appear in assessments for companies in those industries.
                   </div>
                 </div>
                 <div className="mb-4 flex justify-between items-center">
@@ -982,9 +994,9 @@ const SettingsPage = () => {
                   <div className="py-8 flex justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ) : allQuestions && (allQuestions as CustomQuestion[]).length > 0 ? (
+                ) : filteredQuestions && filteredQuestions.length > 0 ? (
                   <div className="space-y-4">
-                    {(allQuestions as CustomQuestion[]).map((question) => (
+                    {filteredQuestions.map((question) => (
                       <div key={question.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
                         <div className="flex justify-between items-start">
                           <div>
@@ -1034,8 +1046,22 @@ const SettingsPage = () => {
                   </div>
                 ) : (
                   <div className="py-8 text-center text-slate-400">
-                    <p>No global questions have been created yet.</p>
-                    <p className="mt-2">Click the "Add Question" button to create your first global question.</p>
+                    {questionFilter === 'global' ? (
+                      <>
+                        <p>No global questions have been created yet.</p>
+                        <p className="mt-2">Click the "Add Question" button to create your first global question.</p>
+                      </>
+                    ) : questionFilter.startsWith('industry-') ? (
+                      <>
+                        <p>No questions for this industry have been created yet.</p>
+                        <p className="mt-2">Click the "Add Question" button to create your first industry-specific question.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>No questions have been created yet.</p>
+                        <p className="mt-2">Click the "Add Question" button to create your first question.</p>
+                      </>
+                    )}
                   </div>
                 )}
               </CardContent>
