@@ -155,22 +155,51 @@ const SettingsPage = () => {
     enabled: !!user,
   });
   
+  // Add an effect to check API response
+  useEffect(() => {
+    if (allQuestions) {
+      console.log("Questions from API:", allQuestions);
+      
+      // Check if questions array is empty
+      if (Array.isArray(allQuestions) && allQuestions.length === 0) {
+        console.log("No questions returned from API");
+      }
+      
+      // Check for data structure issues
+      if (Array.isArray(allQuestions)) {
+        allQuestions.forEach((q, index) => {
+          console.log(`Question ${index}:`, q);
+          console.log(`  type: ${typeof q.global}, value: ${q.global}`);
+          console.log(`  industries:`, q.industries);
+        });
+      }
+    }
+  }, [allQuestions]);
+  
   // Filter questions based on the selected filter
   const filteredQuestions = useMemo(() => {
     if (!allQuestions) return [];
     
-    const questions = allQuestions as CustomQuestion[];
+    const questions = Array.isArray(allQuestions) ? allQuestions : [];
+    console.log("Processing questions:", questions.length);
     
     if (questionFilter === 'all') {
       return questions;
     } else if (questionFilter === 'global') {
-      return questions.filter(q => q.global === true);
+      const filtered = questions.filter(q => q.global === true);
+      console.log("Global questions:", filtered.length);
+      return filtered;
     } else if (questionFilter.startsWith('industry-')) {
       const industryId = parseInt(questionFilter.split('-')[1]);
-      return questions.filter(q => 
+      const filtered = questions.filter(q => 
         q.industries && Array.isArray(q.industries) && 
-        q.industries.some(i => parseInt(i) === industryId)
+        q.industries.some(i => {
+          const matches = parseInt(String(i)) === industryId || i === String(industryId);
+          return matches;
+        })
       );
+      console.log(`Industry-${industryId} questions:`, filtered.length);
+      return filtered;
     }
     
     return questions;
@@ -714,7 +743,8 @@ const SettingsPage = () => {
                             </Button>
                             <Button 
                               type="submit" 
-                              disabled={createQuestionMutation.isPending}
+                              disabled={createQuestionMutation.isPending || 
+                               (!form.watch("global") && form.watch("industries").length === 0)}
                             >
                               {createQuestionMutation.isPending && (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -875,7 +905,8 @@ const SettingsPage = () => {
                             </Button>
                             <Button 
                               type="submit" 
-                              disabled={updateQuestionMutation.isPending}
+                              disabled={updateQuestionMutation.isPending || 
+                               (!form.watch("global") && form.watch("industries").length === 0)}
                             >
                               {updateQuestionMutation.isPending && (
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

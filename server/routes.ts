@@ -1502,6 +1502,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get ALL questions (global and industry-specific)
+  app.get('/api/questions', async (req: Request, res: Response) => {
+    try {
+      // Combine global and industry questions
+      const globalQuestions = await storage.getGlobalQuestions();
+      const industryQuestions = await storage.getIndustryQuestions();
+      
+      // Merge and add industry associations to each question
+      const allQuestions = [...globalQuestions, ...industryQuestions];
+      
+      const questionsWithIndustries = await Promise.all(
+        allQuestions.map(async (question) => {
+          // Only fetch industries for industry-specific questions
+          if (!question.global) {
+            const industries = await storage.getIndustriesByQuestionId(question.id);
+            return {
+              ...question,
+              industries: industries.map(i => String(i.id)) // Convert to string array of IDs for frontend
+            };
+          }
+          return {
+            ...question,
+            industries: [] // Empty array for global questions
+          };
+        })
+      );
+      
+      res.json(questionsWithIndustries);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
   // Get all questions for an assessment (including global ones and industry-specific ones)
   app.get('/api/assessments/:assessmentId/questions', async (req: Request, res: Response) => {
     try {
