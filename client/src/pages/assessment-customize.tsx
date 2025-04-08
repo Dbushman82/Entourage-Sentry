@@ -76,6 +76,7 @@ const AssessmentCustomize = () => {
   const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("assessment-questions");
+  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const assessmentId = match ? parseInt(params.id) : 0;
@@ -109,8 +110,28 @@ const AssessmentCustomize = () => {
     },
   });
 
+  // Query to get all industries
+  const { data: industries, isLoading: industriesLoading } = useQuery({
+    queryKey: ['/api/industries'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/industries');
+      return res.json();
+    },
+  });
+
+  // Query to get industry-specific questions based on selected industry
+  const { data: industryQuestions, isLoading: industryQuestionsLoading } = useQuery({
+    queryKey: ['/api/questions/industry', selectedIndustry],
+    queryFn: async () => {
+      if (!selectedIndustry) return [];
+      const res = await apiRequest('GET', `/api/questions/industry/${selectedIndustry}`);
+      return res.json();
+    },
+    enabled: !!selectedIndustry,
+  });
+
   // Loading state
-  const isLoading = assessmentLoading || questionsLoading || globalQuestionsLoading;
+  const isLoading = assessmentLoading || questionsLoading || globalQuestionsLoading || industriesLoading || (!!selectedIndustry && industryQuestionsLoading);
 
   // Form schema for creating/editing custom questions
   const formSchema = z.object({
@@ -156,6 +177,8 @@ const AssessmentCustomize = () => {
         ...data,
         assessmentId: assessmentId, // Specific to this assessment
         global: false,
+        category: 'assessment', // Required field - assessment-specific question
+        allowMultiple: false, // Required field
         createdBy: 1 // Default to admin user ID 1
       });
       return res.json();
@@ -333,6 +356,27 @@ const AssessmentCustomize = () => {
             
             {/* Assessment Questions Tab */}
             <TabsContent value="assessment-questions">
+              {/* Industry Selection Dropdown */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Label htmlFor="industry-select" className="text-white font-medium">Select Industry to View Questions</Label>
+                  <Select 
+                    value={selectedIndustry || "all"} 
+                    onValueChange={value => setSelectedIndustry(value === "all" ? null : value)}
+                  >
+                    <SelectTrigger className="w-[250px]">
+                      <SelectValue placeholder="All Industries" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Industries</SelectItem>
+                      {industries && industries.map((industry: any) => (
+                        <SelectItem key={industry.id} value={String(industry.id)}>{industry.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <Card className="bg-slate-800 border-slate-700 mb-6">
                 <CardHeader>
                   <CardTitle className="text-white">Assessment-Specific Questions</CardTitle>
@@ -420,6 +464,95 @@ const AssessmentCustomize = () => {
                 </CardContent>
               </Card>
               
+              {/* Industry-specific Questions Section - only show when industry is selected */}
+              {selectedIndustry && (
+                <Card className="bg-slate-800 border-slate-700 mb-6">
+                  <CardHeader>
+                    <CardTitle className="text-white">
+                      Industry-Specific Questions
+                      {industries && selectedIndustry && (
+                        <span className="ml-2 text-primary-300">
+                          ({industries.find((i: any) => i.id === parseInt(selectedIndustry))?.name})
+                        </span>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-slate-400">
+                      Questions specific to the selected industry that will be included in this assessment
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    {industryQuestionsLoading ? (
+                      <div className="flex justify-center items-center p-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="ml-2">Loading industry questions...</span>
+                      </div>
+                    ) : !industryQuestions || industryQuestions.length === 0 ? (
+                      <div className="text-center p-6 border border-slate-700 rounded-md">
+                        <p className="text-slate-400">No questions found for this industry.</p>
+                        <Button 
+                          variant="link" 
+                          onClick={() => setLocation("/customize-assessment")}
+                          className="mt-2"
+                        >
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                          Go to Question Library
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {industryQuestions.map((question: any) => (
+                          <Card key={question.id} className="relative border-slate-700 bg-slate-800/50">
+                            <CardHeader className="pb-2">
+                              <div className="flex justify-between items-start">
+                                <div className="flex items-start space-x-2">
+                                  <div className="mt-1">
+                                    {getTypeIcon(question.type)}
+                                  </div>
+                                  <div>
+                                    <CardTitle className="text-base text-white">{question.question}</CardTitle>
+                                    {question.description && (
+                                      <CardDescription>{question.description}</CardDescription>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <Badge variant="outline" className="bg-green-900/30 text-green-300 border-green-800">
+                                  Industry
+                                </Badge>
+                              </div>
+                              
+                              <div className="flex gap-2 mt-1">
+                                <Badge variant="outline" className="bg-slate-700 text-slate-200">
+                                  {question.type}
+                                </Badge>
+                                
+                                {question.required && (
+                                  <Badge>Required</Badge>
+                                )}
+                              </div>
+                            </CardHeader>
+                            
+                            {["select", "multiselect", "checkbox", "radio"].includes(question.type) && question.options && (
+                              <CardContent>
+                                <div className="text-sm text-slate-400">Options:</div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {question.options.map((option: string, index: number) => (
+                                    <Badge key={index} variant="secondary" className="bg-slate-700">
+                                      {option}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </CardContent>
+                            )}
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Global Questions Section */}
               <Card className="bg-slate-800 border-slate-700">
                 <CardHeader>
