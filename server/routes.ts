@@ -1515,8 +1515,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questionsWithIndustries = await Promise.all(
         allQuestions.map(async (question) => {
           // Only fetch industries for industry-specific questions
-          if (!question.global) {
+          if (question.category === 'industry') {
             const industries = await storage.getIndustriesByQuestionId(question.id);
+            
+            // Log the industries being returned for debugging
+            console.log(`Question ID ${question.id} (${question.question}) industries:`, industries);
+            
             return {
               ...question,
               industries: industries.map(i => String(i.id)) // Convert to string array of IDs for frontend
@@ -1528,6 +1532,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
+      
+      // Debug output
+      console.log('Returning questions with industries:', 
+                 questionsWithIndustries.map(q => ({ 
+                   id: q.id, 
+                   question: q.question, 
+                   category: q.category, 
+                   industries: q.industries 
+                 })));
       
       res.json(questionsWithIndustries);
     } catch (err) {
@@ -1602,40 +1615,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateSchema = insertCustomQuestionSchema.partial();
       const validData = updateSchema.parse(req.body);
       
+      // Debug the incoming data
+      console.log('Updating question, received data:', {
+        id,
+        ...validData,
+        industryIds: validData.industryIds
+      });
+      
       const updatedQuestion = await storage.updateCustomQuestion(id, validData);
       
-      // If industry IDs were provided, update the industry relationships
-      if (validData.category === 'industry' && validData.industryIds) {
+      // If this is an industry question, handle industry associations
+      if (validData.category === 'industry') {
         // Get current industry relationships
         const currentIndustries = await storage.getIndustriesByQuestionId(id);
         const currentIndustryIds = currentIndustries.map(i => i.id);
         
-        // Parse the provided industry IDs
-        const newIndustryIds = Array.isArray(validData.industryIds) 
-          ? validData.industryIds 
-          : [validData.industryIds];
+        console.log('Current industry IDs:', currentIndustryIds);
         
-        // Remove industries that are no longer associated
-        for (const industryId of currentIndustryIds) {
-          if (!newIndustryIds.includes(industryId)) {
-            await storage.removeQuestionIndustry(id, industryId);
-          }
-        }
+        // Process industry IDs, handling different formats
+        let newIndustryIds: number[] = [];
         
-        // Add new industry associations
-        for (const industryId of newIndustryIds) {
-          if (!currentIndustryIds.includes(industryId)) {
-            await storage.addQuestionIndustry(id, industryId);
+        if (validData.industryIds !== undefined) {
+          // Handle string, array of strings, or array of numbers
+          if (Array.isArray(validData.industryIds)) {
+            newIndustryIds = validData.industryIds.map(id => 
+              typeof id === 'string' ? parseInt(id) : id
+            );
+          } else if (typeof validData.industryIds === 'string') {
+            newIndustryIds = [parseInt(validData.industryIds)];
+          } else if (typeof validData.industryIds === 'number') {
+            newIndustryIds = [validData.industryIds];
           }
+          
+          // Remove invalid IDs (NaN)
+          newIndustryIds = newIndustryIds.filter(id => !isNaN(id));
+          
+          console.log('New industry IDs to apply:', newIndustryIds);
+          
+          // Remove industries that are no longer associated
+          for (const industryId of currentIndustryIds) {
+            if (!newIndustryIds.includes(industryId)) {
+              console.log(`Removing industry ${industryId} from question ${id}`);
+              await storage.removeQuestionIndustry(id, industryId);
+            }
+          }
+          
+          // Add new industry associations
+          for (const industryId of newIndustryIds) {
+            if (!currentIndustryIds.includes(industryId)) {
+              console.log(`Adding industry ${industryId} to question ${id}`);
+              await storage.addQuestionIndustry(id, industryId);
+            }
+          }
+        } else {
+          console.log('No industry IDs provided in update request');
         }
       }
       
       // Get updated list of associated industries
       const industries = await storage.getIndustriesByQuestionId(id);
+      console.log('Final industries after update:', industries);
       
+      // Return the updated data to the client
       res.json({
         ...updatedQuestion,
-        industries
+        industries: industries.map(i => String(i.id)) // Convert to string format for frontend
       });
     } catch (err) {
       handleError(err, res);

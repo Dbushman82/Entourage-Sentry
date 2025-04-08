@@ -191,18 +191,29 @@ const SettingsPage = () => {
       console.log("Global questions:", filtered.length);
       return filtered;
     } else if (questionFilter.startsWith('industry-')) {
-      const industryId = parseInt(questionFilter.split('-')[1]);
-      const filtered = questions.filter(q => 
-        q.category === 'industry' && 
-        q.industries && Array.isArray(q.industries) && 
-        q.industries.some(i => {
-          // Try to match as either string or number
-          if (typeof i === 'object' && i.id) {
-            return i.id === industryId || i.id === String(industryId);
-          }
-          return parseInt(String(i)) === industryId || i === String(industryId);
-        })
-      );
+      const industryId = questionFilter.split('-')[1]; // Keep as string for comparison
+      console.log(`Filtering for industry ID: ${industryId}`);
+      
+      const filtered = questions.filter(q => {
+        // Only consider industry questions
+        if (q.category !== 'industry') return false;
+        
+        // Debug industry data
+        console.log(`Question ${q.id} (${q.question}) industries:`, q.industries);
+        
+        // Make sure industries exists and is an array
+        if (!q.industries || !Array.isArray(q.industries)) {
+          console.log(`Question ${q.id} has no industries or invalid format`);
+          return false;
+        }
+        
+        // Check if this industryId is in the question's industries array
+        const hasIndustry = q.industries.some(i => String(i) === industryId);
+        console.log(`Question ${q.id} has industry ${industryId}:`, hasIndustry);
+        
+        return hasIndustry;
+      });
+      
       console.log(`Industry-${industryId} questions:`, filtered.length);
       return filtered;
     }
@@ -291,6 +302,17 @@ const SettingsPage = () => {
     // Convert options array to comma-separated string for the form
     const optionsString = question.options?.join(', ') || '';
     
+    // Debug the industry data
+    console.log(`Editing question ID ${question.id} with industries:`, question.industries);
+    
+    // Convert industry array to a format that the form can handle
+    // The form expects an array of strings
+    const formattedIndustries = (question.industries && Array.isArray(question.industries)) 
+      ? question.industries.map(i => String(i)) 
+      : [];
+    
+    console.log(`Formatted industries for form:`, formattedIndustries);
+    
     // Reset form and set values for editing
     form.reset({
       question: question.question,
@@ -298,8 +320,8 @@ const SettingsPage = () => {
       type: question.type,
       options: optionsString,
       required: question.required,
-      global: question.global,
-      industries: question.industries || [],
+      global: question.category === 'global', // Set global flag based on category
+      industries: formattedIndustries,
       allowMultiple: question.allowMultiple
     });
     
