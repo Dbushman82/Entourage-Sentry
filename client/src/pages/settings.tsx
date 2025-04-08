@@ -126,11 +126,21 @@ const SettingsPage = () => {
       type: "text",
       options: "",
       required: false,
-      global: true,
+      global: false,
       industries: [],
       allowMultiple: false
     }
   });
+  
+  // Watch for changes to the global flag
+  const isGlobal = form.watch("global");
+  
+  // Effect to clear and disable industries when global is true
+  useEffect(() => {
+    if (isGlobal) {
+      form.setValue("industries", []);
+    }
+  }, [isGlobal, form]);
   
   // Query all questions by default
   const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
@@ -282,8 +292,8 @@ const SettingsPage = () => {
       options: needsOptions ? optionsArray : [],
       required: data.required,
       global: data.global, // This will determine if it's a global question
-      // Only set assessmentId to 0 for global questions
-      assessmentId: data.global ? 0 : null, // Will be overridden in custom assessment flows
+      // Only set assessmentId to null for all questions (global questions are handled on server side)
+      assessmentId: null,
       order: allQuestions ? (allQuestions as CustomQuestion[]).length + 1 : 0,
       industries: data.industries,
       allowMultiple: data.allowMultiple,
@@ -513,423 +523,448 @@ const SettingsPage = () => {
                 <CardTitle>Question Management</CardTitle>
                 <CardDescription>
                   Manage questions for assessments including global questions (appear in all assessments) and 
-                  industry-specific questions. These questions collect additional information
-                  from clients during the assessment process. Filter the questions by type using the dropdown below.
+                  industry-specific questions (appear only in assessments for companies in those industries).
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-md border p-4 mb-4 bg-blue-50 border-blue-200">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <div className="font-medium text-blue-600">Important Note</div>
-                  </div>
-                  <div className="mt-2 text-sm text-blue-700">
-                    Questions can be filtered by type (Global or Industry-specific). When editing a question, toggling the "Global Question" 
-                    switch or setting industry associations will determine where the question appears. Industry-specific questions will only 
-                    appear in assessments for companies in those industries.
-                  </div>
-                </div>
-                <div className="mb-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-medium">Question List</h3>
-                    <Select 
-                      value={questionFilter} 
-                      onValueChange={setQuestionFilter}
-                    >
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Filter questions" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Questions</SelectItem>
-                        <SelectItem value="global">Global Questions</SelectItem>
-                        <SelectGroup>
-                          <SelectLabel>Industry Questions</SelectLabel>
-                          {Array.isArray(industries) && industries.map((industry) => (
-                            <SelectItem key={industry.id} value={`industry-${industry.id}`}>
-                              {industry.name}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* Add Question Dialog */}
-                  <Dialog open={isAddingQuestion} onOpenChange={setIsAddingQuestion}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Question
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create New Question</DialogTitle>
-                        <DialogDescription>
-                          Add a new question that will appear in all assessments.
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="question">Question Text*</Label>
-                          <Input 
-                            id="question" 
-                            placeholder="Enter your question here" 
-                            {...form.register("question", { required: true })}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Description (Optional)</Label>
-                          <Textarea 
-                            id="description" 
-                            placeholder="Enter additional context for the question" 
-                            {...form.register("description")}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="type">Question Type*</Label>
-                          <Select 
-                            onValueChange={(value) => form.setValue("type", value as QuestionType)} 
-                            defaultValue={form.getValues("type")}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select question type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">Short Text</SelectItem>
-                              <SelectItem value="textarea">Long Text</SelectItem>
-                              <SelectItem value="select">Single Choice (Dropdown)</SelectItem>
-                              <SelectItem value="multiselect">Multiple Choice (Multi-select)</SelectItem>
-                              <SelectItem value="checkbox">Checkboxes</SelectItem>
-                              <SelectItem value="radio">Radio Buttons</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
-                          <div className="space-y-2">
-                            <Label htmlFor="options">Options (comma-separated)*</Label>
-                            <Textarea 
-                              id="options" 
-                              placeholder="Option 1, Option 2, Option 3" 
-                              {...form.register("options", { 
-                                required: ["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) 
-                              })}
-                            />
-                          </div>
-                        )}
-                        
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Switch 
-                                id="required" 
-                                checked={form.watch("required")}
-                                onCheckedChange={(checked) => form.setValue("required", checked)}
-                              />
-                              <Label htmlFor="required">Required Question</Label>
-                            </div>
-                            
-                            <div className="flex items-center space-x-2">
-                              <Switch 
-                                id="global" 
-                                checked={form.watch("global")}
-                                onCheckedChange={(checked) => form.setValue("global", checked)}
-                              />
-                              <Label htmlFor="global">Global Question</Label>
-                            </div>
-                          </div>
-                          
-                          {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
-                            <div className="flex items-center space-x-2">
-                              <Switch 
-                                id="allowMultiple" 
-                                checked={form.watch("allowMultiple")}
-                                onCheckedChange={(checked) => form.setValue("allowMultiple", checked)}
-                              />
-                              <Label htmlFor="allowMultiple">Allow Multiple Answers</Label>
-                            </div>
-                          )}
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="industries">Industry Association (Optional)</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {isLoadingIndustries ? (
-                                <div className="col-span-2 flex justify-center py-2">
-                                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                                </div>
-                              ) : Array.isArray(industries) && industries.length > 0 ? (
-                                industries.map((industry) => (
-                                  <div key={industry.id} className="flex items-center space-x-2">
-                                    <Checkbox 
-                                      id={`industry-${industry.id}`}
-                                      onCheckedChange={(checked: boolean) => 
-                                        handleIndustryChange(String(industry.id), checked)
-                                      }
-                                      checked={form.watch("industries").includes(String(industry.id))}
-                                    />
-                                    <Label htmlFor={`industry-${industry.id}`}>{industry.name}</Label>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="col-span-2 text-sm text-muted-foreground py-2">
-                                  No industries have been added yet. Add industries in the Industries tab.
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <DialogFooter>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => setIsAddingQuestion(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            type="submit" 
-                            disabled={createQuestionMutation.isPending}
-                          >
-                            {createQuestionMutation.isPending && (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            )}
-                            Create Question
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+              <CardContent>
+                <div className="mb-4 space-y-4">
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Important Note</AlertTitle>
+                    <AlertDescription>
+                      Questions can be filtered by type below. Using the "Global Question" switch or setting industry
+                      associations will determine whether questions appear for all assessments or only for companies in those
+                      industries.
+                    </AlertDescription>
+                  </Alert>
                   
-                  {/* Edit Question Dialog */}
-                  <Dialog open={isEditingQuestion} onOpenChange={setIsEditingQuestion}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Edit Question</DialogTitle>
-                        <DialogDescription>
-                          Make changes to the existing question.
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="question">Question Text*</Label>
-                          <Input 
-                            id="question" 
-                            placeholder="Enter your question here" 
-                            {...form.register("question", { required: true })}
-                          />
-                        </div>
+                  <div className="flex justify-between items-center">
+                    <div className="w-64">
+                      <Select
+                        defaultValue="global"
+                        value={questionFilter}
+                        onValueChange={(value) => setQuestionFilter(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Filter questions" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Questions</SelectItem>
+                          <SelectItem value="global">Global Questions</SelectItem>
+                          <SelectGroup>
+                            <SelectLabel>Industry Questions</SelectLabel>
+                            {Array.isArray(industries) && industries.map((industry) => (
+                              <SelectItem key={industry.id} value={`industry-${industry.id}`}>
+                                {industry.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Dialog open={isAddingQuestion} onOpenChange={setIsAddingQuestion}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Question
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Create New Question</DialogTitle>
+                          <DialogDescription>
+                            Add a new question that will appear in assessments.
+                          </DialogDescription>
+                        </DialogHeader>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Description (Optional)</Label>
-                          <Textarea 
-                            id="description" 
-                            placeholder="Enter additional context for the question" 
-                            {...form.register("description")}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="type">Question Type*</Label>
-                          <Select 
-                            onValueChange={(value) => form.setValue("type", value as QuestionType)} 
-                            defaultValue={form.getValues("type")}
-                            value={form.watch("type")}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select question type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">Short Text</SelectItem>
-                              <SelectItem value="textarea">Long Text</SelectItem>
-                              <SelectItem value="select">Single Choice (Dropdown)</SelectItem>
-                              <SelectItem value="multiselect">Multiple Choice (Multi-select)</SelectItem>
-                              <SelectItem value="checkbox">Checkboxes</SelectItem>
-                              <SelectItem value="radio">Radio Buttons</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="options">Options (comma-separated)*</Label>
-                            <Textarea 
-                              id="options" 
-                              placeholder="Option 1, Option 2, Option 3" 
-                              {...form.register("options", { 
-                                required: ["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) 
-                              })}
+                            <Label htmlFor="question">Question Text*</Label>
+                            <Input 
+                              id="question" 
+                              placeholder="Enter your question here" 
+                              {...form.register("question", { required: true })}
                             />
                           </div>
-                        )}
-                        
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Switch 
-                                id="required" 
-                                checked={form.watch("required")}
-                                onCheckedChange={(checked) => form.setValue("required", checked)}
-                              />
-                              <Label htmlFor="required">Required Question</Label>
-                            </div>
-                            
-                            <div className="flex items-center space-x-2">
-                              <Switch 
-                                id="global" 
-                                checked={form.watch("global")}
-                                onCheckedChange={(checked) => form.setValue("global", checked)}
-                              />
-                              <Label htmlFor="global">Global Question</Label>
-                            </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="description">Description (Optional)</Label>
+                            <Textarea 
+                              id="description" 
+                              placeholder="Enter additional context for the question" 
+                              {...form.register("description")}
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="type">Question Type*</Label>
+                            <Select 
+                              onValueChange={(value) => form.setValue("type", value as QuestionType)} 
+                              defaultValue={form.watch("type")}
+                              value={form.watch("type")}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select question type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="text">Short Text</SelectItem>
+                                <SelectItem value="textarea">Long Text</SelectItem>
+                                <SelectItem value="select">Single Choice (Dropdown)</SelectItem>
+                                <SelectItem value="multiselect">Multiple Choice (Multi-select)</SelectItem>
+                                <SelectItem value="checkbox">Checkboxes</SelectItem>
+                                <SelectItem value="radio">Radio Buttons</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                           
                           {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
-                            <div className="flex items-center space-x-2">
-                              <Switch 
-                                id="allowMultiple" 
-                                checked={form.watch("allowMultiple")}
-                                onCheckedChange={(checked) => form.setValue("allowMultiple", checked)}
+                            <div className="space-y-2">
+                              <Label htmlFor="options">Options (comma-separated)*</Label>
+                              <Textarea 
+                                id="options" 
+                                placeholder="Option 1, Option 2, Option 3" 
+                                {...form.register("options", { 
+                                  required: ["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) 
+                                })}
                               />
-                              <Label htmlFor="allowMultiple">Allow Multiple Answers</Label>
                             </div>
                           )}
+                          
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Switch 
+                                  id="required" 
+                                  checked={form.watch("required")}
+                                  onCheckedChange={(checked) => form.setValue("required", checked)}
+                                />
+                                <Label htmlFor="required">Required Question</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Switch 
+                                  id="global" 
+                                  checked={form.watch("global")}
+                                  onCheckedChange={(checked) => {
+                                    form.setValue("global", checked);
+                                    if (checked) {
+                                      // If global is checked, clear all industry selections
+                                      form.setValue("industries", []);
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor="global">Global Question</Label>
+                              </div>
+                            </div>
+                            
+                            {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
+                              <div className="flex items-center space-x-2">
+                                <Switch 
+                                  id="allowMultiple" 
+                                  checked={form.watch("allowMultiple")}
+                                  onCheckedChange={(checked) => form.setValue("allowMultiple", checked)}
+                                />
+                                <Label htmlFor="allowMultiple">Allow Multiple Answers</Label>
+                              </div>
+                            )}
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="industries">Industry Association (Optional)</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {isLoadingIndustries ? (
+                                  <div className="col-span-2 flex justify-center py-2">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                  </div>
+                                ) : Array.isArray(industries) && industries.length > 0 ? (
+                                  industries.map((industry) => (
+                                    <div key={industry.id} className="flex items-center space-x-2">
+                                      <Checkbox 
+                                        id={`industry-${industry.id}`}
+                                        onCheckedChange={(checked: boolean) => 
+                                          handleIndustryChange(String(industry.id), checked)
+                                        }
+                                        checked={form.watch("industries").includes(String(industry.id))}
+                                        disabled={form.watch("global")}
+                                      />
+                                      <Label 
+                                        htmlFor={`industry-${industry.id}`}
+                                        className={form.watch("global") ? "text-slate-500" : ""}
+                                      >
+                                        {industry.name}
+                                      </Label>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="col-span-2 text-sm text-muted-foreground py-2">
+                                    No industries have been added yet. Add industries in the Industries tab.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <DialogFooter>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setIsAddingQuestion(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              type="submit" 
+                              disabled={createQuestionMutation.isPending}
+                            >
+                              {createQuestionMutation.isPending && (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              )}
+                              Create Question
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    {/* Edit Question Dialog */}
+                    <Dialog open={isEditingQuestion} onOpenChange={setIsEditingQuestion}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit Question</DialogTitle>
+                          <DialogDescription>
+                            Make changes to the existing question.
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="question">Question Text*</Label>
+                            <Input 
+                              id="question" 
+                              placeholder="Enter your question here" 
+                              {...form.register("question", { required: true })}
+                            />
+                          </div>
                           
                           <div className="space-y-2">
-                            <Label htmlFor="industries">Industry Association (Optional)</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {isLoadingIndustries ? (
-                                <div className="col-span-2 flex justify-center py-2">
-                                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                                </div>
-                              ) : Array.isArray(industries) && industries.length > 0 ? (
-                                industries.map((industry) => (
-                                  <div key={`edit-industry-${industry.id}`} className="flex items-center space-x-2">
-                                    <Checkbox 
-                                      id={`edit-industry-${industry.id}`}
-                                      onCheckedChange={(checked: boolean) => 
-                                        handleIndustryChange(String(industry.id), checked)
-                                      }
-                                      checked={form.watch("industries").includes(String(industry.id))}
-                                    />
-                                    <Label htmlFor={`edit-industry-${industry.id}`}>{industry.name}</Label>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="col-span-2 text-sm text-muted-foreground py-2">
-                                  No industries have been added yet. Add industries in the Industries tab.
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <DialogFooter>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setIsEditingQuestion(false);
-                              setEditingQuestion(null);
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button 
-                            type="submit" 
-                            disabled={updateQuestionMutation.isPending}
-                          >
-                            {updateQuestionMutation.isPending && (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            )}
-                            Update Question
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                
-                <Separator />
-                
-                {isLoadingQuestions ? (
-                  <div className="py-8 flex justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : filteredQuestions && filteredQuestions.length > 0 ? (
-                  <div className="space-y-4">
-                    {filteredQuestions.map((question) => (
-                      <div key={question.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium">{question.question}</h4>
-                            {question.description && (
-                              <p className="text-sm text-slate-400 mt-1">{question.description}</p>
-                            )}
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleEditQuestion(question)}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => handleDeleteQuestion(question.id)}
-                              disabled={deleteQuestionMutation.isPending}
-                            >
-                              {deleteQuestionMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="mt-2 space-y-2">
-                          <div className="flex space-x-4 text-xs text-slate-400">
-                            <span>Type: {question.type}</span>
-                            <span>{question.required ? "Required" : "Optional"}</span>
-                            <span>{question.global ? "Global" : "Assessment-specific"}</span>
+                            <Label htmlFor="description">Description (Optional)</Label>
+                            <Textarea 
+                              id="description" 
+                              placeholder="Enter additional context for the question" 
+                              {...form.register("description")}
+                            />
                           </div>
                           
-                          {question.options.length > 0 && (
-                            <div className="text-xs">
-                              <span className="text-slate-400">Options: </span>
-                              <span>{question.options.join(", ")}</span>
+                          <div className="space-y-2">
+                            <Label htmlFor="type">Question Type*</Label>
+                            <Select 
+                              onValueChange={(value) => form.setValue("type", value as QuestionType)} 
+                              defaultValue={form.getValues("type")}
+                              value={form.watch("type")}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select question type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="text">Short Text</SelectItem>
+                                <SelectItem value="textarea">Long Text</SelectItem>
+                                <SelectItem value="select">Single Choice (Dropdown)</SelectItem>
+                                <SelectItem value="multiselect">Multiple Choice (Multi-select)</SelectItem>
+                                <SelectItem value="checkbox">Checkboxes</SelectItem>
+                                <SelectItem value="radio">Radio Buttons</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
+                            <div className="space-y-2">
+                              <Label htmlFor="options">Options (comma-separated)*</Label>
+                              <Textarea 
+                                id="options" 
+                                placeholder="Option 1, Option 2, Option 3" 
+                                {...form.register("options", { 
+                                  required: ["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) 
+                                })}
+                              />
                             </div>
                           )}
+                          
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Switch 
+                                  id="required" 
+                                  checked={form.watch("required")}
+                                  onCheckedChange={(checked) => form.setValue("required", checked)}
+                                />
+                                <Label htmlFor="required">Required Question</Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Switch 
+                                  id="global" 
+                                  checked={form.watch("global")}
+                                  onCheckedChange={(checked) => {
+                                    form.setValue("global", checked);
+                                    if (checked) {
+                                      // If global is checked, clear all industry selections
+                                      form.setValue("industries", []);
+                                    }
+                                  }}
+                                />
+                                <Label htmlFor="global">Global Question</Label>
+                              </div>
+                            </div>
+                            
+                            {["select", "multiselect", "checkbox", "radio"].includes(form.watch("type")) && (
+                              <div className="flex items-center space-x-2">
+                                <Switch 
+                                  id="allowMultiple" 
+                                  checked={form.watch("allowMultiple")}
+                                  onCheckedChange={(checked) => form.setValue("allowMultiple", checked)}
+                                />
+                                <Label htmlFor="allowMultiple">Allow Multiple Answers</Label>
+                              </div>
+                            )}
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="industries">Industry Association (Optional)</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {isLoadingIndustries ? (
+                                  <div className="col-span-2 flex justify-center py-2">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                  </div>
+                                ) : Array.isArray(industries) && industries.length > 0 ? (
+                                  industries.map((industry) => (
+                                    <div key={`edit-industry-${industry.id}`} className="flex items-center space-x-2">
+                                      <Checkbox 
+                                        id={`edit-industry-${industry.id}`}
+                                        onCheckedChange={(checked: boolean) => 
+                                          handleIndustryChange(String(industry.id), checked)
+                                        }
+                                        checked={form.watch("industries").includes(String(industry.id))}
+                                        disabled={form.watch("global")}
+                                      />
+                                      <Label 
+                                        htmlFor={`edit-industry-${industry.id}`}
+                                        className={form.watch("global") ? "text-slate-500" : ""}
+                                      >
+                                        {industry.name}
+                                      </Label>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="col-span-2 text-sm text-muted-foreground py-2">
+                                    No industries have been added yet. Add industries in the Industries tab.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <DialogFooter>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => {
+                                setIsEditingQuestion(false);
+                                setEditingQuestion(null);
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              type="submit" 
+                              disabled={updateQuestionMutation.isPending}
+                            >
+                              {updateQuestionMutation.isPending && (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              )}
+                              Update Question
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {isLoadingQuestions ? (
+                    <div className="py-8 flex justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : filteredQuestions && filteredQuestions.length > 0 ? (
+                    <div className="space-y-4">
+                      {filteredQuestions.map((question) => (
+                        <div key={question.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium">{question.question}</h4>
+                              {question.description && (
+                                <p className="text-sm text-slate-400 mt-1">{question.description}</p>
+                              )}
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleEditQuestion(question)}
+                              >
+                                Edit
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => handleDeleteQuestion(question.id)}
+                                disabled={deleteQuestionMutation.isPending}
+                              >
+                                {deleteQuestionMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-2 space-y-2">
+                            <div className="flex space-x-4 text-xs text-slate-400">
+                              <span>Type: {question.type}</span>
+                              <span>{question.required ? "Required" : "Optional"}</span>
+                              <span>{question.global ? "Global" : "Assessment-specific"}</span>
+                            </div>
+                            
+                            {question.options.length > 0 && (
+                              <div className="text-xs">
+                                <span className="text-slate-400">Options: </span>
+                                <span>{question.options.join(", ")}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-8 text-center text-slate-400">
-                    {questionFilter === 'global' ? (
-                      <>
-                        <p>No global questions have been created yet.</p>
-                        <p className="mt-2">Click the "Add Question" button to create your first global question.</p>
-                      </>
-                    ) : questionFilter.startsWith('industry-') ? (
-                      <>
-                        <p>No questions for this industry have been created yet.</p>
-                        <p className="mt-2">Click the "Add Question" button to create your first industry-specific question.</p>
-                      </>
-                    ) : (
-                      <>
-                        <p>No questions have been created yet.</p>
-                        <p className="mt-2">Click the "Add Question" button to create your first question.</p>
-                      </>
-                    )}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center text-slate-400">
+                      {questionFilter === 'global' ? (
+                        <>
+                          <p>No global questions have been created yet.</p>
+                          <p className="mt-2">Click the "Add Question" button to create your first global question.</p>
+                        </>
+                      ) : questionFilter.startsWith('industry-') ? (
+                        <>
+                          <p>No questions for this industry have been created yet.</p>
+                          <p className="mt-2">Click the "Add Question" button to create your first industry-specific question.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p>No questions have been created yet.</p>
+                          <p className="mt-2">Click the "Add Question" button to create your first question.</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1122,13 +1157,14 @@ const SettingsPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this question and any associated responses.
-              This action cannot be undone.
+              This action cannot be undone. This will permanently delete the question.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
