@@ -12,7 +12,9 @@ import {
   securityAssessments, type SecurityAssessment, type InsertSecurityAssessment,
   assessmentRequests, type AssessmentRequest, type InsertAssessmentRequest,
   customQuestions, type CustomQuestion, type InsertCustomQuestion,
-  customQuestionResponses, type CustomQuestionResponse, type InsertCustomQuestionResponse
+  customQuestionResponses, type CustomQuestionResponse, type InsertCustomQuestionResponse,
+  industries, type Industry, type InsertIndustry,
+  questionIndustries
 } from "@shared/schema";
 
 import { 
@@ -117,10 +119,26 @@ export interface IStorage {
   getSecurityAssessmentByCompanyId(companyId: number): Promise<SecurityAssessment | undefined>;
   updateSecurityAssessment(id: number, assessment: Partial<InsertSecurityAssessment>): Promise<SecurityAssessment | undefined>;
   
+  // Industry management methods
+  createIndustry(industry: InsertIndustry): Promise<Industry>;
+  getIndustry(id: number): Promise<Industry | undefined>;
+  getIndustryByName(name: string): Promise<Industry | undefined>;
+  getAllIndustries(): Promise<Industry[]>;
+  updateIndustry(id: number, industry: Partial<InsertIndustry>): Promise<Industry | undefined>;
+  deleteIndustry(id: number): Promise<boolean>;
+  
+  // Question-Industry relationship methods
+  addQuestionIndustry(questionId: number, industryId: number): Promise<void>;
+  removeQuestionIndustry(questionId: number, industryId: number): Promise<void>;
+  getIndustriesByQuestionId(questionId: number): Promise<Industry[]>;
+  getQuestionsByIndustryId(industryId: number): Promise<CustomQuestion[]>;
+
   // Custom questions methods
   createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion>;
   getCustomQuestion(id: number): Promise<CustomQuestion | undefined>;
   getCustomQuestionsByAssessmentId(assessmentId: number): Promise<CustomQuestion[]>;
+  getGlobalQuestions(): Promise<CustomQuestion[]>;
+  getIndustryQuestions(): Promise<CustomQuestion[]>;
   updateCustomQuestion(id: number, question: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined>;
   deleteCustomQuestion(id: number): Promise<boolean>;
   
@@ -178,6 +196,12 @@ export class MemStorage implements IStorage {
   
   private customQuestionResponseIdCounter: number = 1;
   private customQuestionResponses: Map<number, CustomQuestionResponse> = new Map();
+  
+  private industryIdCounter: number = 1;
+  private industries: Map<number, Industry> = new Map();
+  
+  // Junction table for question-industry relationships
+  private questionIndustries: Map<string, { questionId: number; industryId: number }> = new Map();
 
   constructor() {
     // Initialize with some data if needed
@@ -638,6 +662,83 @@ export class MemStorage implements IStorage {
     return updatedAssessment;
   }
   
+  // Industry management methods
+  async createIndustry(industry: InsertIndustry): Promise<Industry> {
+    const id = this.industryIdCounter++;
+    const now = new Date();
+    const newIndustry: Industry = {
+      ...industry,
+      id,
+      createdAt: now
+    };
+    this.industries.set(id, newIndustry);
+    return newIndustry;
+  }
+
+  async getIndustry(id: number): Promise<Industry | undefined> {
+    return this.industries.get(id);
+  }
+
+  async getIndustryByName(name: string): Promise<Industry | undefined> {
+    return Array.from(this.industries.values()).find(
+      (industry) => industry.name.toLowerCase() === name.toLowerCase()
+    );
+  }
+
+  async getAllIndustries(): Promise<Industry[]> {
+    return Array.from(this.industries.values());
+  }
+
+  async updateIndustry(id: number, industryData: Partial<InsertIndustry>): Promise<Industry | undefined> {
+    const existingIndustry = this.industries.get(id);
+    if (!existingIndustry) return undefined;
+    
+    const updatedIndustry = { ...existingIndustry, ...industryData };
+    this.industries.set(id, updatedIndustry);
+    return updatedIndustry;
+  }
+
+  async deleteIndustry(id: number): Promise<boolean> {
+    // First delete all relationships with questions
+    const keys = Array.from(this.questionIndustries.entries())
+      .filter(([, rel]) => rel.industryId === id)
+      .map(([key]) => key);
+      
+    for (const key of keys) {
+      this.questionIndustries.delete(key);
+    }
+    
+    // Then delete the industry itself
+    return this.industries.delete(id);
+  }
+  
+  // Question-Industry relationship methods
+  async addQuestionIndustry(questionId: number, industryId: number): Promise<void> {
+    const key = `${questionId}-${industryId}`;
+    this.questionIndustries.set(key, { questionId, industryId });
+  }
+
+  async removeQuestionIndustry(questionId: number, industryId: number): Promise<void> {
+    const key = `${questionId}-${industryId}`;
+    this.questionIndustries.delete(key);
+  }
+
+  async getIndustriesByQuestionId(questionId: number): Promise<Industry[]> {
+    const industryIds = Array.from(this.questionIndustries.values())
+      .filter(rel => rel.questionId === questionId)
+      .map(rel => rel.industryId);
+      
+    return industryIds.map(id => this.industries.get(id)).filter(Boolean) as Industry[];
+  }
+
+  async getQuestionsByIndustryId(industryId: number): Promise<CustomQuestion[]> {
+    const questionIds = Array.from(this.questionIndustries.values())
+      .filter(rel => rel.industryId === industryId)
+      .map(rel => rel.questionId);
+      
+    return questionIds.map(id => this.customQuestions.get(id)).filter(Boolean) as CustomQuestion[];
+  }
+
   // Custom question methods
   async createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion> {
     const id = this.customQuestionIdCounter++;
@@ -645,7 +746,9 @@ export class MemStorage implements IStorage {
     const newQuestion: CustomQuestion = { 
       ...question, 
       id, 
-      createdAt: now 
+      createdAt: now,
+      category: question.category || 'assessment',
+      options: question.options || []
     };
     this.customQuestions.set(id, newQuestion);
     return newQuestion;
@@ -655,22 +758,70 @@ export class MemStorage implements IStorage {
     return this.customQuestions.get(id);
   }
   
-  async getCustomQuestionsByAssessmentId(assessmentId: number): Promise<CustomQuestion[]> {
+  async getGlobalQuestions(): Promise<CustomQuestion[]> {
     return Array.from(this.customQuestions.values())
-      .filter(question => question.assessmentId === assessmentId)
+      .filter(question => question.category === 'global')
       .sort((a, b) => a.order - b.order);
   }
   
-  async updateCustomQuestion(id: number, question: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined> {
+  async getIndustryQuestions(): Promise<CustomQuestion[]> {
+    return Array.from(this.customQuestions.values())
+      .filter(question => question.category === 'industry')
+      .sort((a, b) => a.order - b.order);
+  }
+  
+  async getCustomQuestionsByAssessmentId(assessmentId: number): Promise<CustomQuestion[]> {
+    // Get assessment-specific questions
+    const assessmentQuestions = Array.from(this.customQuestions.values())
+      .filter(question => 
+        question.category === 'assessment' && 
+        question.assessmentId === assessmentId
+      )
+      .sort((a, b) => a.order - b.order);
+    
+    // Get global questions
+    const globalQuestions = await this.getGlobalQuestions();
+    
+    // Get industry questions (in a real implementation, we would match against the assessment's company industry)
+    const industryQuestions = await this.getIndustryQuestions();
+    
+    // Combine all sets
+    return [...globalQuestions, ...industryQuestions, ...assessmentQuestions];
+  }
+  
+  async updateCustomQuestion(id: number, questionData: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined> {
     const existingQuestion = this.customQuestions.get(id);
     if (!existingQuestion) return undefined;
     
-    const updatedQuestion = { ...existingQuestion, ...question };
+    // Preserve the existing category if not provided in the update
+    if (!questionData.category) {
+      questionData.category = existingQuestion.category;
+    }
+    
+    const updatedQuestion = { ...existingQuestion, ...questionData };
     this.customQuestions.set(id, updatedQuestion);
     return updatedQuestion;
   }
   
   async deleteCustomQuestion(id: number): Promise<boolean> {
+    // First delete all relationships with industries
+    const keys = Array.from(this.questionIndustries.entries())
+      .filter(([, rel]) => rel.questionId === id)
+      .map(([key]) => key);
+      
+    for (const key of keys) {
+      this.questionIndustries.delete(key);
+    }
+    
+    // Then delete all responses to this question
+    const responsesToDelete = Array.from(this.customQuestionResponses.values())
+      .filter(response => response.questionId === id);
+      
+    for (const response of responsesToDelete) {
+      this.customQuestionResponses.delete(response.id);
+    }
+    
+    // Finally delete the question itself
     return this.customQuestions.delete(id);
   }
   

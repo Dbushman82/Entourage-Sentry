@@ -281,9 +281,10 @@ const SettingsPage = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-3 max-w-md">
+          <TabsList className="grid grid-cols-4 max-w-md">
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="questions">Global Questions</TabsTrigger>
+            <TabsTrigger value="industries">Industries</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
           

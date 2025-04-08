@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, pgEnum, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -465,20 +465,48 @@ export const insertSecurityAssessmentSchema = createInsertSchema(securityAssessm
 export type InsertSecurityAssessment = z.infer<typeof insertSecurityAssessmentSchema>;
 export type SecurityAssessment = typeof securityAssessments.$inferSelect;
 
+// Industries schema
+export const industries = pgTable('industries', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  createdBy: integer('created_by').references(() => users.id).notNull(),
+});
+
+export const insertIndustrySchema = createInsertSchema(industries).pick({
+  name: true,
+  description: true,
+  createdBy: true,
+});
+
+export type InsertIndustry = z.infer<typeof insertIndustrySchema>;
+export type Industry = typeof industries.$inferSelect;
+
+// Question-Industry relationship (many-to-many)
+export const questionIndustries = pgTable('question_industries', {
+  questionId: integer('question_id').references(() => customQuestions.id).notNull(),
+  industryId: integer('industry_id').references(() => industries.id).notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.questionId, t.industryId] }),
+}));
+
 // Custom questions schema
 export const questionTypes = pgEnum('question_type', ['text', 'textarea', 'select', 'multiselect', 'checkbox', 'radio']);
 
+// Question categories
+export const questionCategoryEnum = pgEnum('question_category', ['global', 'industry', 'assessment']);
+
 export const customQuestions = pgTable('custom_questions', {
   id: serial('id').primaryKey(),
-  assessmentId: integer('assessment_id').references(() => assessments.id), // Making this nullable for global questions
-  global: boolean('global').notNull().default(false), // Indicate if it's a global question
+  assessmentId: integer('assessment_id').references(() => assessments.id), // Only for assessment-specific questions
+  category: questionCategoryEnum('category').notNull().default('assessment'),
   question: text('question').notNull(),
   description: text('description'),
   type: questionTypes('type').notNull().default('text'),
   options: text('options').array(), // For select, multiselect, checkbox, and radio types
   required: boolean('required').notNull().default(false),
   order: integer('order').notNull().default(0),
-  industries: text('industries').array().default([]), // For industry-specific questions
   allowMultiple: boolean('allow_multiple').default(false), // Allow multiple answers
   createdAt: timestamp('created_at').notNull().defaultNow(),
   createdBy: integer('created_by').references(() => users.id).notNull(),
@@ -487,21 +515,22 @@ export const customQuestions = pgTable('custom_questions', {
 export const insertCustomQuestionSchema = createInsertSchema(customQuestions, {
   options: z.array(z.string()),
   required: z.boolean(),
-  global: z.boolean(),
-  industries: z.array(z.string()),
+  category: z.enum(['global', 'industry', 'assessment']),
   allowMultiple: z.boolean(),
 }).pick({
   assessmentId: true,
-  global: true,
+  category: true,
   question: true,
   description: true,
   type: true,
   options: true,
   required: true,
   order: true,
-  industries: true,
   allowMultiple: true,
   createdBy: true,
+}).extend({
+  // For industry-specific questions, add support for industry IDs
+  industryIds: z.union([z.number(), z.array(z.number())]).optional(),
 });
 
 export type InsertCustomQuestion = z.infer<typeof insertCustomQuestionSchema>;

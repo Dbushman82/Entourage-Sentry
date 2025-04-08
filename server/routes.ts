@@ -13,9 +13,11 @@ import {
   insertAssessmentSchema,
   insertAssessmentRequestSchema,
   insertCustomQuestionSchema,
-  insertCustomQuestionResponseSchema
+  insertCustomQuestionResponseSchema,
+  insertIndustrySchema
 } from "@shared/schema";
 import * as schema from '@shared/schema';
+import { User } from '@shared/schema';
 import { db } from './db';
 import { z } from "zod";
 import { analyzeDomain } from "./utils/domainRecon";
@@ -1254,11 +1256,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup authentication routes
   setupAuthRoutes(app);
-  // Custom question APIs
+  // Industry management APIs
+  app.post('/api/industries', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get the user ID from the authenticated user
+      const user = req.user as User;
+      
+      // Add the current user as the creator
+      const validData = insertIndustrySchema.parse({
+        ...req.body,
+        createdBy: user.id
+      });
+      
+      const industry = await storage.createIndustry(validData);
+      res.status(201).json(industry);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/industries', async (req: Request, res: Response) => {
+    try {
+      const industries = await storage.getAllIndustries();
+      res.json(industries);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/industries/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid industry ID' });
+      }
+      
+      const industry = await storage.getIndustry(id);
+      if (!industry) {
+        return res.status(404).json({ message: 'Industry not found' });
+      }
+      
+      res.json(industry);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.put('/api/industries/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid industry ID' });
+      }
+      
+      const industry = await storage.getIndustry(id);
+      if (!industry) {
+        return res.status(404).json({ message: 'Industry not found' });
+      }
+      
+      const updateSchema = insertIndustrySchema.partial();
+      const validData = updateSchema.parse(req.body);
+      
+      const updatedIndustry = await storage.updateIndustry(id, validData);
+      res.json(updatedIndustry);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.delete('/api/industries/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid industry ID' });
+      }
+      
+      const deleted = await storage.deleteIndustry(id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Industry not found' });
+      }
+      
+      res.status(204).send();
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  // Question-Industry relationship APIs
+  app.post('/api/questions/:questionId/industries/:industryId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const questionId = parseInt(req.params.questionId);
+      const industryId = parseInt(req.params.industryId);
+      
+      if (isNaN(questionId) || isNaN(industryId)) {
+        return res.status(400).json({ message: 'Invalid question or industry ID' });
+      }
+      
+      const question = await storage.getCustomQuestion(questionId);
+      if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      
+      const industry = await storage.getIndustry(industryId);
+      if (!industry) {
+        return res.status(404).json({ message: 'Industry not found' });
+      }
+      
+      await storage.addQuestionIndustry(questionId, industryId);
+      res.status(201).json({ questionId, industryId });
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.delete('/api/questions/:questionId/industries/:industryId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const questionId = parseInt(req.params.questionId);
+      const industryId = parseInt(req.params.industryId);
+      
+      if (isNaN(questionId) || isNaN(industryId)) {
+        return res.status(400).json({ message: 'Invalid question or industry ID' });
+      }
+      
+      await storage.removeQuestionIndustry(questionId, industryId);
+      res.status(204).send();
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/questions/:questionId/industries', async (req: Request, res: Response) => {
+    try {
+      const questionId = parseInt(req.params.questionId);
+      
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
+      
+      const industries = await storage.getIndustriesByQuestionId(questionId);
+      res.json(industries);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  app.get('/api/industries/:industryId/questions', async (req: Request, res: Response) => {
+    try {
+      const industryId = parseInt(req.params.industryId);
+      
+      if (isNaN(industryId)) {
+        return res.status(400).json({ message: 'Invalid industry ID' });
+      }
+      
+      const questions = await storage.getQuestionsByIndustryId(industryId);
+      res.json(questions);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  // Custom question APIs with industry categories support
   app.post('/api/questions', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const validData = insertCustomQuestionSchema.parse(req.body);
+      // Get the user ID from the authenticated user
+      const user = req.user as User;
+      
+      // Add the current user as the creator
+      const validData = insertCustomQuestionSchema.parse({
+        ...req.body,
+        createdBy: user.id
+      });
+      
       const question = await storage.createCustomQuestion(validData);
+      
+      // If this is an industry question, add the industry relationships
+      if (validData.category === 'industry' && validData.industryIds) {
+        const industryIds = Array.isArray(validData.industryIds) ? validData.industryIds : [validData.industryIds];
+        
+        for (const industryId of industryIds) {
+          await storage.addQuestionIndustry(question.id, industryId);
+        }
+      }
+      
       res.status(201).json(question);
     } catch (err) {
       handleError(err, res);
@@ -1273,24 +1452,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const questions = await storage.getCustomQuestionsByAssessmentId(assessmentId);
+      
+      // For each question, add its associated industries
+      const questionsWithIndustries = await Promise.all(
+        questions.map(async (question) => {
+          const industries = await storage.getIndustriesByQuestionId(question.id);
+          return {
+            ...question,
+            industries
+          };
+        })
+      );
+      
+      res.json(questionsWithIndustries);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
+  // Get global custom questions
+  app.get('/api/questions/global', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const questions = await storage.getGlobalQuestions();
       res.json(questions);
     } catch (err) {
       handleError(err, res);
     }
   });
   
-  // Get global custom questions (not tied to a specific assessment)
-  app.get('/api/questions/global', isAuthenticated, async (req: Request, res: Response) => {
+  // Get industry-specific questions
+  app.get('/api/questions/industry', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Get questions with global flag
-      const questions = await storage.getCustomQuestionsByAssessmentId(0);
-      res.json(questions);
+      const questions = await storage.getIndustryQuestions();
+      
+      // For each question, add its associated industries
+      const questionsWithIndustries = await Promise.all(
+        questions.map(async (question) => {
+          const industries = await storage.getIndustriesByQuestionId(question.id);
+          return {
+            ...question,
+            industries
+          };
+        })
+      );
+      
+      res.json(questionsWithIndustries);
     } catch (err) {
       handleError(err, res);
     }
-  })
+  });
   
-  // Get all questions for an assessment (including global ones)
+  // Get all questions for an assessment (including global ones and industry-specific ones)
   app.get('/api/assessments/:assessmentId/questions', async (req: Request, res: Response) => {
     try {
       const assessmentId = parseInt(req.params.assessmentId);
@@ -1298,16 +1510,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid assessment ID' });
       }
       
-      // First get assessment-specific questions
-      const assessmentQuestions = await storage.getCustomQuestionsByAssessmentId(assessmentId);
+      // Use our updated storage method that handles all categories
+      const questions = await storage.getCustomQuestionsByAssessmentId(assessmentId);
       
-      // Then get global questions
-      const globalQuestions = await storage.getCustomQuestionsByAssessmentId(0);
+      // For each question, add its associated industries
+      const questionsWithIndustries = await Promise.all(
+        questions.map(async (question) => {
+          const industries = await storage.getIndustriesByQuestionId(question.id);
+          return {
+            ...question,
+            industries
+          };
+        })
+      );
       
-      // Combine them, with assessment-specific questions taking precedence
-      const allQuestions = [...globalQuestions, ...assessmentQuestions];
-      
-      res.json(allQuestions);
+      res.json(questionsWithIndustries);
     } catch (err) {
       handleError(err, res);
     }
@@ -1325,7 +1542,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Question not found' });
       }
       
-      res.json(question);
+      // Get associated industries for this question
+      const industries = await storage.getIndustriesByQuestionId(id);
+      
+      res.json({
+        ...question,
+        industries
+      });
     } catch (err) {
       handleError(err, res);
     }
@@ -1347,7 +1570,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validData = updateSchema.parse(req.body);
       
       const updatedQuestion = await storage.updateCustomQuestion(id, validData);
-      res.json(updatedQuestion);
+      
+      // If industry IDs were provided, update the industry relationships
+      if (validData.category === 'industry' && validData.industryIds) {
+        // Get current industry relationships
+        const currentIndustries = await storage.getIndustriesByQuestionId(id);
+        const currentIndustryIds = currentIndustries.map(i => i.id);
+        
+        // Parse the provided industry IDs
+        const newIndustryIds = Array.isArray(validData.industryIds) 
+          ? validData.industryIds 
+          : [validData.industryIds];
+        
+        // Remove industries that are no longer associated
+        for (const industryId of currentIndustryIds) {
+          if (!newIndustryIds.includes(industryId)) {
+            await storage.removeQuestionIndustry(id, industryId);
+          }
+        }
+        
+        // Add new industry associations
+        for (const industryId of newIndustryIds) {
+          if (!currentIndustryIds.includes(industryId)) {
+            await storage.addQuestionIndustry(id, industryId);
+          }
+        }
+      }
+      
+      // Get updated list of associated industries
+      const industries = await storage.getIndustriesByQuestionId(id);
+      
+      res.json({
+        ...updatedQuestion,
+        industries
+      });
     } catch (err) {
       handleError(err, res);
     }

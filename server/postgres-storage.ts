@@ -7,7 +7,8 @@ import {
   InsertNetworkAssessment, Cost, InsertCost, PainPoint, InsertPainPoint,
   Assessment, InsertAssessment, SecurityAssessment, InsertSecurityAssessment,
   AssessmentRequest, InsertAssessmentRequest, CustomQuestion, InsertCustomQuestion,
-  CustomQuestionResponse, InsertCustomQuestionResponse, Expense, InsertExpense
+  CustomQuestionResponse, InsertCustomQuestionResponse, Expense, InsertExpense,
+  Industry, InsertIndustry
 } from '../shared/schema';
 import { IStorage } from './storage';
 import { 
@@ -705,24 +706,107 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  // Industry methods
+  async createIndustry(industry: InsertIndustry): Promise<Industry> {
+    const result = await db.insert(schema.industries).values({
+      ...industry,
+      createdAt: new Date(),
+      description: industry.description || null
+    }).returning();
+    return result[0];
+  }
+
+  async getIndustry(id: number): Promise<Industry | undefined> {
+    const industries = await db.select().from(schema.industries).where(eq(schema.industries.id, id));
+    return industries[0];
+  }
+
+  async getIndustryByName(name: string): Promise<Industry | undefined> {
+    const industries = await db.select().from(schema.industries).where(eq(schema.industries.name, name));
+    return industries[0];
+  }
+
+  async getAllIndustries(): Promise<Industry[]> {
+    return await db.select().from(schema.industries).orderBy(schema.industries.name);
+  }
+
+  async updateIndustry(id: number, industry: Partial<InsertIndustry>): Promise<Industry | undefined> {
+    const result = await db.update(schema.industries)
+      .set({
+        ...industry,
+        description: industry.description !== undefined ? industry.description : null
+      })
+      .where(eq(schema.industries.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteIndustry(id: number): Promise<boolean> {
+    // First, remove any question-industry associations
+    await db.delete(schema.questionIndustries).where(eq(schema.questionIndustries.industryId, id));
+    // Then delete the industry
+    const result = await db.delete(schema.industries).where(eq(schema.industries.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Question-Industry relationship methods
+  async addQuestionIndustry(questionId: number, industryId: number): Promise<void> {
+    await db.insert(schema.questionIndustries).values({
+      questionId,
+      industryId
+    });
+  }
+
+  async removeQuestionIndustry(questionId: number, industryId: number): Promise<void> {
+    await db.delete(schema.questionIndustries)
+      .where(
+        and(
+          eq(schema.questionIndustries.questionId, questionId),
+          eq(schema.questionIndustries.industryId, industryId)
+        )
+      );
+  }
+
+  async getIndustriesByQuestionId(questionId: number): Promise<Industry[]> {
+    const result = await db.select({
+      industry: schema.industries
+    })
+    .from(schema.questionIndustries)
+    .innerJoin(
+      schema.industries,
+      eq(schema.questionIndustries.industryId, schema.industries.id)
+    )
+    .where(eq(schema.questionIndustries.questionId, questionId));
+    
+    return result.map(r => r.industry);
+  }
+
+  async getQuestionsByIndustryId(industryId: number): Promise<CustomQuestion[]> {
+    const result = await db.select({
+      question: schema.customQuestions
+    })
+    .from(schema.questionIndustries)
+    .innerJoin(
+      schema.customQuestions,
+      eq(schema.questionIndustries.questionId, schema.customQuestions.id)
+    )
+    .where(eq(schema.questionIndustries.industryId, industryId));
+    
+    return result.map(r => r.question);
+  }
+
   // Custom question methods
   async createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion> {
-    // Determine if this is a global question based on the global flag passed in
-    // If global is true, set assessmentId to null, otherwise keep it as is
-    const isGlobal = question.global === true;
-    
+    // Create the question
     const result = await db.insert(schema.customQuestions).values({
       ...question,
-      // Respect the global flag as provided
-      global: isGlobal,
-      // Only set assessmentId to null if this is a global question
-      assessmentId: isGlobal ? null : question.assessmentId,
       createdAt: new Date(),
       description: question.description || null,
       type: question.type || 'text',
       options: question.options || [],
       order: question.order || 0
     }).returning();
+    
     return result[0];
   }
   
@@ -732,47 +816,94 @@ export class PostgresStorage implements IStorage {
   }
   
   async getCustomQuestionsByAssessmentId(assessmentId: number): Promise<CustomQuestion[]> {
-    if (assessmentId === 0) {
-      // For global questions, use the global flag instead of assessment ID
-      return await db.select()
+    // Get all applicable questions for an assessment
+    if (assessmentId > 0) {
+      // First get the assessment to find the company's industry
+      const assessment = await this.getAssessment(assessmentId);
+      
+      if (!assessment) {
+        return [];
+      }
+      
+      // Get the company details
+      const company = await this.getCompany(assessment.companyId);
+      
+      if (!company) {
+        return [];
+      }
+      
+      // 1. Get global questions (applies to all assessments)
+      const globalQuestions = await db.select()
         .from(schema.customQuestions)
-        .where(eq(schema.customQuestions.global, true))
+        .where(eq(schema.customQuestions.category, 'global'))
         .orderBy(schema.customQuestions.order);
-    } else {
-      // For assessment-specific questions, use the assessment ID
-      return await db.select()
+      
+      // 2. Get assessment-specific questions
+      const assessmentQuestions = await db.select()
         .from(schema.customQuestions)
-        .where(eq(schema.customQuestions.assessmentId, assessmentId))
+        .where(
+          and(
+            eq(schema.customQuestions.category, 'assessment'),
+            eq(schema.customQuestions.assessmentId, assessmentId)
+          )
+        )
         .orderBy(schema.customQuestions.order);
-    }
+      
+      // 3. Get industry-specific questions (if company has an industry)
+      let industryQuestions: CustomQuestion[] = [];
+      
+      if (company.industry) {
+        // Find the industry ID
+        const industry = await this.getIndustryByName(company.industry);
+        
+        if (industry) {
+          // Get questions for this industry
+          industryQuestions = await this.getQuestionsByIndustryId(industry.id);
+        }
+      }
+      
+      // Combine all questions
+      return [...globalQuestions, ...industryQuestions, ...assessmentQuestions];
+    } 
+    
+    // If no assessmentId provided, return empty array
+    return [];
+  }
+  
+  async getGlobalQuestions(): Promise<CustomQuestion[]> {
+    return await db.select()
+      .from(schema.customQuestions)
+      .where(eq(schema.customQuestions.category, 'global'))
+      .orderBy(schema.customQuestions.order);
+  }
+  
+  async getIndustryQuestions(): Promise<CustomQuestion[]> {
+    return await db.select()
+      .from(schema.customQuestions)
+      .where(eq(schema.customQuestions.category, 'industry'))
+      .orderBy(schema.customQuestions.order);
   }
   
   async updateCustomQuestion(id: number, question: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined> {
     const updateData: Record<string, any> = {};
     
-    // Determine if the question should be global based on the provided global flag
-    const isGlobal = question.global === true;
-    
-    // If global flag is provided, use it directly
-    if (question.global !== undefined) {
-      updateData.global = isGlobal;
+    // Handle category changes
+    if (question.category !== undefined) {
+      updateData.category = question.category;
       
-      // Set assessmentId based on global status
-      if (isGlobal) {
-        updateData.assessmentId = null; // Global questions have null assessmentId
+      // Adjust assessmentId based on category
+      if (question.category === 'global' || question.category === 'industry') {
+        updateData.assessmentId = null; // Global and industry questions don't have assessmentId
       }
     }
     
     // Handle assessmentId if provided
     if (question.assessmentId !== undefined) {
-      if (question.assessmentId === 0 && question.global !== false) {
-        // If assessmentId is 0 and global isn't explicitly false, this is a global question
-        updateData.global = true;
-        updateData.assessmentId = null;
-      } else {
-        // For non-global questions with specific assessmentId
-        updateData.assessmentId = question.assessmentId;
-        updateData.global = false;
+      updateData.assessmentId = question.assessmentId;
+      
+      // If setting a valid assessmentId, ensure category is 'assessment'
+      if (question.assessmentId > 0) {
+        updateData.category = 'assessment';
       }
     }
     
@@ -784,13 +915,14 @@ export class PostgresStorage implements IStorage {
     if (question.required !== undefined) updateData.required = question.required;
     if (question.order !== undefined) updateData.order = question.order;
     if (question.createdBy !== undefined) updateData.createdBy = question.createdBy;
-    if (question.industries !== undefined) updateData.industries = question.industries;
     if (question.allowMultiple !== undefined) updateData.allowMultiple = question.allowMultiple;
     
     const result = await db.update(schema.customQuestions)
       .set(updateData)
       .where(eq(schema.customQuestions.id, id))
       .returning();
+      
+    // Question updated successfully, return
     return result[0];
   }
   
