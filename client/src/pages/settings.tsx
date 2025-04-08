@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Loader2, Plus, Trash2, Settings as SettingsIcon } from "lucide-react";
+import { AlertCircle, Edit, Loader2, Plus, Trash2, Settings as SettingsIcon } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { 
   Dialog, 
@@ -43,6 +43,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type QuestionType = "text" | "textarea" | "select" | "multiselect" | "checkbox" | "radio";
 
@@ -73,6 +81,19 @@ interface NewQuestionForm {
   allowMultiple: boolean;
 }
 
+interface Industry {
+  id: number;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  createdBy: number;
+}
+
+interface IndustryForm {
+  name: string;
+  description: string;
+}
+
 const SettingsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -80,6 +101,20 @@ const SettingsPage = () => {
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<CustomQuestion | null>(null);
+  
+  // Industry management state
+  const [isAddingIndustry, setIsAddingIndustry] = useState(false);
+  const [isEditingIndustry, setIsEditingIndustry] = useState(false);
+  const [editingIndustry, setEditingIndustry] = useState<Industry | null>(null);
+  const [industryToDelete, setIndustryToDelete] = useState<number | null>(null);
+  const [isIndustryDeleteDialogOpen, setIsIndustryDeleteDialogOpen] = useState(false);
+  
+  const industryForm = useForm<IndustryForm>({
+    defaultValues: {
+      name: "",
+      description: ""
+    }
+  });
   
   const form = useForm<NewQuestionForm>({
     defaultValues: {
@@ -96,6 +131,11 @@ const SettingsPage = () => {
   
   const { data: globalQuestions, isLoading: isLoadingQuestions } = useQuery({
     queryKey: ['/api/questions/global'],
+    enabled: !!user,
+  });
+  
+  const { data: industries, isLoading: isLoadingIndustries } = useQuery({
+    queryKey: ['/api/industries'],
     enabled: !!user,
   });
   
@@ -238,6 +278,113 @@ const SettingsPage = () => {
       deleteQuestionMutation.mutate(questionToDelete);
       setQuestionToDelete(null);
       setIsDeleteDialogOpen(false);
+    }
+  };
+  
+  // Industry management
+  const createIndustryMutation = useMutation({
+    mutationFn: async (data: IndustryForm) => {
+      const formData = {
+        ...data,
+        createdBy: user?.id
+      };
+      const res = await apiRequest('POST', '/api/industries', formData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/industries'] });
+      toast({
+        title: "Success",
+        description: "Industry has been added successfully.",
+      });
+      
+      industryForm.reset();
+      setIsAddingIndustry(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "There was an error adding the industry.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const updateIndustryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: IndustryForm }) => {
+      const res = await apiRequest('PUT', `/api/industries/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/industries'] });
+      toast({
+        title: "Success",
+        description: "Industry has been updated successfully.",
+      });
+      
+      industryForm.reset();
+      setIsEditingIndustry(false);
+      setEditingIndustry(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "There was an error updating the industry.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const deleteIndustryMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest('DELETE', `/api/industries/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/industries'] });
+      toast({
+        title: "Success",
+        description: "Industry has been deleted successfully.",
+      });
+      setIndustryToDelete(null);
+      setIsIndustryDeleteDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "There was an error deleting the industry.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleEditIndustry = (industry: Industry) => {
+    setEditingIndustry(industry);
+    industryForm.reset({
+      name: industry.name,
+      description: industry.description || ''
+    });
+    setIsEditingIndustry(true);
+  };
+  
+  const onIndustrySubmit = (data: IndustryForm) => {
+    if (isEditingIndustry && editingIndustry) {
+      updateIndustryMutation.mutate({
+        id: editingIndustry.id,
+        data
+      });
+    } else {
+      createIndustryMutation.mutate(data);
+    }
+  };
+  
+  const handleDeleteIndustry = (id: number) => {
+    setIndustryToDelete(id);
+    setIsIndustryDeleteDialogOpen(true);
+  };
+  
+  const confirmIndustryDelete = () => {
+    if (industryToDelete !== null) {
+      deleteIndustryMutation.mutate(industryToDelete);
     }
   };
   
@@ -841,6 +988,172 @@ const SettingsPage = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="industries" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Industry Management</CardTitle>
+                <CardDescription>
+                  Manage industry categories that can be associated with questions and assessments.
+                  Industry-specific questions will only appear in assessments for companies in those industries.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="mb-4 flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Industry List</h3>
+                  <Dialog open={isAddingIndustry} onOpenChange={setIsAddingIndustry}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Industry
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Industry</DialogTitle>
+                        <DialogDescription>
+                          Add a new industry that can be associated with questions and assessments.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <form onSubmit={industryForm.handleSubmit(onIndustrySubmit)} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Industry Name*</Label>
+                          <Input 
+                            id="name" 
+                            placeholder="Enter industry name" 
+                            {...industryForm.register("name", { required: true })}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Description (Optional)</Label>
+                          <Textarea 
+                            id="description" 
+                            placeholder="Enter industry description" 
+                            {...industryForm.register("description")}
+                          />
+                        </div>
+                        
+                        <DialogFooter>
+                          <Button type="submit">
+                            Save Industry
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  {/* Edit Industry Dialog */}
+                  <Dialog open={isEditingIndustry} onOpenChange={setIsEditingIndustry}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Industry</DialogTitle>
+                        <DialogDescription>
+                          Update industry details.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <form onSubmit={industryForm.handleSubmit(onIndustrySubmit)} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Industry Name*</Label>
+                          <Input 
+                            id="name" 
+                            placeholder="Enter industry name" 
+                            {...industryForm.register("name", { required: true })}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Description (Optional)</Label>
+                          <Textarea 
+                            id="description" 
+                            placeholder="Enter industry description" 
+                            {...industryForm.register("description")}
+                          />
+                        </div>
+                        
+                        <DialogFooter>
+                          <Button type="submit">
+                            Update Industry
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                {isLoadingIndustries ? (
+                  <div className="py-6 flex justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <>
+                    {industries && industries.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="w-24">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {industries.map((industry: Industry) => (
+                            <TableRow key={industry.id}>
+                              <TableCell className="font-medium">{industry.name}</TableCell>
+                              <TableCell>{industry.description || '-'}</TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleEditIndustry(industry)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleDeleteIndustry(industry.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="py-6 text-center text-muted-foreground">
+                        No industries have been added yet. Use the "Add Industry" button to create your first industry.
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Industry Delete Confirmation Dialog */}
+            <AlertDialog open={isIndustryDeleteDialogOpen} onOpenChange={setIsIndustryDeleteDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this industry? This action cannot be undone.
+                    Any questions associated with this industry will be affected.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmIndustryDelete}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </TabsContent>
           
           <TabsContent value="appearance" className="space-y-4">
