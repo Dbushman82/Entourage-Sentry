@@ -1599,6 +1599,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleError(err, res);
     }
   });
+  
+  // Get just the industries for a specific question
+  app.get('/api/questions/:id/industries', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid question ID' });
+      }
+      
+      // Check if question exists first
+      const question = await storage.getCustomQuestion(id);
+      if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+      }
+      
+      // Get associated industries
+      const industries = await storage.getIndustriesByQuestionId(id);
+      console.log(`Industries for question ${id}:`, industries);
+      
+      res.json(industries);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
 
   app.put('/api/questions/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {

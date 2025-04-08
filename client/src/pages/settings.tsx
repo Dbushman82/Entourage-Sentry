@@ -60,6 +60,7 @@ interface CustomQuestion {
   id: number;
   assessmentId: number | null;
   global: boolean;
+  category: 'global' | 'industry' | 'assessment';
   question: string;
   description: string | null;
   type: QuestionType;
@@ -208,7 +209,7 @@ const SettingsPage = () => {
         }
         
         // Check if this industryId is in the question's industries array
-        const hasIndustry = q.industries.some(i => String(i) === industryId);
+        const hasIndustry = q.industries.some((i: string | number) => String(i) === industryId);
         console.log(`Question ${q.id} has industry ${industryId}:`, hasIndustry);
         
         return hasIndustry;
@@ -305,13 +306,32 @@ const SettingsPage = () => {
     // Debug the industry data
     console.log(`Editing question ID ${question.id} with industries:`, question.industries);
     
-    // Convert industry array to a format that the form can handle
-    // The form expects an array of strings
-    const formattedIndustries = (question.industries && Array.isArray(question.industries)) 
-      ? question.industries.map(i => String(i)) 
-      : [];
-    
-    console.log(`Formatted industries for form:`, formattedIndustries);
+    // Get the industries from the server data
+    // This is a critical fix - we need to actually FETCH the associated industries from the server
+    const getIndustriesForQuestion = async () => {
+      try {
+        const response = await fetch(`/api/questions/${question.id}/industries`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch question industries');
+        }
+        const industryData = await response.json();
+        console.log(`Industries for question ${question.id} from API:`, industryData);
+        
+        // Convert industry IDs to strings for the form
+        const formattedIndustries = industryData.map((industry: any) => String(industry.id));
+        console.log(`Formatted industries for form:`, formattedIndustries);
+        
+        // Reset form with the correct industry data
+        form.setValue("industries", formattedIndustries);
+      } catch (error) {
+        console.error('Error fetching question industries:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load industry associations for this question.",
+          variant: "destructive",
+        });
+      }
+    };
     
     // Reset form and set values for editing
     form.reset({
@@ -321,9 +341,12 @@ const SettingsPage = () => {
       options: optionsString,
       required: question.required,
       global: question.category === 'global', // Set global flag based on category
-      industries: formattedIndustries,
+      industries: [], // Start with empty array, will be populated by the API call
       allowMultiple: question.allowMultiple
     });
+    
+    // Fetch industries after form is reset
+    getIndustriesForQuestion();
     
     setIsEditingQuestion(true);
   };
@@ -341,6 +364,15 @@ const SettingsPage = () => {
       category = "industry";
     }
     
+    // The key fix: explicitly set industryIds based on the industries array
+    // This is what the backend is looking for to update industry associations
+    const industryIds = !data.global && data.industries && data.industries.length > 0 
+      ? data.industries 
+      : [];
+      
+    console.log('Industries selected:', data.industries);
+    console.log('Industry IDs to send:', industryIds);
+    
     const formattedData = {
       question: data.question,
       description: data.description || null,
@@ -351,7 +383,8 @@ const SettingsPage = () => {
       // Only set assessmentId to null for all questions (global questions are handled on server side)
       assessmentId: null,
       order: allQuestions ? (allQuestions as CustomQuestion[]).length + 1 : 0,
-      industries: data.industries,
+      industries: data.industries, // Keep for backward compatibility
+      industryIds: industryIds, // Add the explicit industryIds field the server looks for
       allowMultiple: data.allowMultiple,
       createdBy: user?.id,
       category: category // Add the required category field
