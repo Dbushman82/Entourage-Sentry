@@ -36,7 +36,9 @@ import {
 import { 
   Select, 
   SelectContent, 
+  SelectGroup,
   SelectItem, 
+  SelectLabel,
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
@@ -98,6 +100,7 @@ const SettingsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("questions");
+  const [questionFilter, setQuestionFilter] = useState<string>("global");
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<CustomQuestion | null>(null);
@@ -129,8 +132,26 @@ const SettingsPage = () => {
     }
   });
   
-  const { data: globalQuestions, isLoading: isLoadingQuestions } = useQuery({
-    queryKey: ['/api/questions/global'],
+  // Query all questions by default
+  const { data: allQuestions, isLoading: isLoadingQuestions } = useQuery({
+    queryKey: ['/api/questions', questionFilter],
+    queryFn: async () => {
+      let endpoint = '/api/questions';
+      
+      // Apply filtering based on the selected filter
+      if (questionFilter === 'global') {
+        endpoint = '/api/questions/global';
+      } else if (questionFilter.startsWith('industry-')) {
+        const industryId = questionFilter.split('-')[1];
+        endpoint = `/api/questions/industry/${industryId}`;
+      }
+      
+      const res = await fetch(endpoint);
+      if (!res.ok) {
+        throw new Error('Failed to fetch questions');
+      }
+      return res.json();
+    },
     enabled: !!user,
   });
   
@@ -145,7 +166,7 @@ const SettingsPage = () => {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/questions/global'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/questions'] });
       toast({
         title: "Success",
         description: "Question has been created successfully.",
@@ -168,7 +189,7 @@ const SettingsPage = () => {
       await apiRequest('DELETE', `/api/questions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/questions/global'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/questions'] });
       toast({
         title: "Success",
         description: "Question has been deleted successfully.",
@@ -189,7 +210,7 @@ const SettingsPage = () => {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/questions/global'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/questions'] });
       toast({
         title: "Success",
         description: "Question has been updated successfully.",
@@ -252,7 +273,7 @@ const SettingsPage = () => {
       global: data.global, // This will determine if it's a global question
       // Only set assessmentId to 0 for global questions
       assessmentId: data.global ? 0 : null, // Will be overridden in custom assessment flows
-      order: globalQuestions ? (globalQuestions as CustomQuestion[]).length + 1 : 0,
+      order: allQuestions ? (allQuestions as CustomQuestion[]).length + 1 : 0,
       industries: data.industries,
       allowMultiple: data.allowMultiple,
       createdBy: user?.id,
@@ -497,7 +518,29 @@ const SettingsPage = () => {
                   </div>
                 </div>
                 <div className="mb-4 flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Question List</h3>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-medium">Question List</h3>
+                    <Select 
+                      value={questionFilter} 
+                      onValueChange={setQuestionFilter}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filter questions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Questions</SelectItem>
+                        <SelectItem value="global">Global Questions</SelectItem>
+                        <SelectGroup>
+                          <SelectLabel>Industry Questions</SelectLabel>
+                          {Array.isArray(industries) && industries.map((industry) => (
+                            <SelectItem key={industry.id} value={`industry-${industry.id}`}>
+                              {industry.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {/* Add Question Dialog */}
                   <Dialog open={isAddingQuestion} onOpenChange={setIsAddingQuestion}>
                     <DialogTrigger asChild>
@@ -939,9 +982,9 @@ const SettingsPage = () => {
                   <div className="py-8 flex justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ) : globalQuestions && (globalQuestions as CustomQuestion[]).length > 0 ? (
+                ) : allQuestions && (allQuestions as CustomQuestion[]).length > 0 ? (
                   <div className="space-y-4">
-                    {(globalQuestions as CustomQuestion[]).map((question) => (
+                    {(allQuestions as CustomQuestion[]).map((question) => (
                       <div key={question.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
                         <div className="flex justify-between items-start">
                           <div>
