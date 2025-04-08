@@ -134,7 +134,7 @@ const SettingsPage = () => {
     enabled: !!user,
   });
   
-  const { data: industries, isLoading: isLoadingIndustries } = useQuery({
+  const { data: industries, isLoading: isLoadingIndustries } = useQuery<Industry[]>({
     queryKey: ['/api/industries'],
     enabled: !!user,
   });
@@ -235,6 +235,14 @@ const SettingsPage = () => {
     const needsOptions = ["select", "multiselect", "checkbox", "radio"].includes(data.type);
     const optionsArray = needsOptions ? data.options.split(',').map(opt => opt.trim()) : [];
     
+    // Determine the category based on global flag
+    let category: "global" | "industry" | "assessment" = "assessment";
+    if (data.global) {
+      category = "global";
+    } else if (data.industries && data.industries.length > 0) {
+      category = "industry";
+    }
+    
     const formattedData = {
       question: data.question,
       description: data.description || null,
@@ -247,7 +255,8 @@ const SettingsPage = () => {
       order: globalQuestions ? (globalQuestions as CustomQuestion[]).length + 1 : 0,
       industries: data.industries,
       allowMultiple: data.allowMultiple,
-      createdBy: user?.id
+      createdBy: user?.id,
+      category: category // Add the required category field
     };
     
     // Add some debug logging to verify what we're sending
@@ -1090,7 +1099,7 @@ const SettingsPage = () => {
                   </div>
                 ) : (
                   <>
-                    {industries && industries.length > 0 ? (
+                    {Array.isArray(industries) && industries.length > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1100,7 +1109,7 @@ const SettingsPage = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {industries.map((industry: Industry) => (
+                          {(industries as Industry[]).map((industry: Industry) => (
                             <TableRow key={industry.id}>
                               <TableCell className="font-medium">{industry.name}</TableCell>
                               <TableCell>{industry.description || '-'}</TableCell>
