@@ -186,16 +186,21 @@ const SettingsPage = () => {
     if (questionFilter === 'all') {
       return questions;
     } else if (questionFilter === 'global') {
-      const filtered = questions.filter(q => q.global === true);
+      // Use the category field rather than global flag
+      const filtered = questions.filter(q => q.category === 'global');
       console.log("Global questions:", filtered.length);
       return filtered;
     } else if (questionFilter.startsWith('industry-')) {
       const industryId = parseInt(questionFilter.split('-')[1]);
       const filtered = questions.filter(q => 
+        q.category === 'industry' && 
         q.industries && Array.isArray(q.industries) && 
         q.industries.some(i => {
-          const matches = parseInt(String(i)) === industryId || i === String(industryId);
-          return matches;
+          // Try to match as either string or number
+          if (typeof i === 'object' && i.id) {
+            return i.id === industryId || i.id === String(industryId);
+          }
+          return parseInt(String(i)) === industryId || i === String(industryId);
         })
       );
       console.log(`Industry-${industryId} questions:`, filtered.length);
@@ -962,7 +967,11 @@ const SettingsPage = () => {
                             <div className="flex space-x-4 text-xs text-slate-400">
                               <span>Type: {question.type}</span>
                               <span>{question.required ? "Required" : "Optional"}</span>
-                              <span>{question.global ? "Global" : "Assessment-specific"}</span>
+                              <span>
+                                {question.category === 'global' ? "Global" : 
+                                 question.category === 'industry' ? "Industry-specific" : 
+                                 "Assessment-specific"}
+                              </span>
                             </div>
                             
                             {question.options.length > 0 && (
