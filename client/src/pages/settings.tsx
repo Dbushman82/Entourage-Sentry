@@ -200,13 +200,17 @@ const SettingsPage = () => {
       type: data.type,
       options: needsOptions ? optionsArray : [],
       required: data.required,
-      global: data.global,
-      assessmentId: 0, // Use 0 to trigger global flag in backend
+      global: data.global, // This will determine if it's a global question
+      // Only set assessmentId to 0 for global questions
+      assessmentId: data.global ? 0 : null, // Will be overridden in custom assessment flows
       order: globalQuestions ? (globalQuestions as CustomQuestion[]).length + 1 : 0,
       industries: data.industries,
       allowMultiple: data.allowMultiple,
       createdBy: user?.id
     };
+    
+    // Add some debug logging to verify what we're sending
+    console.log('Submitting question with data:', formattedData);
     
     if (isEditingQuestion && editingQuestion) {
       // Update existing question

@@ -707,12 +707,16 @@ export class PostgresStorage implements IStorage {
 
   // Custom question methods
   async createCustomQuestion(question: InsertCustomQuestion): Promise<CustomQuestion> {
+    // Determine if this is a global question based on the global flag passed in
+    // If global is true, set assessmentId to null, otherwise keep it as is
+    const isGlobal = question.global === true;
+    
     const result = await db.insert(schema.customQuestions).values({
       ...question,
-      // If this is a global question (assessmentId === 0), set global flag to true
-      global: question.global || (question.assessmentId === 0),
-      // If this is a global question, set assessmentId to null
-      assessmentId: question.assessmentId === 0 ? null : question.assessmentId,
+      // Respect the global flag as provided
+      global: isGlobal,
+      // Only set assessmentId to null if this is a global question
+      assessmentId: isGlobal ? null : question.assessmentId,
       createdAt: new Date(),
       description: question.description || null,
       type: question.type || 'text',
@@ -746,22 +750,33 @@ export class PostgresStorage implements IStorage {
   async updateCustomQuestion(id: number, question: Partial<InsertCustomQuestion>): Promise<CustomQuestion | undefined> {
     const updateData: Record<string, any> = {};
     
-    // Handle global flag
-    if (question.global !== undefined) updateData.global = question.global;
+    // Determine if the question should be global based on the provided global flag
+    const isGlobal = question.global === true;
     
-    // Handle assessmentId, maintaining consistency with global flag
+    // If global flag is provided, use it directly
+    if (question.global !== undefined) {
+      updateData.global = isGlobal;
+      
+      // Set assessmentId based on global status
+      if (isGlobal) {
+        updateData.assessmentId = null; // Global questions have null assessmentId
+      }
+    }
+    
+    // Handle assessmentId if provided
     if (question.assessmentId !== undefined) {
-      if (question.assessmentId === 0) {
-        // If setting to global question (assessmentId === 0), set global flag to true and assessmentId to null
+      if (question.assessmentId === 0 && question.global !== false) {
+        // If assessmentId is 0 and global isn't explicitly false, this is a global question
         updateData.global = true;
         updateData.assessmentId = null;
       } else {
+        // For non-global questions with specific assessmentId
         updateData.assessmentId = question.assessmentId;
-        // Only set global to false if we're explicitly setting a specific assessmentId
         updateData.global = false;
       }
     }
     
+    // Handle other fields
     if (question.question !== undefined) updateData.question = question.question;
     if (question.description !== undefined) updateData.description = question.description || null;
     if (question.type !== undefined) updateData.type = question.type;
@@ -769,6 +784,8 @@ export class PostgresStorage implements IStorage {
     if (question.required !== undefined) updateData.required = question.required;
     if (question.order !== undefined) updateData.order = question.order;
     if (question.createdBy !== undefined) updateData.createdBy = question.createdBy;
+    if (question.industries !== undefined) updateData.industries = question.industries;
+    if (question.allowMultiple !== undefined) updateData.allowMultiple = question.allowMultiple;
     
     const result = await db.update(schema.customQuestions)
       .set(updateData)
