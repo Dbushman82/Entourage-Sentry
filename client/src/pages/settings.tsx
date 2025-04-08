@@ -366,8 +366,9 @@ const SettingsPage = () => {
     
     // The key fix: explicitly set industryIds based on the industries array
     // This is what the backend is looking for to update industry associations
+    // Important: Convert strings to numbers for the API
     const industryIds = !data.global && data.industries && data.industries.length > 0 
-      ? data.industries 
+      ? data.industries.map(id => parseInt(id as string)) 
       : [];
       
     console.log('Industries selected:', data.industries);

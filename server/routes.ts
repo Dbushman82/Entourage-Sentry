@@ -1431,14 +1431,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If this is an industry question, add the industry relationships
       if (validData.category === 'industry' && validData.industryIds) {
-        const industryIds = Array.isArray(validData.industryIds) ? validData.industryIds : [validData.industryIds];
+        // Process industry IDs, ensuring they're numbers
+        let industryIdsToAdd: number[] = [];
         
-        for (const industryId of industryIds) {
+        if (Array.isArray(validData.industryIds)) {
+          industryIdsToAdd = validData.industryIds.map(id => {
+            if (typeof id === 'string') {
+              return parseInt(id);
+            } else if (typeof id === 'number') {
+              return id;
+            } else {
+              console.warn(`Unexpected type for industry ID: ${typeof id}, value: ${id}`);
+              return NaN; // This will be filtered out below
+            }
+          });
+        } else if (typeof validData.industryIds === 'string') {
+          industryIdsToAdd = [parseInt(validData.industryIds)];
+        } else if (typeof validData.industryIds === 'number') {
+          industryIdsToAdd = [validData.industryIds];
+        }
+        
+        // Remove invalid IDs (NaN)
+        industryIdsToAdd = industryIdsToAdd.filter(id => !isNaN(id));
+        
+        console.log(`Adding industry associations for new question ${question.id}:`, industryIdsToAdd);
+        
+        // Add industry associations
+        for (const industryId of industryIdsToAdd) {
           await storage.addQuestionIndustry(question.id, industryId);
         }
       }
       
-      res.status(201).json(question);
+      // Get the industries for the question to include in the response
+      const industries = await storage.getIndustriesByQuestionId(question.id);
+      
+      res.status(201).json({
+        ...question,
+        industries: industries
+      });
     } catch (err) {
       handleError(err, res);
     }
@@ -1662,9 +1692,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (validData.industryIds !== undefined) {
           // Handle string, array of strings, or array of numbers
           if (Array.isArray(validData.industryIds)) {
-            newIndustryIds = validData.industryIds.map(id => 
-              typeof id === 'string' ? parseInt(id) : id
-            );
+            newIndustryIds = validData.industryIds.map(id => {
+              if (typeof id === 'string') {
+                return parseInt(id);
+              } else if (typeof id === 'number') {
+                return id;
+              } else {
+                console.warn(`Unexpected type for industry ID: ${typeof id}, value: ${id}`);
+                return NaN; // This will be filtered out below
+              }
+            });
           } else if (typeof validData.industryIds === 'string') {
             newIndustryIds = [parseInt(validData.industryIds)];
           } else if (typeof validData.industryIds === 'number') {
