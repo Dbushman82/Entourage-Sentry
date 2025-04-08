@@ -121,11 +121,13 @@ const AssessmentCustomize = () => {
 
   // Query to get industry-specific questions based on selected industry
   const { data: industryQuestions, isLoading: industryQuestionsLoading } = useQuery({
-    queryKey: ['/api/questions/industry', selectedIndustry],
+    queryKey: ['/api/industries', selectedIndustry, 'questions'],
     queryFn: async () => {
       if (!selectedIndustry) return [];
-      const res = await apiRequest('GET', `/api/questions/industry/${selectedIndustry}`);
-      return res.json();
+      const res = await apiRequest('GET', `/api/industries/${selectedIndustry}/questions`);
+      const data = await res.json();
+      console.log("Industry questions from API:", data);
+      return data;
     },
     enabled: !!selectedIndustry,
   });
@@ -379,9 +381,9 @@ const AssessmentCustomize = () => {
 
               <Card className="bg-slate-800 border-slate-700 mb-6">
                 <CardHeader>
-                  <CardTitle className="text-white">Assessment-Specific Questions</CardTitle>
+                  <CardTitle className="text-white">Assessment Questions</CardTitle>
                   <CardDescription className="text-slate-400">
-                    These questions will only appear on this specific assessment
+                    All questions that will be included in this assessment
                   </CardDescription>
                 </CardHeader>
                 
@@ -391,12 +393,14 @@ const AssessmentCustomize = () => {
                       <AlertCircle className="h-8 w-8 mx-auto mb-2" />
                       <p>Failed to load questions. Please try again later.</p>
                     </div>
-                  ) : !questions || questions.length === 0 ? (
+                  ) : ((!questions || questions.length === 0) && 
+                       (!globalQuestions || globalQuestions.length === 0) && 
+                       (!industryQuestions || industryQuestions.length === 0)) ? (
                     <div className="text-center p-10">
                       <div className="mx-auto w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center mb-4">
                         <FormInput className="h-6 w-6 text-slate-400" />
                       </div>
-                      <h3 className="text-lg font-medium text-white mb-2">No custom questions found</h3>
+                      <h3 className="text-lg font-medium text-white mb-2">No questions found</h3>
                       <p className="text-slate-400 mb-4">Add questions to customize this assessment</p>
                       
                       <Button onClick={() => setIsFormOpen(true)}>
@@ -406,183 +410,8 @@ const AssessmentCustomize = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {questions.filter((q: any) => !q.global).map((question: any) => (
-                        <Card key={question.id} className="relative border-slate-700 transition-colors group">
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-start space-x-2">
-                                <div className="mt-1">
-                                  {getTypeIcon(question.type)}
-                                </div>
-                                <div>
-                                  <CardTitle className="text-base text-white">{question.question}</CardTitle>
-                                  {question.description && (
-                                    <CardDescription>{question.description}</CardDescription>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="flex space-x-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => handleDeleteQuestion(question.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </div>
-                            
-                            <div className="flex gap-2 mt-1">
-                              <Badge variant="outline" className="bg-slate-700 text-slate-200">
-                                {question.type}
-                              </Badge>
-                              
-                              {question.required && (
-                                <Badge>Required</Badge>
-                              )}
-                            </div>
-                          </CardHeader>
-                          
-                          {["select", "multiselect", "checkbox", "radio"].includes(question.type) && question.options && (
-                            <CardContent>
-                              <div className="text-sm text-slate-400">Options:</div>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {question.options.map((option: string, index: number) => (
-                                  <Badge key={index} variant="secondary" className="bg-slate-700">
-                                    {option}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </CardContent>
-                          )}
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {/* Industry-specific Questions Section - only show when industry is selected */}
-              {selectedIndustry && (
-                <Card className="bg-slate-800 border-slate-700 mb-6">
-                  <CardHeader>
-                    <CardTitle className="text-white">
-                      Industry-Specific Questions
-                      {industries && selectedIndustry && (
-                        <span className="ml-2 text-primary-300">
-                          ({industries.find((i: any) => i.id === parseInt(selectedIndustry))?.name})
-                        </span>
-                      )}
-                    </CardTitle>
-                    <CardDescription className="text-slate-400">
-                      Questions specific to the selected industry that will be included in this assessment
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    {industryQuestionsLoading ? (
-                      <div className="flex justify-center items-center p-6">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="ml-2">Loading industry questions...</span>
-                      </div>
-                    ) : !industryQuestions || industryQuestions.length === 0 ? (
-                      <div className="text-center p-6 border border-slate-700 rounded-md">
-                        <p className="text-slate-400">No questions found for this industry.</p>
-                        <Button 
-                          variant="link" 
-                          onClick={() => setLocation("/customize-assessment")}
-                          className="mt-2"
-                        >
-                          <LinkIcon className="h-4 w-4 mr-2" />
-                          Go to Question Library
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {industryQuestions.map((question: any) => (
-                          <Card key={question.id} className="relative border-slate-700 bg-slate-800/50">
-                            <CardHeader className="pb-2">
-                              <div className="flex justify-between items-start">
-                                <div className="flex items-start space-x-2">
-                                  <div className="mt-1">
-                                    {getTypeIcon(question.type)}
-                                  </div>
-                                  <div>
-                                    <CardTitle className="text-base text-white">{question.question}</CardTitle>
-                                    {question.description && (
-                                      <CardDescription>{question.description}</CardDescription>
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                <Badge variant="outline" className="bg-green-900/30 text-green-300 border-green-800">
-                                  Industry
-                                </Badge>
-                              </div>
-                              
-                              <div className="flex gap-2 mt-1">
-                                <Badge variant="outline" className="bg-slate-700 text-slate-200">
-                                  {question.type}
-                                </Badge>
-                                
-                                {question.required && (
-                                  <Badge>Required</Badge>
-                                )}
-                              </div>
-                            </CardHeader>
-                            
-                            {["select", "multiselect", "checkbox", "radio"].includes(question.type) && question.options && (
-                              <CardContent>
-                                <div className="text-sm text-slate-400">Options:</div>
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {question.options.map((option: string, index: number) => (
-                                    <Badge key={index} variant="secondary" className="bg-slate-700">
-                                      {option}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </CardContent>
-                            )}
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Global Questions Section */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white">Global Questions (Available to All Assessments)</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    These global questions will also be included in this assessment
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  {globalQuestionsLoading ? (
-                    <div className="flex justify-center items-center p-6">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="ml-2">Loading global questions...</span>
-                    </div>
-                  ) : !globalQuestions || globalQuestions.length === 0 ? (
-                    <div className="text-center p-6 border border-slate-700 rounded-md">
-                      <p className="text-slate-400">No global questions have been created yet.</p>
-                      <Button 
-                        variant="link" 
-                        onClick={() => setLocation("/customize-assessment")}
-                        className="mt-2"
-                      >
-                        <LinkIcon className="h-4 w-4 mr-2" />
-                        Go to Question Library
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {globalQuestions.map((question: any) => (
+                      {/* Global Questions */}
+                      {globalQuestions && globalQuestions.map((question: any) => (
                         <Card key={question.id} className="relative border-slate-700 bg-slate-800/50">
                           <CardHeader className="pb-2">
                             <div className="flex justify-between items-start">
@@ -628,9 +457,127 @@ const AssessmentCustomize = () => {
                           )}
                         </Card>
                       ))}
+
+                      {/* Industry Questions - filtered by selected industry */}
+                      {industryQuestions && industryQuestions.map((question: any) => (
+                        <Card key={question.id} className="relative border-slate-700 bg-slate-800/50">
+                          <CardHeader className="pb-2">
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-start space-x-2">
+                                <div className="mt-1">
+                                  {getTypeIcon(question.type)}
+                                </div>
+                                <div>
+                                  <CardTitle className="text-base text-white">{question.question}</CardTitle>
+                                  {question.description && (
+                                    <CardDescription>{question.description}</CardDescription>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <Badge variant="outline" className="bg-green-900/30 text-green-300 border-green-800">
+                                Industry {selectedIndustry && (
+                                  <span className="ml-1">
+                                    ({industries && industries.find((i: any) => 
+                                      i.id === parseInt(selectedIndustry))?.name})
+                                  </span>
+                                )}
+                              </Badge>
+                            </div>
+                            
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className="bg-slate-700 text-slate-200">
+                                {question.type}
+                              </Badge>
+                              
+                              {question.required && (
+                                <Badge>Required</Badge>
+                              )}
+                            </div>
+                          </CardHeader>
+                          
+                          {["select", "multiselect", "checkbox", "radio"].includes(question.type) && question.options && (
+                            <CardContent>
+                              <div className="text-sm text-slate-400">Options:</div>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {question.options.map((option: string, index: number) => (
+                                  <Badge key={index} variant="secondary" className="bg-slate-700">
+                                    {option}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      ))}
+
+                      {/* Assessment-specific Questions */}
+                      {questions && questions.filter((q: any) => q.category === 'assessment').map((question: any) => (
+                        <Card key={question.id} className="relative border-slate-700 transition-colors group">
+                          <CardHeader className="pb-2">
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-start space-x-2">
+                                <div className="mt-1">
+                                  {getTypeIcon(question.type)}
+                                </div>
+                                <div>
+                                  <CardTitle className="text-base text-white">{question.question}</CardTitle>
+                                  {question.description && (
+                                    <CardDescription>{question.description}</CardDescription>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-1">
+                                <Badge variant="outline" className="bg-purple-900/30 text-purple-300 border-purple-800">
+                                  Custom
+                                </Badge>
+                                
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                                  onClick={() => handleDeleteQuestion(question.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className="bg-slate-700 text-slate-200">
+                                {question.type}
+                              </Badge>
+                              
+                              {question.required && (
+                                <Badge>Required</Badge>
+                              )}
+                            </div>
+                          </CardHeader>
+                          
+                          {["select", "multiselect", "checkbox", "radio"].includes(question.type) && question.options && (
+                            <CardContent>
+                              <div className="text-sm text-slate-400">Options:</div>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {question.options.map((option: string, index: number) => (
+                                  <Badge key={index} variant="secondary" className="bg-slate-700">
+                                    {option}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      ))}
                     </div>
                   )}
                 </CardContent>
+                <CardFooter className="flex justify-center">
+                  <Button onClick={() => setIsFormOpen(true)}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Custom Question
+                  </Button>
+                </CardFooter>
               </Card>
             </TabsContent>
             
