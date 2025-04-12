@@ -849,22 +849,42 @@ export class PostgresStorage implements IStorage {
         )
         .orderBy(schema.customQuestions.order);
       
-      // 3. Get industry-specific questions (if company has an industry)
+      // 3. Get industry-specific questions from various sources
       let industryQuestions: CustomQuestion[] = [];
       
+      // Check if assessment has an industryId directly assigned
+      if (assessment.industryId) {
+        console.log(`Finding industry questions for assessment ${assessmentId} with industryId ${assessment.industryId}`);
+        
+        // Get questions for this industry
+        const questions = await this.getQuestionsByIndustryId(assessment.industryId);
+        industryQuestions = [...industryQuestions, ...questions];
+        console.log(`Found ${questions.length} questions for industry ${assessment.industryId}`);
+      }
+      
+      // Also check the legacy way (if company has an industry name)
       if (company.industry) {
-        // Find the industry ID
+        // Find the industry ID by name
         const industry = await this.getIndustryByName(company.industry);
         
         if (industry) {
+          console.log(`Finding industry questions for company ${company.id} with industry name '${company.industry}'`);
+          
           // Get questions for this industry
-          industryQuestions = await this.getQuestionsByIndustryId(industry.id);
+          const questions = await this.getQuestionsByIndustryId(industry.id);
+          
+          // Add only unique questions that aren't already in the list
+          const existingIds = new Set(industryQuestions.map(q => q.id));
+          const uniqueQuestions = questions.filter(q => !existingIds.has(q.id));
+          
+          industryQuestions = [...industryQuestions, ...uniqueQuestions];
+          console.log(`Found ${uniqueQuestions.length} additional questions for industry '${company.industry}'`);
         }
       }
       
       // Combine all questions
       return [...globalQuestions, ...industryQuestions, ...assessmentQuestions];
-    } 
+    }
     
     // If no assessmentId provided, return empty array
     return [];
