@@ -423,7 +423,7 @@ const AssessmentCustomize = () => {
             {/* Assessment Questions Tab */}
             <TabsContent value="assessment-questions">
               {/* Industry Selection Dropdown */}
-              <div className="mb-6">
+              <div className="mb-6 border border-slate-700 p-4 rounded-md bg-slate-800/50">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="flex items-center gap-2">
                     <Label htmlFor="industry-select" className="text-white font-medium">Select Industry for this Assessment</Label>
@@ -466,6 +466,29 @@ const AssessmentCustomize = () => {
                     <span className="font-medium">Current Industry:</span> {industries?.find((i: any) => i.id === assessment.industryId)?.name || 'None'}
                   </p>
                 )}
+                
+                <Separator className="my-3" />
+                
+                <div className="flex justify-end mt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      if (selectedIndustry) {
+                        saveIndustryMutation.mutate(parseInt(selectedIndustry), {
+                          onSuccess: () => {
+                            setLocation("/dashboard");
+                          }
+                        });
+                      } else {
+                        setLocation("/dashboard");
+                      }
+                    }}
+                    size="sm"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Save and Close
+                  </Button>
+                </div>
               </div>
 
               <Card className="bg-slate-800 border-slate-700 mb-6">
@@ -661,7 +684,25 @@ const AssessmentCustomize = () => {
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex justify-between">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      if (selectedIndustry) {
+                        saveIndustryMutation.mutate(parseInt(selectedIndustry), {
+                          onSuccess: () => {
+                            setLocation("/dashboard");
+                          }
+                        });
+                      } else {
+                        setLocation("/dashboard");
+                      }
+                    }}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Save and Return to Dashboard
+                  </Button>
+                  
                   <Button onClick={() => setIsFormOpen(true)}>
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Add Custom Question
@@ -750,7 +791,7 @@ const AssessmentCustomize = () => {
                   )}
                 </CardContent>
                 
-                <CardFooter>
+                <CardFooter className="flex flex-col space-y-2">
                   <Button 
                     variant="outline" 
                     onClick={() => setLocation("/customize-assessment")}
@@ -758,6 +799,25 @@ const AssessmentCustomize = () => {
                   >
                     <LinkIcon className="h-4 w-4 mr-2" />
                     Manage Global Question Library
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      if (selectedIndustry) {
+                        saveIndustryMutation.mutate(parseInt(selectedIndustry), {
+                          onSuccess: () => {
+                            setLocation("/dashboard");
+                          }
+                        });
+                      } else {
+                        setLocation("/dashboard");
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Save and Return to Dashboard
                   </Button>
                 </CardFooter>
               </Card>
