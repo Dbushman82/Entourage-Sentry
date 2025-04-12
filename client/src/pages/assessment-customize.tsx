@@ -381,10 +381,30 @@ const AssessmentCustomize = () => {
             </div>
           </div>
           
-          <Button onClick={() => setIsFormOpen(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Question
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                if (selectedIndustry) {
+                  saveIndustryMutation.mutate(parseInt(selectedIndustry), {
+                    onSuccess: () => {
+                      setLocation("/dashboard");
+                    }
+                  });
+                } else {
+                  setLocation("/dashboard");
+                }
+              }}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Save and Close
+            </Button>
+            
+            <Button onClick={() => setIsFormOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Question
+            </Button>
+          </div>
         </div>
         
         {/* Loading State */}
