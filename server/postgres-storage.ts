@@ -918,11 +918,12 @@ export class PostgresStorage implements IStorage {
     }
     
     // Handle assessmentId if provided
-    if (question.assessmentId !== undefined) {
+    if (question.assessmentId !== undefined && question.assessmentId !== null) {
       updateData.assessmentId = question.assessmentId;
       
-      // If setting a valid assessmentId, ensure category is 'assessment'
-      if (question.assessmentId > 0) {
+      // If setting a valid assessmentId (already checked for null above), ensure category is 'assessment'
+      const assessmentId = question.assessmentId as number; // Type assertion since we've already checked for null/undefined
+      if (assessmentId > 0) {
         updateData.category = 'assessment';
       }
     }
