@@ -150,6 +150,57 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
     }
   });
   
+  // Mutation for scraping company information from website
+  const scrapeDomainMutation = useMutation({
+    mutationFn: async (domain: string) => {
+      setIsEnriching(true);
+      const res = await apiRequest('POST', '/api/companies/scrape-domain', { domain });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setIsEnriching(false);
+      
+      if (data.success && data.data) {
+        // Auto-fill form fields with scraped data
+        const scrapedData = data.data;
+        
+        if (scrapedData.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion())) {
+          form.setValue('name', scrapedData.name, { shouldDirty: true, shouldValidate: true });
+        }
+        
+        if (scrapedData.phone) {
+          form.setValue('phone', scrapedData.phone, { shouldDirty: true });
+        }
+        
+        if (scrapedData.address) {
+          form.setValue('address', scrapedData.address, { shouldDirty: true });
+        }
+        
+        if (scrapedData.industry) {
+          form.setValue('industry', scrapedData.industry, { shouldDirty: true });
+        }
+        
+        toast({
+          title: "Website scraped successfully",
+          description: "We've extracted information from the company website."
+        });
+      } else {
+        toast({
+          title: "Website scraping limited",
+          description: data.message || "We couldn't extract much information from this website."
+        });
+      }
+    },
+    onError: (error: Error) => {
+      setIsEnriching(false);
+      toast({
+        title: "Website scraping failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
   // Helper function to get a company name suggestion from domain
   const domainNameSuggestion = (customDomain?: string) => {
     const domainToUse = customDomain || cleanedDomain;
@@ -505,6 +556,60 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
                     )}
                   />
                 </div>
+                
+                {/* Add website field with scrape button */}
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Website</FormLabel>
+                      <div className="flex">
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="https://example.com"
+                            className="bg-slate-700 border-slate-600 text-white rounded-r-none"
+                          />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="secondary"
+                          className="rounded-l-none"
+                          onClick={() => {
+                            const websiteValue = form.getValues('website');
+                            if (!websiteValue) {
+                              toast({
+                                title: "Website required",
+                                description: "Please enter a website URL for scraping.",
+                                variant: "destructive"
+                              });
+                              return;
+                            }
+                            
+                            // Clean domain for API call
+                            const domain = websiteValue
+                              .replace(/^https?:\/\//, '')
+                              .replace(/^www\./, '')
+                              .split('/')[0];
+                              
+                            scrapeDomainMutation.mutate(domain);
+                          }}
+                          disabled={isEnriching}
+                        >
+                          {isEnriching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      {domainData && (
+                        <div className="flex items-center mt-1">
+                          <Info className="h-3 w-3 text-success-500 mr-1" />
+                          <span className="text-xs text-success-500">Domain information analyzed</span>
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
