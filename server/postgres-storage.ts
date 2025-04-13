@@ -1001,16 +1001,27 @@ export class PostgresStorage implements IStorage {
   async updateCustomQuestionResponse(id: number, response: Partial<InsertCustomQuestionResponse>): Promise<CustomQuestionResponse | undefined> {
     const updateData: Record<string, any> = {};
     
-    // Only include fields that exist in the database
+    // Process fields that exist in the database
     if (response.questionId !== undefined) updateData.questionId = response.questionId;
-    if (response.response !== undefined) updateData.response = response.response;
-    // Remove assessmentId reference since it doesn't exist in the database
-    // if (response.assessmentId !== undefined) updateData.assessmentId = response.assessmentId;
+    
+    // Update assessmentId if provided
+    if (response.assessmentId !== undefined) {
+      updateData.assessmentId = response.assessmentId;
+    }
+    
+    // Handle response data, ensure it's an array
+    if (response.response !== undefined) {
+      updateData.response = Array.isArray(response.response) ? response.response : [response.response];
+    }
+    
+    console.log(`Updating question response ${id} with data:`, updateData);
     
     const result = await db.update(schema.customQuestionResponses)
       .set(updateData)
       .where(eq(schema.customQuestionResponses.id, id))
       .returning();
+      
+    console.log(`Updated question response:`, result[0]);
     return result[0];
   }
 }
