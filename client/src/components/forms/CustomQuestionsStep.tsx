@@ -119,15 +119,47 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
       // Convert the form data to question responses
       const responses = Object.entries(data).map(([key, value]) => {
         const questionId = parseInt(key.replace('question_', ''));
+        
+        // Make sure value is array, handle empty inputs
+        let responseArray: string[] = [];
+        
+        if (Array.isArray(value)) {
+          // Filter out empty values
+          responseArray = value.filter(v => v && String(v).trim() !== '');
+        } else if (value && String(value).trim() !== '') {
+          responseArray = [value];
+        }
+        
+        console.log(`Question ${questionId} responses:`, responseArray);
+        
         return {
           questionId,
-          response: Array.isArray(value) ? value : [value]
+          response: responseArray
         };
       });
       
+      // Submit each response that has data
+      const validResponses = responses.filter(response => response.response.length > 0);
+      
+      if (validResponses.length === 0) {
+        toast({
+          title: "No responses to save",
+          description: "Please provide at least one answer before continuing.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log("Saving responses:", validResponses);
+      
       // Submit each response
-      const promises = responses.map(response => {
-        return apiRequest('POST', '/api/question-responses', response);
+      const promises = validResponses.map(response => {
+        return apiRequest('POST', '/api/question-responses', {
+          questionId: response.questionId,
+          assessmentId: assessmentId,  // Make sure responses are associated with the assessment
+          response: response.response  // Send array of responses
+        });
       });
       
       await Promise.all(promises);

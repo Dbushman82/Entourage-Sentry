@@ -968,12 +968,22 @@ export class PostgresStorage implements IStorage {
   
   // Custom question response methods
   async createCustomQuestionResponse(response: InsertCustomQuestionResponse): Promise<CustomQuestionResponse> {
-    // Only include fields that exist in the database
-    const result = await db.insert(schema.customQuestionResponses).values({
+    console.log("Creating custom question response:", response);
+    
+    // Include both assessmentId and convert response to array if not already
+    const values: any = {
       questionId: response.questionId,
-      response: response.response,
+      response: Array.isArray(response.response) ? response.response : [response.response],
       createdAt: new Date()
-    }).returning();
+    };
+    
+    // Add assessmentId if provided
+    if (response.assessmentId) {
+      values.assessmentId = response.assessmentId;
+    }
+    
+    const result = await db.insert(schema.customQuestionResponses).values(values).returning();
+    console.log("Created response:", result[0]);
     return result[0];
   }
   
