@@ -28,6 +28,7 @@ import crypto from 'crypto';
 import { setupAuthRoutes } from "./auth";
 import { setupAdminRoutes } from "./admin";
 import { isAuthenticated, isManager, isAdmin } from "./middlewares/auth";
+import { scrapeCompanyInfo } from "./services/scraper";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Error handling middleware
@@ -487,6 +488,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const company = await storage.createCompany(validData);
       res.status(201).json(company);
     } catch (err) {
+      handleError(err, res);
+    }
+  });
+  
+  // Scrape company information from website domain
+  app.post('/api/companies/scrape-domain', async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        domain: z.string().min(3, "Domain must be at least 3 characters long")
+      });
+      
+      const { domain } = schema.parse(req.body);
+      console.log(`Scraping company information for domain: ${domain}`);
+      
+      // Perform the scraping
+      const companyInfo = await scrapeCompanyInfo(domain);
+      
+      if (Object.keys(companyInfo).length === 0) {
+        return res.status(404).json({ 
+          message: 'Could not extract information from this domain. Please enter company details manually.'
+        });
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: companyInfo
+      });
+    } catch (err) {
+      console.error('Error in domain scraping:', err);
       handleError(err, res);
     }
   });
