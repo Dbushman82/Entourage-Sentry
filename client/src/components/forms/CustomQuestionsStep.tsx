@@ -162,26 +162,79 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
             key={question.id}
             control={form.control}
             name={fieldName}
-            render={({ field }) => (
-              <FormItem className="mb-6">
-                <FormLabel className="text-white">
-                  {question.question}
-                  {question.required && <span className="text-destructive ml-1">*</span>}
-                </FormLabel>
-                {question.description && (
-                  <CardDescription className="mb-2">{question.description}</CardDescription>
-                )}
-                <FormControl>
-                  <Input 
-                    placeholder="Your answer" 
-                    className="bg-slate-900 border-slate-700"
-                    {...field} 
-                    value={field.value || ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              // Convert field value to array if not already
+              const answers = Array.isArray(field.value) ? field.value : field.value ? [field.value] : [];
+              
+              const addAnswer = () => {
+                field.onChange([...answers, '']);
+              };
+              
+              const removeAnswer = (index: number) => {
+                const newAnswers = [...answers];
+                newAnswers.splice(index, 1);
+                field.onChange(newAnswers.length ? newAnswers : '');
+              };
+              
+              const updateAnswer = (index: number, value: string) => {
+                const newAnswers = [...answers];
+                newAnswers[index] = value;
+                field.onChange(newAnswers);
+              };
+              
+              return (
+                <FormItem className="mb-6">
+                  <FormLabel className="text-white">
+                    {question.question}
+                    {question.required && <span className="text-destructive ml-1">*</span>}
+                  </FormLabel>
+                  <div className="space-y-2">
+                    {answers.length === 0 ? (
+                      <div className="flex">
+                        <FormControl>
+                          <Input 
+                            placeholder="Your answer" 
+                            className="bg-slate-900 border-slate-700"
+                            value=""
+                            onChange={(e) => field.onChange([e.target.value])}
+                          />
+                        </FormControl>
+                      </div>
+                    ) : (
+                      answers.map((answer, index) => (
+                        <div key={index} className="flex">
+                          <FormControl>
+                            <Input 
+                              placeholder="Your answer" 
+                              className="bg-slate-900 border-slate-700"
+                              value={answer || ''}
+                              onChange={(e) => updateAnswer(index, e.target.value)}
+                            />
+                          </FormControl>
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            className="ml-2 px-2 py-0"
+                            onClick={() => removeAnswer(index)}
+                          >
+                            &times;
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-2"
+                      onClick={addAnswer}
+                    >
+                      + Add Another Answer
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         );
       
@@ -191,26 +244,79 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
             key={question.id}
             control={form.control}
             name={fieldName}
-            render={({ field }) => (
-              <FormItem className="mb-6">
-                <FormLabel className="text-white">
-                  {question.question}
-                  {question.required && <span className="text-destructive ml-1">*</span>}
-                </FormLabel>
-                {question.description && (
-                  <CardDescription className="mb-2">{question.description}</CardDescription>
-                )}
-                <FormControl>
-                  <Textarea 
-                    placeholder="Your answer" 
-                    className="bg-slate-900 border-slate-700"
-                    {...field} 
-                    value={field.value || ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              // Convert field value to array if not already
+              const answers = Array.isArray(field.value) ? field.value : field.value ? [field.value] : [];
+              
+              const addAnswer = () => {
+                field.onChange([...answers, '']);
+              };
+              
+              const removeAnswer = (index: number) => {
+                const newAnswers = [...answers];
+                newAnswers.splice(index, 1);
+                field.onChange(newAnswers.length ? newAnswers : '');
+              };
+              
+              const updateAnswer = (index: number, value: string) => {
+                const newAnswers = [...answers];
+                newAnswers[index] = value;
+                field.onChange(newAnswers);
+              };
+              
+              return (
+                <FormItem className="mb-6">
+                  <FormLabel className="text-white">
+                    {question.question}
+                    {question.required && <span className="text-destructive ml-1">*</span>}
+                  </FormLabel>
+                  <div className="space-y-2">
+                    {answers.length === 0 ? (
+                      <div className="flex">
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Your answer" 
+                            className="bg-slate-900 border-slate-700"
+                            value=""
+                            onChange={(e) => field.onChange([e.target.value])}
+                          />
+                        </FormControl>
+                      </div>
+                    ) : (
+                      answers.map((answer, index) => (
+                        <div key={index} className="flex">
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Your answer" 
+                              className="bg-slate-900 border-slate-700"
+                              value={answer || ''}
+                              onChange={(e) => updateAnswer(index, e.target.value)}
+                            />
+                          </FormControl>
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            className="ml-2 px-2 py-0 h-10"
+                            onClick={() => removeAnswer(index)}
+                          >
+                            &times;
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-2"
+                      onClick={addAnswer}
+                    >
+                      + Add Another Answer
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         );
       
@@ -220,35 +326,102 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
             key={question.id}
             control={form.control}
             name={fieldName}
-            render={({ field }) => (
-              <FormItem className="mb-6">
-                <FormLabel className="text-white">
-                  {question.question}
-                  {question.required && <span className="text-destructive ml-1">*</span>}
-                </FormLabel>
-                {question.description && (
-                  <CardDescription className="mb-2">{question.description}</CardDescription>
-                )}
-                <Select 
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <FormControl>
-                    <SelectTrigger className="bg-slate-900 border-slate-700">
-                      <SelectValue placeholder="Select an option" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    {question.options.map((option: string, index: number) => (
-                      <SelectItem key={index} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              // Convert field value to array if not already
+              const answers = Array.isArray(field.value) ? field.value : field.value ? [field.value] : [];
+              
+              const addAnswer = () => {
+                if (answers.length === 0) {
+                  field.onChange([question.options[0] || '']);
+                } else {
+                  // Add another select as a new answer
+                  field.onChange([...answers, '']);
+                }
+              };
+              
+              const removeAnswer = (index: number) => {
+                const newAnswers = [...answers];
+                newAnswers.splice(index, 1);
+                field.onChange(newAnswers.length ? newAnswers : '');
+              };
+              
+              const updateAnswer = (index: number, value: string) => {
+                const newAnswers = [...answers];
+                newAnswers[index] = value;
+                field.onChange(newAnswers);
+              };
+              
+              return (
+                <FormItem className="mb-6">
+                  <FormLabel className="text-white">
+                    {question.question}
+                    {question.required && <span className="text-destructive ml-1">*</span>}
+                  </FormLabel>
+                  <div className="space-y-2">
+                    {answers.length === 0 ? (
+                      <div className="flex">
+                        <Select 
+                          value=""
+                          onValueChange={(value) => field.onChange([value])}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="bg-slate-900 border-slate-700">
+                              <SelectValue placeholder="Select an option" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-slate-800 border-slate-700">
+                            {question.options.map((option: string, index: number) => (
+                              <SelectItem key={index} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      answers.map((answer, index) => (
+                        <div key={index} className="flex">
+                          <Select 
+                            value={answer}
+                            onValueChange={(value) => updateAnswer(index, value)}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="bg-slate-900 border-slate-700">
+                                <SelectValue placeholder="Select an option" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-slate-800 border-slate-700">
+                              {question.options.map((option: string, index: number) => (
+                                <SelectItem key={index} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            className="ml-2 px-2 py-0"
+                            onClick={() => removeAnswer(index)}
+                          >
+                            &times;
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-2"
+                      onClick={addAnswer}
+                    >
+                      + Add Another Answer
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         );
       
@@ -265,9 +438,6 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
                   {question.question}
                   {question.required && <span className="text-destructive ml-1">*</span>}
                 </FormLabel>
-                {question.description && (
-                  <CardDescription className="mb-2">{question.description}</CardDescription>
-                )}
                 <div className="space-y-2">
                   {question.options.map((option: string, index: number) => (
                     <div className="flex items-center space-x-2" key={index}>
@@ -310,9 +480,6 @@ const CustomQuestionsStep: React.FC<CustomQuestionsStepProps> = ({
                   {question.question}
                   {question.required && <span className="text-destructive ml-1">*</span>}
                 </FormLabel>
-                {question.description && (
-                  <CardDescription className="mb-2">{question.description}</CardDescription>
-                )}
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
