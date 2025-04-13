@@ -128,7 +128,7 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
       
       // Navigate to contact page
       await page.goto(resolvedContactUrl, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Extract contact details
       const contactInfo = await page.evaluate(() => {
@@ -268,7 +268,7 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
     
     // Go back to homepage
     await page.goto(url, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Find about page link
     const aboutPageUrl = await page.evaluate(() => {
@@ -293,7 +293,7 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
       
       // Navigate to about page
       await page.goto(resolvedAboutUrl, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Extract company description and industry
       const aboutInfo = await page.evaluate(() => {
