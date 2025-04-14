@@ -4,6 +4,12 @@ import { JSDOM } from 'jsdom';
 interface ScrapedCompanyInfo {
   name?: string;
   address?: string;
+  // Detailed address fields
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
   phone?: string;
   industry?: string;
   description?: string;
@@ -485,6 +491,55 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
           .replace(/<\/?[^>]+(>|$)/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
+          
+        // Try to extract address components
+        try {
+          // Simple regex-based parsing for US addresses
+          // Extract street address (everything before the first comma or line break)
+          const streetMatch = companyInfo.address.match(/^(.*?)(?:,|\n)/);
+          if (streetMatch && streetMatch[1]) {
+            companyInfo.streetAddress = streetMatch[1].trim();
+          }
+          
+          // Extract city (usually after first comma, before state)
+          const cityMatch = companyInfo.address.match(/(?:,|\n)\s*([^,\n]+)(?:,|\n)/);
+          if (cityMatch && cityMatch[1]) {
+            companyInfo.city = cityMatch[1].trim();
+          }
+          
+          // Extract state (2-letter code) - common US format
+          const stateMatch = companyInfo.address.match(/(?:,|\n)\s*([A-Z]{2})\s+/i);
+          if (stateMatch && stateMatch[1]) {
+            companyInfo.state = stateMatch[1].trim();
+          }
+          
+          // Extract postal/ZIP code (5 digits, possibly with 4-digit extension)
+          const zipMatch = companyInfo.address.match(/\b(\d{5}(?:-\d{4})?)\b/);
+          if (zipMatch && zipMatch[1]) {
+            companyInfo.postalCode = zipMatch[1].trim();
+          }
+          
+          // Try to extract country (usually at the end)
+          const countryMatch = companyInfo.address.match(/(?:,|\n)\s*([^,\n]+)$/);
+          if (countryMatch && countryMatch[1] && !countryMatch[1].match(/\d/)) {
+            companyInfo.country = countryMatch[1].trim();
+          } else {
+            // Default to USA if format matches US address pattern
+            if (companyInfo.state && companyInfo.postalCode) {
+              companyInfo.country = "USA";
+            }
+          }
+          
+          console.log('Extracted address components:', {
+            streetAddress: companyInfo.streetAddress,
+            city: companyInfo.city,
+            state: companyInfo.state,
+            postalCode: companyInfo.postalCode,
+            country: companyInfo.country
+          });
+        } catch (error) {
+          console.error('Error extracting address components:', error);
+        }
       }
     }
     

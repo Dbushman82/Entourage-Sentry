@@ -547,6 +547,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateSchema = insertCompanySchema.partial();
       const validData = updateSchema.parse(req.body);
       
+      // Log company update - helpful for debugging address updates
+      console.log('Updating company with data:', validData);
+      
+      // Update company record with new info
       const updatedCompany = await storage.updateCompany(id, validData);
       res.json(updatedCompany);
     } catch (err) {
