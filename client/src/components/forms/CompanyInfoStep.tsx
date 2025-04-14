@@ -716,22 +716,7 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
                     )}
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="primaryContact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Contact</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Primary Contact field removed as requested - using contact info instead */}
                 </div>
                 
                 <div className="px-6 py-4 bg-slate-900/50 border-t border-slate-700 flex justify-between items-center -mx-6 -mb-6 mt-6">
