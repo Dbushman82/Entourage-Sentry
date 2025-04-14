@@ -22,6 +22,7 @@ import { db } from './db';
 import { z } from "zod";
 import { analyzeDomain } from "./utils/domainRecon";
 import { enrichCompanyByDomain, enrichCompanyByName } from "./utils/pdlEnrichment";
+import { companyEnrichmentService } from "./services/company-enrichment";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import crypto from 'crypto';

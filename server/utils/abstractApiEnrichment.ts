@@ -6,7 +6,39 @@
 
 import axios from 'axios';
 import { PostgresStorage } from '../postgres-storage';
-import { CompanyEnrichmentResult } from './pdlEnrichment';
+import { CompanyEnrichmentResult as PDLCompanyEnrichmentResult } from './pdlEnrichment';
+
+// Extended CompanyEnrichmentResult interface with address and phone fields
+export interface CompanyEnrichmentResult extends PDLCompanyEnrichmentResult {
+  data?: {
+    name: string;
+    logo: string | null;
+    description: string | null;
+    industry: string | null;
+    employeeCount: number | null;
+    founded: string | null;
+    companyType: string | null;
+    annualRevenue: string | null;
+    socialProfiles: {
+      linkedin?: string | undefined;
+      twitter?: string | undefined;
+      facebook?: string | undefined;
+      github?: string | undefined;
+    } | null;
+    tags: string[] | null;
+    website: string | null;
+    // Additional fields for Abstract API
+    phone?: string | null;
+    address?: {
+      street: string | null;
+      city: string | null;
+      state: string | null;
+      postalCode: string | null;
+      country: string | null;
+      countryCode: string | null;
+    };
+  };
+}
 
 // Initialize storage for retrieving API keys
 const storage = new PostgresStorage();
@@ -140,12 +172,15 @@ export async function abstractEnrichCompanyByDomain(domain: string): Promise<Com
       raw: data
     };
     
-    console.log('[AbstractAPI] Enrichment success! Processed data:', JSON.stringify({
-      name: result.data.name,
-      industry: result.data.industry,
-      phone: result.data.phone,
-      address: result.data.address
-    }, null, 2));
+    // Log the processed data for debugging, handling undefined data safely
+    if (result.data) {
+      console.log('[AbstractAPI] Enrichment success! Processed data:', JSON.stringify({
+        name: result.data.name,
+        industry: result.data.industry,
+        phone: result.data.phone,
+        address: result.data.address
+      }, null, 2));
+    }
     
     return result;
   } catch (error: any) {

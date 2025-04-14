@@ -1,7 +1,21 @@
-import axios from 'axios';
+/**
+ * Company Enrichment Service
+ * 
+ * This service coordinates company data enrichment from multiple sources
+ * and provides a unified interface for the application.
+ */
+
+import { enrichCompanyByDomain as pdlEnrichCompanyByDomain } from '../utils/pdlEnrichment';
+import { abstractEnrichCompanyByDomain, CompanyEnrichmentResult } from '../utils/abstractApiEnrichment';
 import { PostgresStorage } from '../postgres-storage';
 
-// Initialize storage for retrieving API keys
+// API key provider types
+enum EnrichmentProvider {
+  PeopleDataLabs = 'peopledatalabs',
+  AbstractAPI = 'abstractapi'
+}
+
+// Initialize storage for API key management
 const storage = new PostgresStorage();
 
 interface AbstractCompanyEnrichmentResponse {
@@ -27,6 +41,7 @@ interface AbstractCompanyEnrichmentResponse {
   has_email?: boolean;
 }
 
+// Combined enriched company data interface
 export interface EnrichedCompanyData {
   name?: string;
   domain?: string;
@@ -54,75 +69,89 @@ export class CompanyEnrichmentService {
       // Find the Abstract API key for company enrichment
       const abstractApiKey = apiKeys.find(key => 
         key.name.toLowerCase().includes('abstract') && 
-        key.name.toLowerCase().includes('enrich')
+        (key.name.toLowerCase().includes('enrich') || key.name.toLowerCase().includes('company'))
       );
       
       return abstractApiKey ? abstractApiKey.key : null;
     } catch (error) {
-      console.error('Error fetching Abstract API key:', error);
+      console.error('[AbstractAPI] Error fetching API key:', error);
       return null;
     }
   }
-  
+
   /**
    * Enriches company data using AbstractAPI's Company Enrichment API
    * @param domain The company's domain name (e.g., "acme.com")
    * @returns Enriched company data or null if enrichment failed
    */
   public async enrichCompanyByDomain(domain: string): Promise<EnrichedCompanyData | null> {
+    console.log(`[CompanyEnrichment] Starting enrichment for domain: ${domain}`);
+    
     try {
-      const apiKey = await this.getApiKey();
+      // Try to enrich with Abstract API first
+      const abstractApiResult = await abstractEnrichCompanyByDomain(domain);
       
-      if (!apiKey) {
-        console.error('AbstractAPI Company Enrichment API key not found');
-        return null;
+      if (abstractApiResult.success && abstractApiResult.data) {
+        console.log('[CompanyEnrichment] Abstract API enrichment successful');
+        
+        // Map the AbstractAPI data to our unified format
+        const enrichedData: EnrichedCompanyData = {
+          name: abstractApiResult.data.name,
+          domain: domain,
+          yearFounded: abstractApiResult.data.founded ? parseInt(abstractApiResult.data.founded) : undefined,
+          industry: abstractApiResult.data.industry || undefined,
+          employeeCount: abstractApiResult.data.employeeCount || undefined,
+          logo: abstractApiResult.data.logo || undefined,
+          linkedinUrl: abstractApiResult.data.socialProfiles?.linkedin
+        };
+        
+        // Add Abstract API specific fields if available
+        if (abstractApiResult.data.phone) {
+          enrichedData.phone = abstractApiResult.data.phone;
+        }
+        
+        // Add address information if available
+        if (abstractApiResult.data.address) {
+          const addr = abstractApiResult.data.address;
+          enrichedData.streetAddress = addr.street || undefined;
+          enrichedData.city = addr.city || undefined;
+          enrichedData.state = addr.state || undefined;
+          enrichedData.postalCode = addr.postalCode || undefined;
+          enrichedData.country = addr.country || undefined;
+          enrichedData.countryCode = addr.countryCode || undefined;
+        }
+        
+        return enrichedData;
       }
       
-      // Remove any protocol prefixes if they exist
-      const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+      // If Abstract API fails, try PDL
+      console.log('[CompanyEnrichment] Abstract API enrichment failed, trying PDL');
+      const pdlResult = await pdlEnrichCompanyByDomain(domain);
       
-      // Call the AbstractAPI Company Enrichment API
-      const response = await axios.get<AbstractCompanyEnrichmentResponse>(
-        `https://companyenrichment.abstractapi.com/v1/`,
-        {
-          params: {
-            api_key: apiKey,
-            domain: cleanDomain
-          }
-        }
-      );
+      if (pdlResult.success && pdlResult.data) {
+        console.log('[CompanyEnrichment] PDL enrichment successful');
+        
+        // Map the PDL data to our unified format
+        const enrichedData: EnrichedCompanyData = {
+          name: pdlResult.data.name,
+          domain: pdlResult.data.website || domain,
+          yearFounded: pdlResult.data.founded ? parseInt(pdlResult.data.founded) : undefined,
+          industry: pdlResult.data.industry || undefined,
+          employeeCount: pdlResult.data.employeeCount || undefined,
+          logo: pdlResult.data.logo || undefined,
+          linkedinUrl: pdlResult.data.socialProfiles?.linkedin
+        };
+        
+        return enrichedData;
+      }
       
-      const data = response.data;
-      
-      // Transform the response to our internal format
-      const enrichedData: EnrichedCompanyData = {
-        name: data.name,
-        domain: data.domain,
-        yearFounded: data.year_founded,
-        industry: data.industry,
-        employeeCount: data.employee_count,
-        locality: data.locality,
-        country: data.country,
-        linkedinUrl: data.linkedin_url,
-        logo: data.logo,
-        phone: data.phone,
-        // Combine address parts into a street address
-        streetAddress: data.address ? 
-          `${data.address.street_number || ''} ${data.address.street_name || ''}`.trim() : 
-          undefined,
-        city: data.address?.city,
-        state: data.address?.state,
-        postalCode: data.address?.postal_code,
-        countryCode: data.address?.country_code
-      };
-      
-      return enrichedData;
+      console.log('[CompanyEnrichment] All enrichment attempts failed');
+      return null;
     } catch (error) {
-      console.error('Error enriching company data:', error);
+      console.error('[CompanyEnrichment] Error during enrichment:', error);
       return null;
     }
   }
 }
 
-// Export a singleton instance
 export const companyEnrichmentService = new CompanyEnrichmentService();
