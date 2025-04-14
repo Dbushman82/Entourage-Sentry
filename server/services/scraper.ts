@@ -37,7 +37,16 @@ const EXCLUSION_PATTERNS = [
   '<script',
   '</script>',
   '.js',
-  '.css'
+  '.css',
+  'window.',
+  'jQuery',
+  'console.log',
+  'return',
+  '= function',
+  'object',
+  'void',
+  '<style',
+  '!'
 ];
 
 /**
@@ -455,19 +464,34 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
         companyInfo.address?.includes(pattern)
       );
       
-      if (containsExcludedPattern) {
-        console.log('Address contains excluded patterns, removing it');
+      // Check for invalid address patterns
+      const isValidAddress = 
+        companyInfo.address.length > 5 && // Reasonable minimum length
+        companyInfo.address.length < 200 && // Reasonable maximum length
+        /\d/.test(companyInfo.address) && // Contains at least one digit (most physical addresses do)
+        /[a-zA-Z]/.test(companyInfo.address) && // Contains letters
+        !companyInfo.address.includes('function(') && // Not JavaScript code
+        !companyInfo.address.includes('undefined') && // Not JavaScript undefined
+        !companyInfo.address.includes('NaN'); // Not JavaScript NaN
+      
+      if (containsExcludedPattern || !isValidAddress) {
+        console.log('Address contains excluded patterns or is invalid, removing it');
         companyInfo.address = undefined;
         scrapingResults.foundAddress = false;
+      } else {
+        // Clean up the address if it looks valid
+        // Remove any HTML tags that might be included
+        companyInfo.address = companyInfo.address
+          .replace(/<\/?[^>]+(>|$)/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
       }
     }
     
-    // Add domain-specific fallbacks when data is missing
-    if (formattedDomain.includes('fortisaccess')) {
-      if (!companyInfo.address || companyInfo.address.length < 10) {
-        companyInfo.address = "New York, NY";
-        scrapingResults.foundAddress = false;  // This is a fallback, not found directly
-      }
+    // We no longer use domain-specific fallbacks for addresses
+    // Instead, we'll report accurate scraping results to the user
+    if (!companyInfo.address) {
+      scrapingResults.foundAddress = false;
     }
     
     // Include scraping results in the returned data
