@@ -139,8 +139,27 @@ export class CompanyEnrichmentService {
           industry: pdlResult.data.industry || undefined,
           employeeCount: pdlResult.data.employeeCount || undefined,
           logo: pdlResult.data.logo || undefined,
-          linkedinUrl: pdlResult.data.socialProfiles?.linkedin
+          linkedinUrl: pdlResult.data.socialProfiles?.linkedin,
+          
+          // Address fields from PDL
+          streetAddress: pdlResult.data.streetAddress || undefined,
+          city: pdlResult.data.city || undefined,
+          state: pdlResult.data.state || undefined,
+          postalCode: pdlResult.data.postalCode || undefined,
+          country: pdlResult.data.country || undefined,
+          phone: pdlResult.data.phone || undefined
         };
+        
+        // Log address information when available
+        if (pdlResult.data.city || pdlResult.data.state || pdlResult.data.postalCode) {
+          console.log('[CompanyEnrichment] PDL provided address data:', {
+            street: pdlResult.data.streetAddress,
+            city: pdlResult.data.city,
+            state: pdlResult.data.state,
+            postalCode: pdlResult.data.postalCode,
+            country: pdlResult.data.country
+          });
+        }
         
         return enrichedData;
       }

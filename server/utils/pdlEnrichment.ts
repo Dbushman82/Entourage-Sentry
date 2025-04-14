@@ -45,6 +45,11 @@ interface PDLLocation {
   region?: string;
   country?: string;
   continent?: string;
+  street_address?: string;
+  address_line_2?: string;
+  postal_code?: string;
+  geo?: string;
+  metro?: string;
 }
 
 interface PDLNaics {
@@ -285,9 +290,15 @@ function formatCompanyResponse(pdlResponse: PDLCompanyResponse): CompanyEnrichme
       website: pdlResponse.website || null,
       
       // Extract location information from the PDL response
+      // Extended address fields
+      streetAddress: pdlResponse.location?.street_address || null,
       city: pdlResponse.location?.locality || null,
       state: pdlResponse.location?.region || null,
-      country: pdlResponse.location?.country || null
+      postalCode: pdlResponse.location?.postal_code || null,
+      country: pdlResponse.location?.country || null,
+      
+      // For logging purposes
+      phone: null // PDL doesn't always provide phone info, we'll get it from other sources
     },
     raw: pdlResponse
   };
@@ -296,7 +307,14 @@ function formatCompanyResponse(pdlResponse: PDLCompanyResponse): CompanyEnrichme
   console.log('PDL Enrichment success! Processed data:', JSON.stringify({
     name: result.data.name,
     industry: result.data.industry,
-    employeeCount: result.data.employeeCount
+    employeeCount: result.data.employeeCount,
+    address: {
+      street: result.data.streetAddress,
+      city: result.data.city,
+      state: result.data.state,
+      postalCode: result.data.postalCode,
+      country: result.data.country
+    }
   }, null, 2));
   
   return result;
