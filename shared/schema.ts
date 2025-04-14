@@ -557,3 +557,24 @@ export const insertCustomQuestionResponseSchema = createInsertSchema(customQuest
 
 export type InsertCustomQuestionResponse = z.infer<typeof insertCustomQuestionResponseSchema>;
 export type CustomQuestionResponse = typeof customQuestionResponses.$inferSelect;
+
+// API Keys for external integrations
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  key: text("key").notNull(),
+  documentationUrl: text("documentation_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).pick({
+  name: true,
+  key: true,
+  documentationUrl: true,
+  createdBy: true,
+});
+
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
