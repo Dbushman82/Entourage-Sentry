@@ -346,10 +346,39 @@ const Assessment = () => {
   };
   
   // Handle company info submission (Step 2)
-  const handleCompanySubmit = (data: any, domainReconData: any) => {
+  const handleCompanySubmit = async (data: any, domainReconData: any) => {
+    console.log("Saving company data:", data);
     setCompanyData(data);
     if (domainReconData) {
       setDomainData(domainReconData);
+    }
+    
+    // Save company data to database
+    if (assessment && assessment.company) {
+      try {
+        const res = await apiRequest('PUT', `/api/companies/${assessment.company.id}`, {
+          name: data.name,
+          website: data.website,
+          address: data.address,
+          phone: data.phone,
+          primaryContact: data.primaryContact,
+          industry: data.industry,
+          employeeCount: data.employeeCount
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Failed to save company data: ${res.status}`);
+        }
+        
+        console.log("Company data saved successfully");
+      } catch (error) {
+        console.error("Error saving company data:", error);
+        toast({
+          title: "Warning",
+          description: "Some company data could not be saved.",
+          variant: "destructive"
+        });
+      }
     }
     
     setCurrentStep(3);

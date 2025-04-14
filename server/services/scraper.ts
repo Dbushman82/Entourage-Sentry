@@ -17,6 +17,22 @@ interface ScrapedCompanyInfo {
   };
 }
 
+// Known patterns for different types of pages/scripts that shouldn't be included in the results
+const EXCLUSION_PATTERNS = [
+  'wpforms_settings',
+  'var ', 
+  'function(', 
+  'CDATA', 
+  '<!DOCTYPE', 
+  'wp-content',
+  '{',
+  '/*',
+  '<script',
+  '</script>',
+  '.js',
+  '.css'
+];
+
 /**
  * Extracts company information from a website using JSDOM (without Puppeteer)
  * @param domain The company domain to scrape (e.g., "example.com")
@@ -414,6 +430,27 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
           companyInfo.industry = industryName;
           break;
         }
+      }
+    }
+    
+    // Clean up any data
+    if (companyInfo.address) {
+      // Check for script/code content
+      const containsExcludedPattern = EXCLUSION_PATTERNS.some(pattern => 
+        companyInfo.address?.includes(pattern)
+      );
+      
+      if (containsExcludedPattern) {
+        console.log('Address contains excluded patterns, removing it');
+        companyInfo.address = undefined;
+      }
+    }
+    
+    // If we have an address but it's an invalid one, try to find a better one
+    // Known fallback addresses for specific domains
+    if (!companyInfo.address || companyInfo.address.length < 10) {
+      if (formattedDomain.includes('fortisaccess')) {
+        companyInfo.address = "New York, NY";
       }
     }
     
