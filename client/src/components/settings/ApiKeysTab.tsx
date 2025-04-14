@@ -55,7 +55,7 @@ const ApiKeysTab: React.FC = () => {
   });
 
   // Fetch API keys
-  const { data: apiKeys = [], isLoading } = useQuery({
+  const { data: apiKeys = [], isLoading } = useQuery<ApiKey[]>({
     queryKey: ["/api/api-keys"],
     staleTime: 60000, // 1 minute
   });
@@ -213,7 +213,7 @@ const ApiKeysTab: React.FC = () => {
         <div className="flex justify-center my-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
-      ) : apiKeys.length === 0 ? (
+      ) : (apiKeys as ApiKey[]).length === 0 ? (
         <Card>
           <CardContent className="py-10">
             <div className="text-center">
@@ -235,7 +235,7 @@ const ApiKeysTab: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {apiKeys.map((apiKey: ApiKey) => (
+                {(apiKeys as ApiKey[]).map((apiKey: ApiKey) => (
                   <TableRow key={apiKey.id}>
                     <TableCell className="font-medium">{apiKey.name}</TableCell>
                     <TableCell>

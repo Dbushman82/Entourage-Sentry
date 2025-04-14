@@ -101,7 +101,7 @@ interface IndustryForm {
 const SettingsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("questions");
+  const [activeTab, setActiveTab] = useState("apikeys");
   const [questionFilter, setQuestionFilter] = useState<string>("global");
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
@@ -1231,6 +1231,20 @@ const SettingsPage = () => {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </TabsContent>
+          
+          <TabsContent value="apikeys" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>API Key Management</CardTitle>
+                <CardDescription>
+                  Securely store and manage API keys for external services like People Data Labs, FullHunt, and other integrations.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ApiKeysTab />
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="appearance" className="space-y-4">
