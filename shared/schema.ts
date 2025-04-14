@@ -96,7 +96,7 @@ export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   website: text("website").notNull(),
-  address: text("address"),
+  address: text("address"),              // Legacy field - will be deprecated
   phone: text("phone"),
   primaryContact: text("primary_contact"),
   industry: text("industry"),
@@ -106,6 +106,13 @@ export const companies = pgTable("companies", {
   overview: text("overview"),
   compliance: jsonb("compliance"),
   growthPlans: text("growth_plans"),
+  
+  // New detailed address fields
+  streetAddress: text("street_address"),  // Street number and name
+  city: text("city"),                     // City or locality
+  state: text("state"),                   // State or region
+  postalCode: text("postal_code"),        // ZIP or postal code
+  country: text("country"),               // Country
   
   // Enrichment fields
   logo: text("logo"),                     // URL to company logo
@@ -133,6 +140,12 @@ export const insertCompanySchema = createInsertSchema(companies).pick({
   overview: true,
   compliance: true,
   growthPlans: true,
+  // Add new address fields
+  streetAddress: true,
+  city: true,
+  state: true,
+  postalCode: true,
+  country: true,
 });
 
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
