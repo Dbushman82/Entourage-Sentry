@@ -38,7 +38,7 @@ const companyFormSchema = z.object({
   }, { message: "Please enter a valid URL" }),
   address: z.string().optional(),
   phone: z.string().optional(),
-  primaryContact: z.string().optional(),
+  // Primary Contact field removed - using contact info instead
   // Additional fields for enrichment data
   industry: z.string().optional(),
   employeeCount: z.string().optional(),
@@ -366,7 +366,9 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
       website: initialDomain || "",
       address: "",
       phone: "",
-      primaryContact: "",
+      // Primary Contact removed
+      industry: "",
+      employeeCount: "",
       ...defaultValues
     },
   });

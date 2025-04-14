@@ -356,15 +356,20 @@ const Assessment = () => {
     // Save company data to database
     if (assessment && assessment.company) {
       try {
-        const res = await apiRequest('PUT', `/api/companies/${assessment.company.id}`, {
+        // Ensure phone is properly saved by explicitly including it in the request
+        const companyData = {
           name: data.name,
           website: data.website,
           address: data.address,
-          phone: data.phone,
-          primaryContact: data.primaryContact,
+          phone: data.phone || null, // Ensure phone is included, even if null
           industry: data.industry,
           employeeCount: data.employeeCount
-        });
+          // Primary Contact removed as requested
+        };
+        
+        console.log("Sending company data to API:", companyData);
+        
+        const res = await apiRequest('PUT', `/api/companies/${assessment.company.id}`, companyData);
         
         if (!res.ok) {
           throw new Error(`Failed to save company data: ${res.status}`);
