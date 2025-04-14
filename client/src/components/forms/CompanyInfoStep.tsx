@@ -158,7 +158,7 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
       const res = await apiRequest('POST', '/api/companies/scrape-domain', { domain });
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setIsEnriching(false);
       
       if (data.success && data.data) {
@@ -172,6 +172,36 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
         
         if (scrapedData.phone) {
           form.setValue('phone', scrapedData.phone, { shouldDirty: true, shouldValidate: true });
+          
+          // Save the phone number to the database immediately
+          try {
+            // Get company ID from URL if available
+            const assessmentId = window.location.pathname.split('/').pop();
+            if (assessmentId) {
+              // First get the assessment to find company ID
+              const assessmentRes = await apiRequest('GET', `/api/assessments/${assessmentId}`);
+              if (assessmentRes.ok) {
+                const assessmentData = await assessmentRes.json();
+                const companyId = assessmentData.companyId;
+                
+                if (companyId) {
+                  // Now update the company with the new phone number
+                  console.log(`Saving phone number ${scrapedData.phone} to company ID ${companyId}`);
+                  const saveRes = await apiRequest('PUT', `/api/companies/${companyId}`, {
+                    phone: scrapedData.phone
+                  });
+                  
+                  if (saveRes.ok) {
+                    console.log("Phone number saved to database");
+                  } else {
+                    console.error("Failed to save phone number to database", await saveRes.text());
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error saving phone number to database:", error);
+          }
         }
         
         // Handle address specially - it might be HTML or have weird formatting
@@ -201,6 +231,36 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
             if (cleanedAddress && cleanedAddress.length > 5 && looksLikeAddress) {
               form.setValue('address', cleanedAddress, { shouldDirty: true });
               setHasScrapedAddress(true);
+              
+              // Save the address to the database immediately
+              try {
+                // Get company ID from URL if available
+                const assessmentId = window.location.pathname.split('/').pop();
+                if (assessmentId) {
+                  // First get the assessment to find company ID
+                  const assessmentRes = await apiRequest('GET', `/api/assessments/${assessmentId}`);
+                  if (assessmentRes.ok) {
+                    const assessmentData = await assessmentRes.json();
+                    const companyId = assessmentData.companyId;
+                    
+                    if (companyId) {
+                      // Now update the company with the new address
+                      console.log(`Saving address ${cleanedAddress} to company ID ${companyId}`);
+                      const saveRes = await apiRequest('PUT', `/api/companies/${companyId}`, {
+                        address: cleanedAddress
+                      });
+                      
+                      if (saveRes.ok) {
+                        console.log("Address saved to database");
+                      } else {
+                        console.error("Failed to save address to database", await saveRes.text());
+                      }
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error("Error saving address to database:", error);
+              }
             }
           } else {
             console.log("Skipping address data as it appears to be script content");

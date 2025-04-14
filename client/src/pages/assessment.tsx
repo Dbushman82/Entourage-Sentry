@@ -138,9 +138,11 @@ const Assessment = () => {
         setCompanyData({
           name: typedAssessmentDetails.company.name,
           website: typedAssessmentDetails.company.website,
-          address: typedAssessmentDetails.company.address,
-          phone: typedAssessmentDetails.company.phone,
-          primaryContact: typedAssessmentDetails.company.primaryContact,
+          address: typedAssessmentDetails.company.address || "",
+          phone: typedAssessmentDetails.company.phone || "",
+          // primaryContact removed
+          industry: typedAssessmentDetails.company.industry || "",
+          employeeCount: typedAssessmentDetails.company.employeeCount || "",
         });
         
         setCompanyProfileData({
