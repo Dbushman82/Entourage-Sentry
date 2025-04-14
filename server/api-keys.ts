@@ -10,7 +10,7 @@ const storage = new PostgresStorage();
 export function setupApiKeyRoutes(app: Express) {
   // Get all API keys
   app.get('/api/api-keys', async (req: Request, res: Response) => {
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
 
@@ -32,7 +32,7 @@ export function setupApiKeyRoutes(app: Express) {
 
   // Get a specific API key by ID (with actual key value)
   app.get('/api/api-keys/:id', async (req: Request, res: Response) => {
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
 
@@ -51,14 +51,14 @@ export function setupApiKeyRoutes(app: Express) {
 
   // Create a new API key
   app.post('/api/api-keys', async (req: Request, res: Response) => {
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
 
     try {
       const validatedData = insertApiKeySchema.parse({
         ...req.body,
-        createdBy: req.user.id
+        createdBy: (req.user as any).id
       });
 
       const apiKey = await storage.createApiKey(validatedData);
@@ -78,7 +78,7 @@ export function setupApiKeyRoutes(app: Express) {
 
   // Update an existing API key
   app.put('/api/api-keys/:id', async (req: Request, res: Response) => {
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
 
@@ -107,7 +107,7 @@ export function setupApiKeyRoutes(app: Express) {
 
   // Delete an API key
   app.delete('/api/api-keys/:id', async (req: Request, res: Response) => {
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+    if (!req.isAuthenticated() || (req.user as any)?.role !== 'admin') {
       return res.status(403).json({ message: 'Unauthorized access' });
     }
 
