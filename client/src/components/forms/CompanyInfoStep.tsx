@@ -171,7 +171,7 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
         }
         
         if (scrapedData.phone) {
-          form.setValue('phone', scrapedData.phone, { shouldDirty: true });
+          form.setValue('phone', scrapedData.phone, { shouldDirty: true, shouldValidate: true });
         }
         
         // Handle address specially - it might be HTML or have weird formatting
@@ -211,10 +211,41 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
           form.setValue('industry', scrapedData.industry, { shouldDirty: true });
         }
         
+        // Create an array to collect missing data notifications
+        const missingData: string[] = [];
+        
+        // Check what data was not found using scrapingResults
+        if (scrapedData.scrapingResults) {
+          if (!scrapedData.scrapingResults.foundName) {
+            missingData.push("Company name");
+          }
+          if (!scrapedData.scrapingResults.foundPhone) {
+            missingData.push("Phone number");
+          }
+          if (!scrapedData.scrapingResults.foundAddress) {
+            missingData.push("Address");
+          }
+          if (!scrapedData.scrapingResults.foundIndustry) {
+            missingData.push("Industry");
+          }
+        }
+        
+        // Success notification
         toast({
           title: "Website scraped successfully",
           description: "We've extracted information from the company website."
         });
+        
+        // If there are missing data fields, show a warning
+        if (missingData.length > 0) {
+          setTimeout(() => {
+            toast({
+              title: "Some information not found",
+              description: `We couldn't find: ${missingData.join(", ")}. Please fill these manually.`,
+              variant: "destructive",
+            });
+          }, 500); // Small delay so toasts don't overlap
+        }
       } else {
         toast({
           title: "Website scraping limited",

@@ -15,6 +15,13 @@ interface ScrapedCompanyInfo {
     linkedin?: string;
     instagram?: string;
   };
+  scrapingResults?: {
+    foundName: boolean;
+    foundAddress: boolean;
+    foundPhone: boolean;
+    foundEmail: boolean;
+    foundIndustry: boolean;
+  };
 }
 
 // Known patterns for different types of pages/scripts that shouldn't be included in the results
@@ -433,7 +440,15 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
       }
     }
     
-    // Clean up any data
+    // Clean up any data and track what was found
+    const scrapingResults = {
+      foundName: !!companyInfo.name,
+      foundAddress: !!companyInfo.address,
+      foundPhone: !!companyInfo.phone,
+      foundEmail: !!companyInfo.email,
+      foundIndustry: !!companyInfo.industry
+    };
+    
     if (companyInfo.address) {
       // Check for script/code content
       const containsExcludedPattern = EXCLUSION_PATTERNS.some(pattern => 
@@ -443,16 +458,20 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
       if (containsExcludedPattern) {
         console.log('Address contains excluded patterns, removing it');
         companyInfo.address = undefined;
+        scrapingResults.foundAddress = false;
       }
     }
     
-    // If we have an address but it's an invalid one, try to find a better one
-    // Known fallback addresses for specific domains
-    if (!companyInfo.address || companyInfo.address.length < 10) {
-      if (formattedDomain.includes('fortisaccess')) {
+    // Add domain-specific fallbacks when data is missing
+    if (formattedDomain.includes('fortisaccess')) {
+      if (!companyInfo.address || companyInfo.address.length < 10) {
         companyInfo.address = "New York, NY";
+        scrapingResults.foundAddress = false;  // This is a fallback, not found directly
       }
     }
+    
+    // Include scraping results in the returned data
+    companyInfo.scrapingResults = scrapingResults;
     
     console.log('Company information extracted:', companyInfo);
     return companyInfo;
