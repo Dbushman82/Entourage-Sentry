@@ -190,10 +190,44 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
                     }
                     sibling = sibling.nextElementSibling;
                   }
+                  
+                  // If we still don't have an address, check child elements
+                  if (!companyInfo.address) {
+                    const children = Array.from(el.children);
+                    for (const child of children) {
+                      const childText = child.textContent?.trim() || '';
+                      if (childText && childText.length > 5 && /[0-9]/.test(childText) && 
+                          !childText.toLowerCase().includes('address') && 
+                          !childText.toLowerCase().includes('location')) {
+                        companyInfo.address = childText;
+                        break;
+                      }
+                    }
+                  }
+                  
+                  // If still no address, try the parent container
+                  if (!companyInfo.address && el.parentElement) {
+                    const parentText = el.parentElement.textContent?.trim() || '';
+                    const addressMatch = parentText.match(/(\d+\s+[a-zA-Z0-9\s,\.]+(?:Avenue|Ave|Boulevard|Blvd|Circle|Cir|Court|Ct|Drive|Dr|Lane|Ln|Parkway|Pkwy|Place|Pl|Plaza|Plz|Road|Rd|Square|Sq|Street|St|Terrace|Ter|Way|Wy)(?:\s+[a-zA-Z0-9\s,\.]*))/i);
+                    if (addressMatch) {
+                      companyInfo.address = addressMatch[0].trim();
+                    }
+                  }
                 }
                 
                 // If we found an address, break the loop
                 if (companyInfo.address) break;
+              }
+            }
+            
+            // If still no address, try a broader search for common address patterns
+            if (!companyInfo.address) {
+              const contactText = contactDoc.body.textContent || '';
+              // Look for patterns like "123 Main St, City, ST 12345" or variations
+              const addressRegex = /(\d+\s+[a-zA-Z0-9\s,\.]+(?:Avenue|Ave|Boulevard|Blvd|Circle|Cir|Court|Ct|Drive|Dr|Lane|Ln|Parkway|Pkwy|Place|Pl|Plaza|Plz|Road|Rd|Square|Sq|Street|St|Suite|Ste|Terrace|Ter|Way|Wy)(?:\s+[a-zA-Z0-9\s,\.]*))/gi;
+              const matches = contactText.match(addressRegex);
+              if (matches && matches.length > 0) {
+                companyInfo.address = matches[0].trim();
               }
             }
           }

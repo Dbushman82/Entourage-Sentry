@@ -151,6 +151,7 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
   });
   
   // Mutation for scraping company information from website
+  const [hasScrapedAddress, setHasScrapedAddress] = useState(false);
   const scrapeDomainMutation = useMutation({
     mutationFn: async (domain: string) => {
       setIsEnriching(true);
@@ -163,6 +164,7 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
       if (data.success && data.data) {
         // Auto-fill form fields with scraped data
         const scrapedData = data.data;
+        console.log("Scraped data:", scrapedData);
         
         if (scrapedData.name && (!form.getValues('name') || form.getValues('name') === domainNameSuggestion())) {
           form.setValue('name', scrapedData.name, { shouldDirty: true, shouldValidate: true });
@@ -172,8 +174,24 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
           form.setValue('phone', scrapedData.phone, { shouldDirty: true });
         }
         
+        // Handle address specially - it might be HTML or have weird formatting
         if (scrapedData.address) {
-          form.setValue('address', scrapedData.address, { shouldDirty: true });
+          // Clean up HTML and formatting issues
+          let cleanedAddress = scrapedData.address;
+          
+          // Remove any HTML/JavaScript content
+          cleanedAddress = cleanedAddress.replace(/<[^>]*>?/gm, '')
+                                      .replace(/\/\*[\s\S]*?\*\//gm, '')
+                                      .replace(/var.*?;/g, '')
+                                      .replace(/\n/g, ' ')
+                                      .replace(/\s{2,}/g, ' ')
+                                      .trim();
+                                      
+          // If we still have a valid address after cleaning
+          if (cleanedAddress && cleanedAddress.length > 5) {
+            form.setValue('address', cleanedAddress, { shouldDirty: true });
+            setHasScrapedAddress(true);
+          }
         }
         
         if (scrapedData.industry) {
@@ -618,14 +636,29 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
                     <FormItem>
                       <FormLabel>Company Address</FormLabel>
                       <FormControl>
-                        <AddressAutocomplete
-                          value={field.value || ""}
-                          onChange={field.onChange}
-                          placeholder="Start typing address..."
-                          className="bg-slate-700 border-slate-600 text-white"
-                          disabled={false}
-                        />
+                        {hasScrapedAddress ? (
+                          // Use regular input for scraped address
+                          <Input
+                            {...field}
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        ) : (
+                          // Use autocomplete for manual address entry
+                          <AddressAutocomplete
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            placeholder="Start typing address..."
+                            className="bg-slate-700 border-slate-600 text-white"
+                            disabled={false}
+                          />
+                        )}
                       </FormControl>
+                      {hasScrapedAddress && (
+                        <div className="flex items-center mt-1">
+                          <Info className="h-3 w-3 text-success-500 mr-1" />
+                          <span className="text-xs text-success-500">Extracted from website</span>
+                        </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
