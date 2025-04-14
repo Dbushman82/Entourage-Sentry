@@ -27,6 +27,7 @@ import { fromZodError } from "zod-validation-error";
 import crypto from 'crypto';
 import { setupAuthRoutes } from "./auth";
 import { setupAdminRoutes } from "./admin";
+import { setupApiKeyRoutes } from "./api-keys";
 import { isAuthenticated, isManager, isAdmin } from "./middlewares/auth";
 import { scrapeCompanyInfo } from "./services/scraper";
 
@@ -1861,6 +1862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   setupAdminRoutes(app);
+  setupApiKeyRoutes(app);
   
   // Apply authentication middleware to protected routes
   // You can uncomment these lines to secure specific routes
