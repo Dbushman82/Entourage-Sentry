@@ -239,6 +239,30 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
               form.setValue('address', cleanedAddress, { shouldDirty: true });
               setHasScrapedAddress(true);
               
+              // Try to extract address components using simple regex patterns
+              // This is a basic implementation - the AddressAutocomplete component does this better
+              const streetMatch = cleanedAddress.match(/^(.*?)(?:,|\n)/);
+              const cityMatch = cleanedAddress.match(/(?:,|\n)\s*([^,\n]+)(?:,|\n)/);
+              const stateMatch = cleanedAddress.match(/(?:,|\n)\s*([A-Z]{2})\s+/i);
+              const zipMatch = cleanedAddress.match(/\b(\d{5}(?:-\d{4})?)\b/);
+              const countryMatch = cleanedAddress.match(/(?:,|\n)\s*([^,\n]+)$/);
+              
+              if (streetMatch && streetMatch[1]) {
+                form.setValue('streetAddress', streetMatch[1].trim(), { shouldDirty: true });
+              }
+              if (cityMatch && cityMatch[1]) {
+                form.setValue('city', cityMatch[1].trim(), { shouldDirty: true });
+              }
+              if (stateMatch && stateMatch[1]) {
+                form.setValue('state', stateMatch[1].trim(), { shouldDirty: true });
+              }
+              if (zipMatch && zipMatch[1]) {
+                form.setValue('postalCode', zipMatch[1].trim(), { shouldDirty: true });
+              }
+              if (countryMatch && countryMatch[1] && !countryMatch[1].match(/\d/)) {
+                form.setValue('country', countryMatch[1].trim(), { shouldDirty: true });
+              }
+              
               // Save the address to the database immediately
               try {
                 // Get company ID from URL if available
@@ -436,6 +460,12 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
       // Primary Contact removed
       industry: "",
       employeeCount: "",
+      // New address fields
+      streetAddress: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "",
       ...defaultValues
     },
   });
@@ -749,9 +779,31 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
                     <FormItem>
                       <FormLabel>Company Address</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Company address"
+                        <AddressAutocomplete
+                          value={field.value || ""}
+                          onChange={(value, components) => {
+                            field.onChange(value);
+                            
+                            // If we have detailed components, update those fields too
+                            if (components) {
+                              if (components.streetAddress) {
+                                form.setValue('streetAddress', components.streetAddress);
+                              }
+                              if (components.city) {
+                                form.setValue('city', components.city);
+                              }
+                              if (components.state) {
+                                form.setValue('state', components.state);
+                              }
+                              if (components.postalCode) {
+                                form.setValue('postalCode', components.postalCode);
+                              }
+                              if (components.country) {
+                                form.setValue('country', components.country);
+                              }
+                            }
+                          }}
+                          placeholder="Enter company address"
                           className="bg-slate-700 border-slate-600 text-white"
                         />
                       </FormControl>
@@ -765,6 +817,101 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
                     </FormItem>
                   )}
                 />
+                
+                {/* Address Details Fields (hidden on small screens) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-800 p-4 rounded-md">
+                  <h3 className="text-sm font-medium text-slate-300 col-span-2">Detailed Address Components</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="streetAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Street Address</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Street address"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">City</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="City"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">State/Province</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="State or province"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="postalCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Postal Code</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Postal/ZIP code"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel className="text-xs">Country</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Country"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField

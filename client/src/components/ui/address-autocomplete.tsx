@@ -3,9 +3,18 @@ import { Input } from "./input";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./command";
 import { Loader2 } from "lucide-react";
 
+interface AddressComponents {
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  fullAddress: string;
+}
+
 interface AddressAutocompleteProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, components?: AddressComponents) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -123,7 +132,23 @@ export function AddressAutocomplete({
                     onSelect={() => {
                       const formattedAddress = formatAddress(result);
                       setInputValue(formattedAddress);
-                      onChange(formattedAddress);
+                      
+                      // Extract address components
+                      const streetAddress = [
+                        result.housenumber, 
+                        result.street
+                      ].filter(Boolean).join(' ');
+                      
+                      const addressComponents: AddressComponents = {
+                        streetAddress: streetAddress || undefined,
+                        city: result.city || undefined,
+                        state: result.state || undefined,
+                        postalCode: result.postcode || undefined,
+                        country: result.country || undefined,
+                        fullAddress: formattedAddress
+                      };
+                      
+                      onChange(formattedAddress, addressComponents);
                       setOpen(false);
                     }}
                     className="cursor-pointer"
