@@ -80,6 +80,13 @@ export interface CompanyEnrichmentResult {
     } | null;
     tags: string[] | null;
     website: string | null;
+    // Address fields
+    phone?: string | null;
+    streetAddress?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
   };
   raw?: any; // Raw API response for debugging
 }
@@ -275,7 +282,12 @@ function formatCompanyResponse(pdlResponse: PDLCompanyResponse): CompanyEnrichme
         github: socialProfiles.github_url || undefined
       } : null,
       tags: pdlResponse.tags || null,
-      website: pdlResponse.website || null
+      website: pdlResponse.website || null,
+      
+      // Extract location information from the PDL response
+      city: pdlResponse.location?.locality || null,
+      state: pdlResponse.location?.region || null,
+      country: pdlResponse.location?.country || null
     },
     raw: pdlResponse
   };

@@ -36,12 +36,19 @@ const companyFormSchema = z.object({
       return false;
     }
   }, { message: "Please enter a valid URL" }),
+  // Keep address field for backward compatibility
   address: z.string().optional(),
   phone: z.string().optional(),
   // Primary Contact field removed - using contact info instead
   // Additional fields for enrichment data
   industry: z.string().optional(),
   employeeCount: z.string().optional(),
+  // New detailed address fields
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().optional(),
 });
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
