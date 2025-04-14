@@ -176,21 +176,34 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
         
         // Handle address specially - it might be HTML or have weird formatting
         if (scrapedData.address) {
-          // Clean up HTML and formatting issues
-          let cleanedAddress = scrapedData.address;
+          // Check if address looks like a WordPress script block (common false positive)
+          const isWordPressScript = scrapedData.address.includes('wpforms_settings') || 
+                                   scrapedData.address.includes('var ') ||
+                                   scrapedData.address.includes('CDATA');
           
-          // Remove any HTML/JavaScript content
-          cleanedAddress = cleanedAddress.replace(/<[^>]*>?/gm, '')
-                                      .replace(/\/\*[\s\S]*?\*\//gm, '')
-                                      .replace(/var.*?;/g, '')
-                                      .replace(/\n/g, ' ')
-                                      .replace(/\s{2,}/g, ' ')
-                                      .trim();
-                                      
-          // If we still have a valid address after cleaning
-          if (cleanedAddress && cleanedAddress.length > 5) {
-            form.setValue('address', cleanedAddress, { shouldDirty: true });
-            setHasScrapedAddress(true);
+          // If it looks like script content, don't use it
+          if (!isWordPressScript) {
+            // Clean up HTML and formatting issues
+            let cleanedAddress = scrapedData.address;
+            
+            // Remove any HTML/JavaScript content
+            cleanedAddress = cleanedAddress.replace(/<[^>]*>?/gm, '')
+                                        .replace(/\/\*[\s\S]*?\*\//gm, '')
+                                        .replace(/var.*?;/g, '')
+                                        .replace(/\n/g, ' ')
+                                        .replace(/\s{2,}/g, ' ')
+                                        .trim();
+                                        
+            // Validate if looks like a physical address (contains digits and words)
+            const looksLikeAddress = /\d+.*\w+.*/.test(cleanedAddress);
+            
+            // If we still have a valid address after cleaning
+            if (cleanedAddress && cleanedAddress.length > 5 && looksLikeAddress) {
+              form.setValue('address', cleanedAddress, { shouldDirty: true });
+              setHasScrapedAddress(true);
+            }
+          } else {
+            console.log("Skipping address data as it appears to be script content");
           }
         }
         
@@ -636,22 +649,11 @@ const CompanyInfoStep = ({ onNext, onBack, defaultValues = {}, initialDomain }: 
                     <FormItem>
                       <FormLabel>Company Address</FormLabel>
                       <FormControl>
-                        {hasScrapedAddress ? (
-                          // Use regular input for scraped address
-                          <Input
-                            {...field}
-                            className="bg-slate-700 border-slate-600 text-white"
-                          />
-                        ) : (
-                          // Use autocomplete for manual address entry
-                          <AddressAutocomplete
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            placeholder="Start typing address..."
-                            className="bg-slate-700 border-slate-600 text-white"
-                            disabled={false}
-                          />
-                        )}
+                        <Input
+                          {...field}
+                          placeholder="Company address"
+                          className="bg-slate-700 border-slate-600 text-white"
+                        />
                       </FormControl>
                       {hasScrapedAddress && (
                         <div className="flex items-center mt-1">

@@ -223,11 +223,39 @@ export async function scrapeCompanyInfo(domain: string): Promise<ScrapedCompanyI
             // If still no address, try a broader search for common address patterns
             if (!companyInfo.address) {
               const contactText = contactDoc.body.textContent || '';
-              // Look for patterns like "123 Main St, City, ST 12345" or variations
-              const addressRegex = /(\d+\s+[a-zA-Z0-9\s,\.]+(?:Avenue|Ave|Boulevard|Blvd|Circle|Cir|Court|Ct|Drive|Dr|Lane|Ln|Parkway|Pkwy|Place|Pl|Plaza|Plz|Road|Rd|Square|Sq|Street|St|Suite|Ste|Terrace|Ter|Way|Wy)(?:\s+[a-zA-Z0-9\s,\.]*))/gi;
-              const matches = contactText.match(addressRegex);
-              if (matches && matches.length > 0) {
-                companyInfo.address = matches[0].trim();
+              
+              // Skip if contact text has WordPress code indicators
+              if (!contactText.includes('wpforms_settings') && !contactText.includes('wp-content')) {
+                // First try U.S. address format with street names 
+                const streetAddressRegex = /(\d+\s+[a-zA-Z0-9\s,\.]+(?:Avenue|Ave|Boulevard|Blvd|Circle|Cir|Court|Ct|Drive|Dr|Lane|Ln|Parkway|Pkwy|Place|Pl|Plaza|Plz|Road|Rd|Square|Sq|Street|St|Suite|Ste|Terrace|Ter|Way|Wy)(?:\s+[a-zA-Z0-9\s,\.]*))/gi;
+                const streetMatches = contactText.match(streetAddressRegex);
+                if (streetMatches && streetMatches.length > 0) {
+                  companyInfo.address = streetMatches[0].trim();
+                }
+                
+                // If no street address, try number + word pattern (more general)
+                if (!companyInfo.address) {
+                  // Look for address pattern with number followed by text and commas (common address format)
+                  const generalAddressRegex = /\d+[^.,;]*(?:,\s*[^.,;]*){1,3}/g;
+                  const generalMatches = contactText.match(generalAddressRegex);
+                  
+                  // Filter matches to avoid false positives (like dates, phone numbers, etc.)
+                  if (generalMatches && generalMatches.length > 0) {
+                    // Find the longest match that's likely an address (not just numbers)
+                    const possibleAddress = generalMatches
+                      .filter(match => 
+                        match.length > 10 && // Reasonable address length
+                        /[a-zA-Z]/.test(match) && // Contains letters
+                        !/^\d{2}[-.\/]\d{2}[-.\/]\d{2,4}/.test(match) && // Not a date
+                        !/\d{10}/.test(match.replace(/\D/g, '')) // Not a phone number
+                      )
+                      .sort((a, b) => b.length - a.length)[0]; // Get longest match
+                      
+                    if (possibleAddress) {
+                      companyInfo.address = possibleAddress.trim();
+                    }
+                  }
+                }
               }
             }
           }
