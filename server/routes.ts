@@ -974,9 +974,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           founded: enrichedData.yearFounded?.toString(),
           // New fields from AbstractAPI
           phone: enrichedData.phone || company.phone,
+          
+          // Store both in legacy address field (for backward compatibility) and in new detailed fields
           address: enrichedData.streetAddress ? 
             `${enrichedData.streetAddress}${enrichedData.city ? ', ' + enrichedData.city : ''}${enrichedData.state ? ', ' + enrichedData.state : ''}${enrichedData.postalCode ? ' ' + enrichedData.postalCode : ''}` 
             : company.address,
+          
+          // Store in new detailed fields
+          streetAddress: enrichedData.streetAddress || company.streetAddress,
+          city: enrichedData.city || company.city,
+          state: enrichedData.state || company.state,
+          postalCode: enrichedData.postalCode || company.postalCode,
+          country: enrichedData.country || company.country,
+          
           enrichedAt: new Date().toISOString()
         };
         
@@ -1051,6 +1061,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           founded: enrichmentData.data.founded,
           companyType: enrichmentData.data.companyType,
           annualRevenue: enrichmentData.data.annualRevenue,
+          
+          // Store address components if available
+          streetAddress: enrichmentData.data.streetAddress || company.streetAddress,
+          city: enrichmentData.data.city || company.city,
+          state: enrichmentData.data.state || company.state,
+          postalCode: enrichmentData.data.postalCode || company.postalCode,
+          country: enrichmentData.data.country || company.country,
+          
+          // For backward compatibility, maintain the full address string
+          address: enrichmentData.data.streetAddress ? 
+            `${enrichmentData.data.streetAddress}${enrichmentData.data.city ? ', ' + enrichmentData.data.city : ''}${enrichmentData.data.state ? ', ' + enrichmentData.data.state : ''}${enrichmentData.data.postalCode ? ' ' + enrichmentData.data.postalCode : ''}` 
+            : company.address,
+            
           socialProfiles: enrichmentData.data.socialProfiles ? JSON.stringify(enrichmentData.data.socialProfiles) : null,
           tags: enrichmentData.data.tags ? JSON.stringify(enrichmentData.data.tags) : null,
           enrichedAt: new Date().toISOString()
