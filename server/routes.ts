@@ -904,32 +904,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Domain is required' });
       }
       
-      console.log('[PDL] Starting company enrichment for domain:', domain);
+      console.log('[Enrichment] Starting company enrichment for domain:', domain);
       
       // First, analyze the domain for technical details
       const domainReconData = await analyzeDomain(domain);
-      console.log('[PDL] Domain analysis complete for', domain);
+      console.log('[Enrichment] Domain analysis complete for', domain);
       
-      // Normalize domain for PDL API
+      // Normalize domain for API calls
       const normalizedDomain = domain.toLowerCase()
         .replace(/^https?:\/\//, '')
         .replace(/^www\./, '')
         .split('/')[0];
-      console.log('[PDL] Using normalized domain for PDL API:', normalizedDomain);
+      console.log('[Enrichment] Using normalized domain:', normalizedDomain);
       
-      // Get enrichment data from PDL API
-      const enrichmentData = await enrichCompanyByDomain(normalizedDomain);
+      // Use the new company enrichment service that tries multiple providers
+      // This will first attempt AbstractAPI and fall back to PDL if needed
+      const enrichedData = await companyEnrichmentService.enrichCompanyByDomain(normalizedDomain);
       
-      console.log('[PDL] Enrichment result:', 
-        enrichmentData.success ? 'Success' : 'Failed', 
-        enrichmentData.error || '');
-        
-      if (enrichmentData.success && enrichmentData.data) {
-        console.log('[PDL] Received data:', JSON.stringify({
-          name: enrichmentData.data.name,
-          industry: enrichmentData.data.industry,
-          employeeCount: enrichmentData.data.employeeCount,
-          founded: enrichmentData.data.founded
+      // Get PDL enrichment data for backward compatibility and domain tech analysis
+      const pdlEnrichmentData = await enrichCompanyByDomain(normalizedDomain);
+      
+      console.log('[Enrichment] Result:', enrichedData ? 'Success' : 'Failed');
+      
+      if (enrichedData) {
+        console.log('[Enrichment] Received data:', JSON.stringify({
+          name: enrichedData.name,
+          industry: enrichedData.industry,
+          employeeCount: enrichedData.employeeCount,
+          yearFounded: enrichedData.yearFounded,
+          phone: enrichedData.phone,
+          address: enrichedData.streetAddress ? {
+            street: enrichedData.streetAddress,
+            city: enrichedData.city,
+            state: enrichedData.state,
+            postalCode: enrichedData.postalCode
+          } : 'Not available'
         }, null, 2));
       }
       
@@ -937,11 +946,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let responseData: any = {
         domain,
         domainData: domainReconData,
-        enrichment: enrichmentData,
+        enrichment: {
+          // For backward compatibility, maintain the PDL enrichment format while adding our new data
+          ...pdlEnrichmentData,
+          // Add the enriched data we got from either AbstractAPI or PDL
+          enrichedData
+        }
       };
       
       // If companyId is provided, update the company with the enriched data
-      if (companyId && enrichmentData.success && enrichmentData.data) {
+      if (companyId && enrichedData) {
         const companyIdNum = parseInt(companyId);
         if (isNaN(companyIdNum)) {
           return res.status(400).json({ error: 'Invalid company ID' });
@@ -954,17 +968,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Update the company with enriched data
         const enrichedCompanyData: any = {
-          logo: enrichmentData.data.logo,
-          description: enrichmentData.data.description,
-          industry: enrichmentData.data.industry || company.industry,
-          employeeCount: enrichmentData.data.employeeCount?.toString() || company.employeeCount,
-          founded: enrichmentData.data.founded,
-          companyType: enrichmentData.data.companyType,
-          annualRevenue: enrichmentData.data.annualRevenue,
-          socialProfiles: enrichmentData.data.socialProfiles ? JSON.stringify(enrichmentData.data.socialProfiles) : null,
-          tags: enrichmentData.data.tags ? JSON.stringify(enrichmentData.data.tags) : null,
+          logo: enrichedData.logo,
+          industry: enrichedData.industry || company.industry,
+          employeeCount: enrichedData.employeeCount?.toString() || company.employeeCount,
+          founded: enrichedData.yearFounded?.toString(),
+          // New fields from AbstractAPI
+          phone: enrichedData.phone || company.phone,
+          address: enrichedData.streetAddress ? 
+            `${enrichedData.streetAddress}${enrichedData.city ? ', ' + enrichedData.city : ''}${enrichedData.state ? ', ' + enrichedData.state : ''}${enrichedData.postalCode ? ' ' + enrichedData.postalCode : ''}` 
+            : company.address,
           enrichedAt: new Date().toISOString()
         };
+        
+        // Get additional data from PDL if available
+        if (pdlEnrichmentData.success && pdlEnrichmentData.data) {
+          enrichedCompanyData.description = pdlEnrichmentData.data.description || enrichedCompanyData.description;
+          enrichedCompanyData.companyType = pdlEnrichmentData.data.companyType || enrichedCompanyData.companyType;
+          enrichedCompanyData.annualRevenue = pdlEnrichmentData.data.annualRevenue || enrichedCompanyData.annualRevenue;
+          
+          if (pdlEnrichmentData.data.socialProfiles) {
+            enrichedCompanyData.socialProfiles = JSON.stringify(pdlEnrichmentData.data.socialProfiles);
+          }
+          
+          if (pdlEnrichmentData.data.tags) {
+            enrichedCompanyData.tags = JSON.stringify(pdlEnrichmentData.data.tags);
+          }
+        }
         
         // Remove undefined/null properties
         Object.keys(enrichedCompanyData).forEach(key => {
@@ -986,7 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return the complete response with all data
       res.json(responseData);
     } catch (error) {
-      console.error('[PDL] Error in domain enrichment:', error);
+      console.error('[Enrichment] Error in domain enrichment:', error);
       handleError(error, res);
     }
   });

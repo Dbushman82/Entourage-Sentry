@@ -174,12 +174,16 @@ export async function abstractEnrichCompanyByDomain(domain: string): Promise<Com
     
     // Log the processed data for debugging, handling undefined data safely
     if (result.data) {
-      console.log('[AbstractAPI] Enrichment success! Processed data:', JSON.stringify({
-        name: result.data.name,
-        industry: result.data.industry,
-        phone: result.data.phone,
-        address: result.data.address
-      }, null, 2));
+      try {
+        console.log('[AbstractAPI] Enrichment success! Processed data:', JSON.stringify({
+          name: result.data.name,
+          industry: result.data.industry,
+          phone: result.data.phone,
+          address: result.data.address
+        }, null, 2));
+      } catch (logError) {
+        console.log('[AbstractAPI] Enrichment success! (Error logging details)');
+      }
     }
     
     return result;
