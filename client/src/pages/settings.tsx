@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Edit, Loader2, Plus, Trash2, Settings as SettingsIcon } from "lucide-react";
+import { AlertCircle, Edit, Loader2, Plus, Trash2, Settings as SettingsIcon, Key } from "lucide-react";
+import ApiKeysTab from "@/components/settings/ApiKeysTab";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { 
   Dialog, 
@@ -569,10 +570,11 @@ const SettingsPage = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-4 max-w-md">
+          <TabsList className="grid grid-cols-5 max-w-md">
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="industries">Industries</TabsTrigger>
+            <TabsTrigger value="apikeys">API Keys</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
           
