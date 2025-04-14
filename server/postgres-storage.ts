@@ -8,7 +8,7 @@ import {
   Assessment, InsertAssessment, SecurityAssessment, InsertSecurityAssessment,
   AssessmentRequest, InsertAssessmentRequest, CustomQuestion, InsertCustomQuestion,
   CustomQuestionResponse, InsertCustomQuestionResponse, Expense, InsertExpense,
-  Industry, InsertIndustry
+  Industry, InsertIndustry, ApiKey, InsertApiKey
 } from '../shared/schema';
 import { IStorage } from './storage';
 import { 
@@ -746,6 +746,43 @@ export class PostgresStorage implements IStorage {
     await db.delete(schema.questionIndustries).where(eq(schema.questionIndustries.industryId, id));
     // Then delete the industry
     const result = await db.delete(schema.industries).where(eq(schema.industries.id, id)).returning();
+    return result.length > 0;
+  }
+  
+  // API Key methods
+  async createApiKey(apiKey: InsertApiKey): Promise<ApiKey> {
+    const result = await db.insert(schema.apiKeys).values({
+      ...apiKey,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      documentationUrl: apiKey.documentationUrl || null
+    }).returning();
+    return result[0];
+  }
+  
+  async getApiKey(id: number): Promise<ApiKey | undefined> {
+    const keys = await db.select().from(schema.apiKeys).where(eq(schema.apiKeys.id, id));
+    return keys[0];
+  }
+  
+  async getAllApiKeys(): Promise<ApiKey[]> {
+    return await db.select().from(schema.apiKeys);
+  }
+  
+  async updateApiKey(id: number, apiKey: Partial<InsertApiKey>): Promise<ApiKey | undefined> {
+    const result = await db.update(schema.apiKeys)
+      .set({
+        ...apiKey,
+        updatedAt: new Date(),
+        documentationUrl: apiKey.documentationUrl !== undefined ? apiKey.documentationUrl : null
+      })
+      .where(eq(schema.apiKeys.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deleteApiKey(id: number): Promise<boolean> {
+    const result = await db.delete(schema.apiKeys).where(eq(schema.apiKeys.id, id)).returning();
     return result.length > 0;
   }
 
